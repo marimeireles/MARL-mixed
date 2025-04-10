@@ -94,6 +94,8 @@ class aPObase(abase):
         # use optimized einsum method
         self.opti = opteinsum
 
+        print('initialization of POBAse 🥶')
+
     # =========================================================================
     #   Strategy averaging
     # =========================================================================

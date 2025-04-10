@@ -1,0 +1,2 @@
+[nbdev]
+pyCRLD = pyCRLD._modidx:d

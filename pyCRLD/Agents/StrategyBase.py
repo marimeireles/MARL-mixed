@@ -59,6 +59,8 @@ class strategybase(abase):
         in strategy space, given joint strategy `Xisa`.
         """
         TDe = self.TDerror(Xisa)
+        print('🌸')
+        print('shape Xisa: ', Xisa.shape)
         n = jnp.newaxis
         XexpaTDe = Xisa * jnp.exp(self.alpha[:, n, n] * TDe)
         return XexpaTDe / XexpaTDe.sum(-1, keepdims=True), TDe
