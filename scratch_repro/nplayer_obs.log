@@ -1,0 +1,51 @@
+[verify] N=2 reduction to 2-agent SocialDilemma:
+   OK   CC->R (agent0): got +1.000 exp +1.000
+   OK   DD->P (agent0): got +0.000 exp +0.000
+   OK   agent0 defects unilaterally ->T: got +1.500 exp +1.500
+   OK   agent0 cooperates, other defects ->S: got -0.500 exp -0.500
+   OK   agent1 defects unilaterally ->T: got +1.500 exp +1.500
+   OK   agent1 cooperates, other defects ->S: got -0.500 exp -0.500
+[verify] N=3 spot checks (pairwise-averaged):
+   all-C agent0 = +1.000 (exp R=1)
+   all-D agent0 = +0.000 (exp P=0)
+   agent0 D vs (C,C) = +1.500 (exp T=1.5)
+   agent0 C vs (D,D) = -0.500 (exp S=-0.5)
+   agent0 C vs (C,D) = +0.250 (exp mean(R,S)=+0.250)
+
+[verify] converged cooperation (full observability):
+   game      N   P(C|all-C state)     P(C overall, all states)
+   ipd       2   0.001 +/- 0.000        0.000 +/- 0.000
+   ipd       3   0.089 +/- 0.112        0.022 +/- 0.021
+   ipd       4   0.229 +/- 0.103        0.173 +/- 0.071
+   staghunt  2   0.833 +/- 0.373        0.718 +/- 0.269
+   staghunt  3   0.722 +/- 0.404        0.708 +/- 0.241
+   staghunt  4   0.844 +/- 0.255        0.556 +/- 0.270
+   snowdrift 2   0.500 +/- 0.001        0.498 +/- 0.002
+   snowdrift 3   0.542 +/- 0.148        0.423 +/- 0.133
+   snowdrift 4   0.503 +/- 0.116        0.394 +/- 0.082
+[obsgrid] ipd N=3 -> obsgrid_ipd_ac_N3.png
+[obsgrid] harmony N=3 -> obsgrid_harmony_ac_N3.png
+[obsgrid] staghunt N=3 -> obsgrid_staghunt_ac_N3.png
+[obsgrid] snowdrift N=3 -> obsgrid_snowdrift_ac_N3.png
+[obsgrid] coin N=3 -> obsgrid_coin_ac_N3.png
+[obsgrid] arena N=3 -> obsgrid_arena_ac_N3.png
+[obsgrid] ipd N=4 -> obsgrid_ipd_ac_N4.png
+[obsgrid] harmony N=4 -> obsgrid_harmony_ac_N4.png
+[obsgrid] staghunt N=4 -> obsgrid_staghunt_ac_N4.png
+[obsgrid] snowdrift N=4 -> obsgrid_snowdrift_ac_N4.png
+[obsgrid] coin N=4 -> obsgrid_coin_ac_N4.png
+[obsgrid] arena N=4 -> obsgrid_arena_ac_N4.png
+
+[done] figures:
+   /nas/ucb/marimeireles/MARL-mixed/jaxmarl_env/results/obsgrid_ipd_ac_N3.png
+   /nas/ucb/marimeireles/MARL-mixed/jaxmarl_env/results/obsgrid_harmony_ac_N3.png
+   /nas/ucb/marimeireles/MARL-mixed/jaxmarl_env/results/obsgrid_staghunt_ac_N3.png
+   /nas/ucb/marimeireles/MARL-mixed/jaxmarl_env/results/obsgrid_snowdrift_ac_N3.png
+   /nas/ucb/marimeireles/MARL-mixed/jaxmarl_env/results/obsgrid_coin_ac_N3.png
+   /nas/ucb/marimeireles/MARL-mixed/jaxmarl_env/results/obsgrid_arena_ac_N3.png
+   /nas/ucb/marimeireles/MARL-mixed/jaxmarl_env/results/obsgrid_ipd_ac_N4.png
+   /nas/ucb/marimeireles/MARL-mixed/jaxmarl_env/results/obsgrid_harmony_ac_N4.png
+   /nas/ucb/marimeireles/MARL-mixed/jaxmarl_env/results/obsgrid_staghunt_ac_N4.png
+   /nas/ucb/marimeireles/MARL-mixed/jaxmarl_env/results/obsgrid_snowdrift_ac_N4.png
+   /nas/ucb/marimeireles/MARL-mixed/jaxmarl_env/results/obsgrid_coin_ac_N4.png
+   /nas/ucb/marimeireles/MARL-mixed/jaxmarl_env/results/obsgrid_arena_ac_N4.png

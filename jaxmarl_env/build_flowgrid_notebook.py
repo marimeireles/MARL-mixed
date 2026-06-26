@@ -60,7 +60,23 @@ for gkey, gname in GAMES:
             title = f"{gname}  -  {alabel}  -  N={N}"
             code(f'show({fname!r}, {title!r})')
 
-md("""## Notes & honest caveats
+md("""## Key findings & honest caveats
+
+**Cooperation vs number of players (a surprise).** In this *pairwise-averaged* PD,
+cooperation does **not** get harder with more players — for the IPD it gets
+*easier*: from random starts, cooperation at the reciprocity state rises with N.
+
+| game (full obs, P(C) at reciprocity state) | N=2 | N=3 | N=4 |
+|---|---|---|---|
+| Prisoner's Dilemma | 0.00 | 0.09 | 0.23 |
+| Stag Hunt | 0.83 | 0.72 | 0.84 |
+| Snowdrift | 0.50 | 0.54 | 0.50 |
+
+Why: a single agent's defection only perturbs *one* of the N−1 pairwise terms, so
+the pull away from mutual cooperation shrinks relative to the reciprocity
+structure, enlarging the cooperative basin. The naive "more players → less
+cooperation" intuition comes from non-reciprocal / public-goods framings; under
+memory-1 reciprocity with payoff dilution it goes the other way.
 
 - **Actor-critic vs SARSA:** the flow field depends on the *learning rule*. On the
   IPD, actor-critic flows to defection while SARSA (value-based) sustains more
