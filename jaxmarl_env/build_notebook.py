@@ -535,6 +535,39 @@ the (shaped) return directly and make steady progress. Once again: **the best
 algorithm is a property of the game, not the algorithm** — IQL wins the matrix
 dilemma, IPPO wins the spatial cooperative task.""")
 
+md("""## 7f. The STORM arena — general-sum, N agents, observability
+
+STORM "in-the-matrix" (`storm_np`) is the **arena**: a gridworld where agents move,
+collect red ("cooperate") / blue ("defect") coins into an inventory, and resolve a
+**Prisoner's Dilemma** matrix game on contact. It is general-sum, **CNN-observed**
+(egocentric 5x5x14 grid), and scales to **arbitrary agent counts** — exactly the
+setting you asked for. We train CNN-IPPO and vary two things.""")
+
+code("""for nm, cap in [("storm_nagents.png", "Number of agents (N = 2, 4, 8)"),
+                ("storm_obs.png", "Observability at N=2 (full vs blind-to-others)")]:
+    p = os.path.join(RESULTS, nm)
+    if os.path.exists(p):
+        from matplotlib import image as mpimg
+        fig, ax = plt.subplots(figsize=(7, 4.3)); ax.imshow(mpimg.imread(p)); ax.axis("off")
+        ax.set_title(cap, fontsize=10); plt.show()
+    else:
+        print("run storm_arena.py to generate", nm)""")
+
+md("""**My read on the arena:**
+- **Group size:** per-agent reward is healthy and similar at **N=2 and N=4**
+  (~0.22) but **collapses at N=8** (~0.04). In the arena, more agents means a much
+  harder coordination / credit-assignment problem — encounters multiply, a single
+  shared policy can't organise a large group, and interference/free-riding wins.
+  Cooperative payoff does **not** scale to large groups (echoing the N-agent IPD
+  result, now in an embodied arena).
+- **Observability:** masking the "other-agent-present" channel (**blind to others**)
+  is **indistinguishable from full observability** (~0.22 vs ~0.24). Unlike the
+  matrix IPD — where reward is *purely* reciprocal and observability was decisive —
+  arena reward is dominated by **coin collection** (your own inventory), which
+  barely depends on tracking the other agent's position. So *which* observation
+  matters is itself a property of the game: reciprocity games need to see the
+  partner; foraging-style arenas mostly don't.""")
+
 md("""## 8. What was added to this repository
 
 | path | what it is |
@@ -553,6 +586,10 @@ md("""## 8. What was added to this repository
 | `jaxmarl_env/algo_phase.py` | algorithm paths over the CRLD flow field |
 | `jaxmarl_env/gen_algos.py` | **generic** IPPO/A2C/IQL for any discrete JaxMARL game |
 | `jaxmarl_env/gen_compare.py` | the three algorithms on general-sum games |
+| `jaxmarl_env/cnn_algos.py` + `img_compare.py` | CNN trainers for image envs (Overcooked) |
+| `jaxmarl_env/coin_coop.py` | coin_game cooperation-fraction dynamics |
+| `jaxmarl_env/memory_sweep.py` | cooperation vs memory length (1–10) |
+| `jaxmarl_env/storm_arena.py` | STORM in-the-matrix arena: N agents + observability |
 | `scratch_repro/flowplots.py` | **CRLD flow plots** (vector field + trajectories) |
 | `jaxmarl_env/results/` | per-env `.npz` curves, `.png`, `.status` |
 | `scratch_repro/` | CRLD reproduction scripts (deterministic IPD dynamics) |
