@@ -27,6 +27,17 @@ import pandas as pd
 import matplotlib.pyplot as plt
 plt.rcParams.update({"figure.dpi": 140, "savefig.dpi": 140})   # higher-res inline figures
 
+def showcap(fname, caption, figsize=(12, 4.2)):
+    "Display a saved figure with a one-line 'how to read it' caption above it."
+    from matplotlib import image as mpimg
+    p = os.path.join(RESULTS, fname)
+    if not os.path.exists(p):
+        print("(figure not generated yet:", fname, ")"); return
+    fig, ax = plt.subplots(figsize=figsize)
+    ax.imshow(mpimg.imread(p)); ax.axis("off")
+    ax.set_title("\U0001F4CA  " + caption, fontsize=10, loc="left", wrap=True, color="#114")
+    plt.show()
+
 HERE = os.path.dirname(os.path.abspath("__file__")) if "__file__" in dir() else os.getcwd()
 RESULTS = os.path.join(HERE, "results")
 REPO = os.path.dirname(HERE)
@@ -129,7 +140,9 @@ code("""summ = os.path.join(REPO, "paper", "figures", "summary.png")
 if os.path.exists(summ):
     from matplotlib import image as mpimg
     fig, ax = plt.subplots(figsize=(11, 3.6)); ax.imshow(mpimg.imread(summ)); ax.axis("off")
-    ax.set_title("CRLD: cooperation rate & reward vs. observability (2-agent IPD)")
+    ax.set_title("\U0001F4CA  CRLD (2-agent IPD): (left) cooperation rate and (right) per-agent "
+                 "reward both fall as Agent-2's observability is degraded full->blind.",
+                 fontsize=10, loc="left", wrap=True, color="#114")
     plt.show()
 else:
     print("summary figure not found:", summ)""")
@@ -200,13 +213,9 @@ md("""Sweeping the temptation `T` moves the game along the dilemma axis — and 
 flow reorganizes from cooperation-attracting (Harmony) to defection-attracting
 (Prisoner's Dilemma). Purple lines are trajectories from several random starts.""")
 
-code("""img = os.path.join(RESULTS, "payoff_sweep.png")
-if os.path.exists(img):
-    from matplotlib import image as mpimg
-    fig, ax = plt.subplots(figsize=(13, 4)); ax.imshow(mpimg.imread(img)); ax.axis("off")
-    plt.show()
-else:
-    print("run scratch_repro/flowplots.py to generate payoff_sweep.png")""")
+code('showcap("payoff_sweep.png", "Same flow plot across the dilemma axis: '
+     'cooperation-attracting (Harmony, left) to defection-attracting (Strong PD, right). '
+     'Purple = sample learning paths.", figsize=(13, 4))')
 
 md("""### Dynamics for *more games* — the four canonical 2x2 games
 
@@ -217,13 +226,9 @@ basins, cooperate or defect, split by a separatrix), **Snowdrift/Chicken**
 (anti-coordination → an interior/off-diagonal attractor), and the **Prisoner's
 Dilemma** (defection dominant → flows to (0,0)).""")
 
-code("""img = os.path.join(RESULTS, "game_menagerie.png")
-if os.path.exists(img):
-    from matplotlib import image as mpimg
-    fig, ax = plt.subplots(figsize=(15, 4)); ax.imshow(mpimg.imread(img)); ax.axis("off")
-    plt.show()
-else:
-    print("run scratch_repro/flowplots.py to generate game_menagerie.png")""")
+code('showcap("game_menagerie.png", "Four canonical 2x2 games. Arrows = where learning '
+     'pushes the joint policy; purple = sample paths. Harmony->cooperate, Stag-Hunt->two '
+     'basins, Snowdrift->anti-coordination, Prisoner\'s Dilemma->defect.", figsize=(15, 4))')
 
 md("""### Dynamics for *more algorithms* — paths over the flow field
 
@@ -234,13 +239,9 @@ trajectories on the memory-1 IPD. **IPPO and A2C ride the grey flow down to (0,0
 IQL climbs *against* it to (1,1)** — value-based learning plus memory escapes the
 basin the memoryless dynamics predict. That deviation is the whole story.""")
 
-code("""img = os.path.join(RESULTS, "algo_phase_full.png")
-if os.path.exists(img):
-    from matplotlib import image as mpimg
-    fig, ax = plt.subplots(figsize=(6.5, 6.2)); ax.imshow(mpimg.imread(img)); ax.axis("off")
-    plt.show()
-else:
-    print("run algo_phase.py to generate algo_phase_full.png")""")
+code('showcap("algo_phase_full.png", "Grey arrows = the IPD\'s defection flow field. '
+     'Coloured lines = each algorithm\'s actual path: IPPO/A2C ride the flow down to (0,0); '
+     'IQL climbs against it to cooperation (1,1). x=start, o=end.", figsize=(6.5, 6.2))')
 
 md("""### Observation heterogeneity, with the flow field — all six regimes
 
@@ -256,13 +257,9 @@ observability the flow has structure that can sustain cooperation; as Agent 1's
 view is masked the flow reorganises toward mutual defection — the **blind** field
 points almost uniformly at (0, 0).""")
 
-code("""img = os.path.join(RESULTS, "memory_observability.png")
-if os.path.exists(img):
-    from matplotlib import image as mpimg
-    fig, ax = plt.subplots(figsize=(14, 4)); ax.imshow(mpimg.imread(img)); ax.axis("off")
-    plt.show()
-else:
-    print("run scratch_repro/flowplots.py to generate memory_observability.png")""")
+code('showcap("memory_observability.png", "Cooperation flow field for each of Agent-1\'s six '
+     'observability regimes (memory-1 IPD). Full obs keeps structure that can sustain '
+     'cooperation; Blind -> arrows point straight to mutual defection.", figsize=(14, 4))')
 
 md("""## 6. Cooperation phase portraits in deep RL — *why these have no arrows*
 
@@ -293,7 +290,7 @@ axis is not defined for them — for those, the reward curves in Section 2 are t
 learning dynamics.)*""")
 
 code("""coop = sorted(f for f in glob.glob(os.path.join(RESULTS, "coop_*.npy"))
-              if "vs_n" not in f)   # regime trajectories only
+              if "vs_n" not in f and "baselines" not in f)   # regime trajectories only
 if coop:
     names = {"full":"Full obs","blind":"Blind","self":"Self only","others":"Others only",
              "coop":"Coop-tracking","def":"Def-tracking"}
@@ -358,18 +355,14 @@ drift to mutual defection, while **value-based IQL converges to cooperation
 
 So "do agents cooperate?" depends as much on the algorithm as on the game.""")
 
-code("""img = os.path.join(RESULTS, "algo_compare.png")
-if os.path.exists(img):
-    from matplotlib import image as mpimg
-    fig, ax = plt.subplots(figsize=(12.5, 4.5)); ax.imshow(mpimg.imread(img)); ax.axis("off")
-    plt.show()
-    af = os.path.join(RESULTS, "algo_final.npy")
-    if os.path.exists(af):
-        final = np.load(af)
-        algos, regs = np.load(os.path.join(RESULTS, "algo_final_axes.npy"), allow_pickle=True)
-        display(pd.DataFrame(np.round(final, 2), index=list(algos), columns=list(regs)))
-else:
-    print("run algo_compare.py to generate the comparison")""")
+code('''showcap("algo_compare.png", "(a) cooperation over training, full obs; (b) final "
+        "cooperation by regime. IQL cooperates ~0.95 in every regime EXCEPT blind; "
+        "IPPO/A2C drift to defection.", figsize=(12.5, 4.5))
+af = os.path.join(RESULTS, "algo_final.npy")
+if os.path.exists(af):
+    final = np.load(af)
+    algos, regs = np.load(os.path.join(RESULTS, "algo_final_axes.npy"), allow_pickle=True)
+    display(pd.DataFrame(np.round(final, 2), index=list(algos), columns=list(regs)))''')
 
 md("""## 7b. Does the learning rate change cooperation?
 
@@ -378,19 +371,14 @@ basin (smaller, more careful steps settle into cooperative fixed points that
 larger steps overshoot). Here we sweep the learning rate for each algorithm on
 the full-observability IPD.""")
 
-code("""img = os.path.join(RESULTS, "lr_sweep.png")
-if os.path.exists(img):
-    from matplotlib import image as mpimg
-    fig, ax = plt.subplots(figsize=(7, 4.5)); ax.imshow(mpimg.imread(img)); ax.axis("off")
-    plt.show()
-    lf = os.path.join(RESULTS, "lr_sweep.npy")
-    if os.path.exists(lf):
-        M = np.load(lf)
-        algos, lrs = np.load(os.path.join(RESULTS, "lr_sweep_axes.npy"), allow_pickle=True)
-        display(pd.DataFrame(np.round(M, 2), index=list(algos),
-                             columns=[f"{l:.0e}" for l in lrs]))
-else:
-    print("run lr_sweep.py to generate the learning-rate sweep")""")
+code('''showcap("lr_sweep.png", "Final cooperation vs learning rate. Smaller LR -> more "
+        "cooperation for A2C; IQL has a sharp cliff (~5e-4); IPPO stuck at 0 for every rate.",
+        figsize=(7, 4.5))
+lf = os.path.join(RESULTS, "lr_sweep.npy")
+if os.path.exists(lf):
+    M = np.load(lf)
+    algos, lrs = np.load(os.path.join(RESULTS, "lr_sweep_axes.npy"), allow_pickle=True)
+    display(pd.DataFrame(np.round(M, 2), index=list(algos), columns=[f"{l:.0e}" for l in lrs]))''')
 
 md("""**My read on the learning-rate result** (and it lines up nicely with the CRLD
 α-finding that smaller learning rates enlarge the cooperative basin):
@@ -426,13 +414,9 @@ matrix games spatially. They are general-sum, but their observation is an
 image/grid that collapses to nothing when flattened, so a feed-forward policy
 can't use them — they need a CNN encoder (a clean next step, not done here).""")
 
-code("""img = os.path.join(RESULTS, "gen_compare.png")
-if os.path.exists(img):
-    from matplotlib import image as mpimg
-    fig, ax = plt.subplots(figsize=(12, 7)); ax.imshow(mpimg.imread(img)); ax.axis("off")
-    plt.show()
-else:
-    print("run gen_compare.py to generate the general-sum comparison")""")
+code('showcap("gen_compare.png", "Reward over training, 3 algorithms x 4 general-sum games. '
+     "No algorithm wins everywhere: IQL is great on the IPD but diverges on the MPE control "
+     'games; IPPO is the most robust.", figsize=(12, 7))')
 
 md("""**My read across games:** there is no universally-best algorithm — the ranking
 *flips with the game*. On the IPD, **IQL** was the only one to cooperate; but on
@@ -466,32 +450,23 @@ policy gradient finds it.
 game with a single shared reward, so there is no defect option; its dish-delivery
 reward curve in §7e *is* its cooperation signal.)""")
 
-code("""img = os.path.join(RESULTS, "coin_coop.png")
-if os.path.exists(img):
-    from matplotlib import image as mpimg
-    fig, ax = plt.subplots(figsize=(7, 4.4)); ax.imshow(mpimg.imread(img)); ax.axis("off")
-    plt.show()
-else:
-    print("run coin_coop.py to generate the coin_game cooperation dynamics")""")
+code('showcap("coin_coop.png", "coin_game cooperation (fraction of own-coin pickups) over '
+     'training. IPPO learns to cooperate (~0.72) - the opposite of the matrix IPD where it '
+     'defects; A2C/IQL stay near chance.", figsize=(7, 4.4))')
 
 md("""## 7d. Does longer memory help cooperation?
 
 Everything above used memory-1 (agents condition on the previous round). The IPD
 env now supports memory-`m`; here we sweep it for each algorithm (full obs).""")
 
-code("""img = os.path.join(RESULTS, "memory_sweep.png")
-if os.path.exists(img):
-    from matplotlib import image as mpimg
-    fig, ax = plt.subplots(figsize=(7, 4.6)); ax.imshow(mpimg.imread(img)); ax.axis("off")
-    plt.show()
-    mf = os.path.join(RESULTS, "memory_sweep.npy")
-    if os.path.exists(mf):
-        M = np.load(mf)
-        algos, mems = np.load(os.path.join(RESULTS, "memory_sweep_axes.npy"), allow_pickle=True)
-        display(pd.DataFrame(np.round(M, 2), index=list(algos),
-                             columns=[f"mem={m}" for m in mems]))
-else:
-    print("run memory_sweep.py to generate the memory sweep")""")
+code('''showcap("memory_sweep.png", "Final cooperation vs memory length (1 to 10). IQL holds "
+        "to ~memory-4 then collapses past 5 (a cliff); IPPO/A2C flat. Longer memory does NOT "
+        "help cooperation.", figsize=(7, 4.6))
+mf = os.path.join(RESULTS, "memory_sweep.npy")
+if os.path.exists(mf):
+    M = np.load(mf)
+    algos, mems = np.load(os.path.join(RESULTS, "memory_sweep_axes.npy"), allow_pickle=True)
+    display(pd.DataFrame(np.round(M, 2), index=list(algos), columns=[f"mem={m}" for m in mems]))''')
 
 md("""**My read on memory (now swept to 10):** more memory does **not** buy more
 cooperation — and at enough depth it actively **destroys** it. IPPO/A2C are flat
@@ -516,13 +491,10 @@ and a **sparse** reward (you only score when a dish is delivered). It needs (a) 
 all. We train all three algorithms with the CNN and shaped rewards, and plot the
 *sparse* task reward (real dishes).""")
 
-code("""img = os.path.join(RESULTS, "overcooked_compare.png")
-if os.path.exists(img):
-    from matplotlib import image as mpimg
-    fig, ax = plt.subplots(figsize=(7, 4.6)); ax.imshow(mpimg.imread(img)); ax.axis("off")
-    plt.show()
-else:
-    print("run img_compare.py (CNN, shaped reward) to generate the Overcooked comparison")""")
+code('showcap("overcooked_compare.png", "Overcooked dishes delivered (sparse reward) over '
+     'training. IPPO learns to cook (~0.34), A2C slowly, IQL fails (~0) - sparse spatial '
+     'coordination is hardest for value-based methods. Opposite ranking to the IPD.", '
+     'figsize=(7, 4.6))')
 
 md("""**My read on Overcooked:** the CNN + shaped reward work — **IPPO learns to
 deliver dishes** (sparse reward climbs to ~0.34), **A2C** learns slowly (~0.10),
@@ -576,20 +548,16 @@ The canonical JaxMARL baseline families on a *cooperative* task
 **IQL**; and the value-mixing methods **VDN** (sum) and **QMIX** (monotonic mixing
 network).""")
 
-code("""img = os.path.join(RESULTS, "coop_baselines.png")
-if os.path.exists(img):
-    from matplotlib import image as mpimg
-    fig, ax = plt.subplots(figsize=(7.5, 5)); ax.imshow(mpimg.imread(img)); ax.axis("off")
-    plt.show()
-    bf = os.path.join(RESULTS, "coop_baselines.npy")
-    if os.path.exists(bf):
-        d = np.load(bf, allow_pickle=True).item()
-        display(pd.DataFrame({k: [round(float(np.asarray(v)[0]), 2),
-                                  round(float(np.asarray(v)[-1]), 2),
-                                  round(float(np.asarray(v).max()), 2)] for k, v in d.items()},
-                             index=["start", "final", "best"]).T)
-else:
-    print("run coop_baselines.py to generate the baseline comparison")""")
+code('''showcap("coop_baselines.png", "All 6 baselines on cooperative simple_spread "
+        "(higher = better). Policy-gradient (IPPO/MAPPO) win ~-0.78; value-mixing (VDN/QMIX) "
+        "trails IQL and is unstable without a replay buffer.", figsize=(7.5, 5))
+bf = os.path.join(RESULTS, "coop_baselines.npy")
+if os.path.exists(bf):
+    d = np.load(bf, allow_pickle=True).item()
+    display(pd.DataFrame({k: [round(float(np.asarray(v)[0]), 2),
+                              round(float(np.asarray(v)[-1]), 2),
+                              round(float(np.asarray(v).max()), 2)] for k, v in d.items()},
+                         index=["start", "final", "best"]).T)''')
 
 md("""**My read on the baselines:** the **policy-gradient** methods win cleanly —
 **IPPO and MAPPO** reach ~-0.78, A2C just behind (~-0.86) — and MAPPO's centralized
@@ -605,6 +573,40 @@ network more often (every 10 updates) keeps it stable at -1.09 — the figure us
 that. The published VDN/QMIX rely on big replay buffers and far more gradient steps
 to realise their advantage; treat these as honest *naive* baselines, not the tuned
 ceiling. (All runs single-seed.)""")
+
+md("""## 7h. coin_game ported to CRLD — flow diagrams, observability & memory
+
+You asked for the *flow-field* "game dynamics diagrams" for coin_game. Those arrows
+only exist in the analytic CRLD framework, so we **port coin_game's embedded social
+dilemma** to a CRLD matrix game. coin_game's payoffs reduce to a Prisoner's Dilemma
+(C = grab your own coin, D = steal the other's): **R=1, T=2, S=-2, P=0** (strict PD,
+T>R>P>S). This is the matrix reduction of the spatial game (not an exact port), but
+it lets us reuse *all* the CRLD machinery — flow fields, the six observability
+regimes, and memory.""")
+
+code('''showcap("coin_crld_flow.png",
+        "coin_game as a CRLD Prisoner's Dilemma: every trajectory from random starts flows "
+        "to (0,0) = mutual defection (the PD signature) - cooperation is socially optimal "
+        "but individually unstable.", figsize=(9, 4))''')
+
+code('''showcap("coin_crld_obs.png",
+        "The six observability regimes for the coin_game-PD (memory-1), each with its "
+        "cooperation flow field - the same analysis we ran on the IPD.", figsize=(14, 9))''')
+
+md("""And in the **deep-RL** coin_game (sampled, no flow field): a per-agent phase
+portrait, plus a memory experiment using a verified frame-stacking **wrapper**
+(`ObsMemoryWrapper`, which leaves rewards byte-identical and only stacks the last
+k observations — reusable for the arena too).""")
+
+code('''showcap("coin_phase.png",
+        "Per-agent cooperation phase portrait (IPPO). The two agents co-evolve symmetrically "
+        "along the diagonal, settling near ~60% own-coin (cooperative) pickups. "
+        "x=start, o=end.", figsize=(5.5, 5.2))''')
+
+code('''showcap("coin_memory.png",
+        "Cooperation vs observation-memory depth k (frame-stacking wrapper). The k=1,2,4 "
+        "curves overlap - coin_game is largely Markov in a single frame, so memory does not "
+        "change cooperation here.", figsize=(7, 4.4))''')
 
 md("""## 8. What was added to this repository
 

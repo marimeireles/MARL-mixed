@@ -1,0 +1,12 @@
+=== storm_obs_combos: observability regimes, N=2 ===
+  full          mask()        : +0.0024 -> +0.2176 (final-10 +0.2239)
+  blind_others  mask(5,)      : +0.0024 -> +0.2391 (final-10 +0.2293)
+  self_only     mask(5, 11, 12): +0.0024 -> +0.2350 (final-10 +0.2382)
+  blind         mask(4, 5)    : +0.0020 -> +0.1943 (final-10 +0.2041)
+  saved results/storm_obs_combos.{png,npy}
+=== storm_algos: IPPO vs A2C vs IQL, N=2 full-obs ===
+  IPPO : +0.0024 -> +0.2176 (final-10 +0.2239)
+  A2C  : +0.0024 -> +0.1203 (final-10 +0.1200)
+  IQL  : +0.0032 -> +0.0541 (final-10 +0.0479)
+  saved results/storm_algos.{png,npy}
+=== storm_nagents_long: number of agents (timesteps=8000000) ===
