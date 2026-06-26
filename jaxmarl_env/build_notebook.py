@@ -142,12 +142,22 @@ else:
 
 md("""## 5. CRLD flow plots — the dynamics of cooperation, done properly
 
-The trajectory-only portraits above show *a* path, but not the **flow** that
-produced it. In the CRLD (deterministic learning-dynamics) framework we can draw
-the actual **vector field** of the learning update in strategy space — this is
-`pyCRLD`'s `fp.plot_strategy_flow` — with trajectories overlaid. The flow field
-needs the analytic dynamics object (`mae`), so it is a CRLD construct: it exists
-for the social-dilemma games, not for the sampled deep-RL runs.
+**How to read these plots — there are TWO different things on them:**
+
+1. **The little coloured arrows = the *flow field*.** At *every* point in strategy
+   space (every combination of the two agents' cooperation probabilities), the
+   arrow shows the direction the learning rule pushes the joint policy *next*.
+   Think of it as wind, or the slope of a hill: it covers the whole square and
+   tells you which way things move from anywhere. Colour = arrow strength.
+2. **The single purple line = ONE actual learning *trajectory*.** Pick a random
+   starting policy (the purple **×**), let the agents learn, and the policy drifts
+   — always following the arrows — until it lands at a fixed point (the purple
+   **dot**). It is one path *through* the flow field, like one leaf carried by the
+   wind. (We draw two, from two random starts.)
+
+So: **arrows = the rule everywhere; purple = one run obeying that rule.** The
+flow field needs the analytic dynamics object (`mae`), which is why it only
+exists for the CRLD social-dilemma games, not the sampled deep-RL runs.
 
 The cell below runs the canonical example *live* (pyCRLD now runs in the same
 Python 3.11 environment as JaxMARL — forced onto CPU for the small CRLD compute).""")
@@ -173,6 +183,12 @@ ax = fp.plot_strategy_flow(mae, xs, ys, use_RPEarrows=False,
 fp.plot_trajectories([xtraj], xs, ys, cols=["purple"], axes=ax)
 axs[0].set_xlabel("Agent 0  P(cooperate)"); axs[0].set_ylabel("Agent 1  P(cooperate)")
 axs[0].set_title("Flow plot")
+# explicit legend so the two elements are unmistakable
+from matplotlib.lines import Line2D as _L
+axs[0].legend(handles=[
+    _L([0],[0], color="teal", marker=">", ls="none", label="flow field (learning direction, everywhere)"),
+    _L([0],[0], color="purple", lw=2, marker="x", label="one learning trajectory (x = start)"),
+], fontsize=7, loc="upper right")
 axs[1].plot(xtraj[:, 0, 0, 0], label="Agent 0", c="red")
 axs[1].plot(xtraj[:, 1, 0, 0], label="Agent 1", c="blue")
 axs[1].set_xlabel("Time steps"); axs[1].set_ylabel("Cooperation probability")
@@ -266,7 +282,100 @@ if coop:
 else:
     print("coop_*.npy not present yet — run coop_trajectories.py")""")
 
-md("""## 7. What was added to this repository
+md("""## 7. Algorithm comparison — IPPO vs A2C vs IQL
+
+Does the *learning algorithm* change cooperation? We train three MARL families on
+the same heterogeneous-observation IPD and log cooperation:
+
+- **IPPO** — clipped policy-gradient actor-critic
+- **A2C** — independent advantage actor-critic (on-policy, no clipping)
+- **IQL** — independent Q-learning (value-based, epsilon-greedy)
+
+They behave strikingly differently: the **policy-gradient** methods (IPPO, A2C)
+drift to mutual defection, while **value-based IQL converges to cooperation
+(~0.95)** — in every regime *except blind*, where it too collapses (~0.05).
+
+**My read on why this happens:**
+- **IPPO / A2C defect** because they are *on-policy policy gradient*. The gradient
+  follows the immediate advantage, and in a Prisoner's Dilemma defection has
+  positive advantage at every step (T>R, P>S — defection dominates the stage
+  game). So the policy is pushed relentlessly to (0,0). This is exactly the CRLD
+  flow field of Section 5 — the deterministic learning dynamics *are* the
+  policy-gradient limit, and they point to defection.
+- **IQL cooperates** because it is *value-based and bootstrapped*. Mutual
+  cooperation is a self-reinforcing fixed point of the Q-values: once both agents
+  mostly cooperate, the estimated value of cooperating (a stream of R=1) exceeds
+  that of defecting (which provokes the partner's defection → P=0). The slow
+  target network and greedy action selection let this high-value cooperative
+  equilibrium lock in — the well-documented "Q-learning collusion" effect.
+- **IQL needs observability to do it.** When *blind*, the agent has a single
+  observation and cannot condition its action on history — and reciprocity
+  ("cooperate if you cooperated") is exactly a conditional rule. With nothing to
+  condition on, unconditional defection wins, so blind IQL collapses. Cooperation
+  here requires *both* a value-based learner *and* the ability to observe — tying
+  the algorithm axis back to the observation-heterogeneity theme.
+- **A2C is intermediate and noisy** (e.g. its odd blind=0.43) because the
+  un-clipped, single-update actor-critic is high-variance and under-converged; run
+  longer it drifts toward IPPO's defection.
+
+So "do agents cooperate?" depends as much on the algorithm as on the game.""")
+
+code("""img = os.path.join(RESULTS, "algo_compare.png")
+if os.path.exists(img):
+    from matplotlib import image as mpimg
+    fig, ax = plt.subplots(figsize=(12.5, 4.5)); ax.imshow(mpimg.imread(img)); ax.axis("off")
+    plt.show()
+    af = os.path.join(RESULTS, "algo_final.npy")
+    if os.path.exists(af):
+        final = np.load(af)
+        algos, regs = np.load(os.path.join(RESULTS, "algo_final_axes.npy"), allow_pickle=True)
+        display(pd.DataFrame(np.round(final, 2), index=list(algos), columns=list(regs)))
+else:
+    print("run algo_compare.py to generate the comparison")""")
+
+md("""## 7b. Does the learning rate change cooperation?
+
+On the CRLD side we found that a *smaller* learning rate enlarges the cooperative
+basin (smaller, more careful steps settle into cooperative fixed points that
+larger steps overshoot). Here we sweep the learning rate for each algorithm on
+the full-observability IPD.""")
+
+code("""img = os.path.join(RESULTS, "lr_sweep.png")
+if os.path.exists(img):
+    from matplotlib import image as mpimg
+    fig, ax = plt.subplots(figsize=(7, 4.5)); ax.imshow(mpimg.imread(img)); ax.axis("off")
+    plt.show()
+    lf = os.path.join(RESULTS, "lr_sweep.npy")
+    if os.path.exists(lf):
+        M = np.load(lf)
+        algos, lrs = np.load(os.path.join(RESULTS, "lr_sweep_axes.npy"), allow_pickle=True)
+        display(pd.DataFrame(np.round(M, 2), index=list(algos),
+                             columns=[f"{l:.0e}" for l in lrs]))
+else:
+    print("run lr_sweep.py to generate the learning-rate sweep")""")
+
+md("""**My read on the learning-rate result** (and it lines up nicely with the CRLD
+α-finding that smaller learning rates enlarge the cooperative basin):
+
+- **IPPO: pinned at defection for every rate.** Once the policy gradient commits
+  to the dominant action, step size changes only *how fast* it reaches (0,0), not
+  *where* it lands — no learning rate rescues it.
+- **A2C: smooth, monotone — smaller rate → more cooperation** (0.46 at 5e-5, down
+  to 0.0 by 1e-3). This is the direct deep-RL echo of the CRLD result: small,
+  careful steps let the on-policy learner *linger in and settle toward* the
+  cooperative region before the defection gradient drags it out, whereas large
+  steps overshoot straight to defection.
+- **IQL: a sharp threshold (~5e-4).** Below it, cooperation locks in at ~0.95;
+  above it, it collapses to ~0.05. The cooperative equilibrium lives in the
+  *bootstrapped* Q-values stabilised by the slow target network; once the step
+  size is large enough to outrun the target updates, the bootstrap no longer
+  converges to the cooperative fixed point and value-based collusion fails.
+
+Net: step size sets *speed and stability*, and for the value-based and
+unregularised actor-critic learners it also moves the **basin boundary** — small
+rates are pro-cooperation — exactly the lever we identified on the CRLD side.""")
+
+md("""## 8. What was added to this repository
 
 | path | what it is |
 |---|---|
@@ -276,13 +385,19 @@ md("""## 7. What was added to this repository
 | `jaxmarl_env/slurm_sweep.sh` | SLURM array job — one task per registered env |
 | `jaxmarl_env/plot_all.py` | coverage report + combined dynamics grid |
 | `jaxmarl_env/sweep_table.py` | regime x N cooperation table for the IPD |
+| `jaxmarl_env/coop_trajectories.py` | IPPO cooperation phase portraits (deep RL) |
+| `jaxmarl_env/coop_vs_n.py` | cooperation vs #agents x regime sweep |
+| `jaxmarl_env/algorithms.py` | A2C + IQL trainers (cooperation-logging) |
+| `jaxmarl_env/algo_compare.py` | IPPO/A2C/IQL comparison figure |
+| `scratch_repro/flowplots.py` | **CRLD flow plots** (vector field + trajectories) |
 | `jaxmarl_env/results/` | per-env `.npz` curves, `.png`, `.status` |
 | `scratch_repro/` | CRLD reproduction scripts (deterministic IPD dynamics) |
 | `paper/` | corrected write-up + regenerated figures |
-| `.venv-jaxmarl/` | Python 3.11 env (uv) with JaxMARL + CUDA jax 0.4.38 (git-ignored) |
+| `.venv-jaxmarl/` | Python 3.11 env (uv): JaxMARL **and** pyCRLD, CUDA jax 0.4.38 (git-ignored) |
 
-Two interpreters are used deliberately: the CRLD code runs on the repo's
-Python 3.8 / jax 0.4.13; the JaxMARL code runs in `.venv-jaxmarl` (Python 3.11).""")
+Both pyCRLD (flow plots) and JaxMARL now run in the single `.venv-jaxmarl`
+(Python 3.11); CRLD cells run on CPU (`JAX_PLATFORMS=cpu`) while the JaxMARL
+sweeps use the GPU.""")
 
 nb["cells"] = C
 nb["metadata"]["kernelspec"] = {"name": "python3", "display_name": "Python 3"}
