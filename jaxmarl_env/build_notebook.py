@@ -444,6 +444,52 @@ more gracefully. So "which algorithm cooperates / wins?" is not a property of th
 algorithm alone — it is the algorithm × game × (as we saw) the observability and
 learning rate, together.""")
 
+md("""## 7d. Does longer memory help cooperation?
+
+Everything above used memory-1 (agents condition on the previous round). The IPD
+env now supports memory-`m`; here we sweep it for each algorithm (full obs).""")
+
+code("""img = os.path.join(RESULTS, "memory_sweep.png")
+if os.path.exists(img):
+    from matplotlib import image as mpimg
+    fig, ax = plt.subplots(figsize=(7, 4.6)); ax.imshow(mpimg.imread(img)); ax.axis("off")
+    plt.show()
+    mf = os.path.join(RESULTS, "memory_sweep.npy")
+    if os.path.exists(mf):
+        M = np.load(mf)
+        algos, mems = np.load(os.path.join(RESULTS, "memory_sweep_axes.npy"), allow_pickle=True)
+        display(pd.DataFrame(np.round(M, 2), index=list(algos),
+                             columns=[f"mem={m}" for m in mems]))
+else:
+    print("run memory_sweep.py to generate the memory sweep")""")
+
+md("""**My read on memory:** more memory does **not** buy more cooperation here — it
+is flat-to-slightly-negative. The reason is that the cooperative strategies that
+matter (tit-for-tat, win-stay-lose-shift) are already **memory-1** strategies, so
+one round of history is enough to support reciprocity. Adding rounds doesn't add
+any *needed* capability; it only multiplies the observation space (obs grows
+2N per extra round), which **dilutes** learning at a fixed sample budget. IPPO/A2C
+were already defecting; IQL stays cooperative but gets noisier as the state space
+grows. So memory depth is not the cooperation lever — observability and the
+algorithm family are.""")
+
+md("""## 7e. 🍲 Overcooked — image observations via a CNN
+
+Overcooked is a *cooperative* game with a **spatial-grid observation** (4x5x26)
+and a **sparse** reward (you only score when a dish is delivered). It needs (a) a
+**CNN** encoder, and (b) **shaped-reward** training (the env exposes
+`info["shaped_reward"]` for picking up onions, using the pot, etc.) to learn at
+all. We train all three algorithms with the CNN and shaped rewards, and plot the
+*sparse* task reward (real dishes).""")
+
+code("""img = os.path.join(RESULTS, "overcooked_compare.png")
+if os.path.exists(img):
+    from matplotlib import image as mpimg
+    fig, ax = plt.subplots(figsize=(7, 4.6)); ax.imshow(mpimg.imread(img)); ax.axis("off")
+    plt.show()
+else:
+    print("run img_compare.py (CNN, shaped reward) to generate the Overcooked comparison")""")
+
 md("""## 8. What was added to this repository
 
 | path | what it is |

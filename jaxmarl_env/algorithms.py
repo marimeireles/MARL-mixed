@@ -36,7 +36,7 @@ class Tr(NamedTuple):
 
 def coop_trajectory_a2c(regime, num_agents=2, seed=0, cfg=CFG):
     c = dict(cfg)
-    env = make_hetero_ipd(num_agents=num_agents, regime=regime, num_steps=c["NUM_STEPS"])
+    env = make_hetero_ipd(num_agents=num_agents, regime=regime, num_steps=c["NUM_STEPS"], memory=c.get("MEMORY", 1))
     agents = env.agents; nA = env.num_agents; NE = c["NUM_ENVS"]; n_actors = nA * NE
     c["NUM_UPDATES"] = c["TOTAL_TIMESTEPS"] // (c["NUM_STEPS"] * NE)
     obs_dim = env.observation_space(agents[0]).shape[0]
@@ -114,7 +114,7 @@ class QNet(nn.Module):
 def coop_trajectory_iql(regime, num_agents=2, seed=0, cfg=CFG,
                         eps_start=1.0, eps_end=0.05, target_period=200):
     c = dict(cfg)
-    env = make_hetero_ipd(num_agents=num_agents, regime=regime, num_steps=c["NUM_STEPS"])
+    env = make_hetero_ipd(num_agents=num_agents, regime=regime, num_steps=c["NUM_STEPS"], memory=c.get("MEMORY", 1))
     agents = env.agents; nA = env.num_agents; NE = c["NUM_ENVS"]; n_actors = nA * NE
     c["NUM_UPDATES"] = c["TOTAL_TIMESTEPS"] // (c["NUM_STEPS"] * NE)
     obs_dim = env.observation_space(agents[0]).shape[0]

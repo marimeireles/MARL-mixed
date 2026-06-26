@@ -70,7 +70,8 @@ def coop_trajectory(regime, num_agents=2, seed=0, cfg=CFG,
     """Train and return a (num_updates, num_agents) array of cooperation freq."""
     c = dict(cfg)
     env = make_hetero_ipd(num_agents=num_agents, regime=regime,
-                          num_steps=c["NUM_STEPS"], payoffs=payoffs)
+                          num_steps=c["NUM_STEPS"], payoffs=payoffs,
+                          memory=c.get("MEMORY", 1))
     agents = env.agents; nA = env.num_agents; NE = c["NUM_ENVS"]
     n_actors = nA * NE
     c["NUM_UPDATES"] = c["TOTAL_TIMESTEPS"] // (c["NUM_STEPS"] * NE)

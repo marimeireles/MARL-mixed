@@ -53,7 +53,7 @@ REGIMES = ("full", "blind", "self", "others", "coop", "def")
 
 @struct.dataclass
 class State:
-    last_actions: chex.Array  # (N,) int in {0,1}; previous round's joint action
+    history: chex.Array       # (memory, N) int in {0,1}; last `memory` joint actions
     step: int                 # steps taken this episode
     is_start: chex.Array      # bool scalar; True before any round has been played
     done: chex.Array          # (N,) bool
@@ -68,18 +68,21 @@ class HeterogeneousIPD(MultiAgentEnv):
         regime: str = "full",
         payoffs: Tuple[float, float, float, float] = (1.0, 1.2, -0.5, 0.0),  # R,T,S,P
         num_steps: int = 128,
+        memory: int = 1,          # how many past rounds the agents condition on
     ):
         super().__init__(num_agents)
         assert num_agents >= 2, "need at least 2 agents for a dilemma"
         assert regime in REGIMES, f"regime must be one of {REGIMES}"
+        assert memory >= 1
         self.regime = regime
         self.num_steps = num_steps
+        self.memory = memory
         self.R, self.T, self.S, self.P = payoffs
 
         self.agents = [f"agent_{i}" for i in range(num_agents)]
         self.a_to_i = {a: i for i, a in enumerate(self.agents)}
 
-        obs_dim = 2 * num_agents + 1
+        obs_dim = memory * 2 * num_agents + 1     # `memory` rounds x (N agents x 2) + start
         self.action_spaces = {a: Discrete(2) for a in self.agents}
         self.observation_spaces = {
             a: Box(0.0, 1.0, (obs_dim,)) for a in self.agents
@@ -109,26 +112,28 @@ class HeterogeneousIPD(MultiAgentEnv):
             return self._eye + self._off * (1.0 - coop)[None, :]
         raise ValueError(self.regime)
 
+    def _obs_one_round(self, round_actions):
+        """(N_i, 2N) masked one-hot view of a single past round's joint action."""
+        coop = (round_actions == 0).astype(jnp.float32)
+        vis = self._visibility(coop)                       # (N_i, N_j)
+        onehot = jax.nn.one_hot(round_actions, 2)          # (N_j, 2)
+        return (vis[:, :, None] * onehot[None, :, :]).reshape(self.num_agents, -1)
+
     @partial(jax.jit, static_argnums=(0,))
     def get_obs(self, state: State) -> Dict[str, chex.Array]:
-        last = state.last_actions                 # (N,)
-        coop = (last == 0).astype(jnp.float32)    # 1 where cooperated
-        vis = self._visibility(coop)              # (N_i, N_j)
-        vis = jnp.where(state.is_start, jnp.zeros_like(vis), vis)
-        onehot = jax.nn.one_hot(last, 2)          # (N_j, 2)
-        obs = vis[:, :, None] * onehot[None, :, :]  # (N_i, N_j, 2)
-        obs = obs.reshape(self.num_agents, -1)      # (N_i, 2N)
-        start = jnp.broadcast_to(
-            state.is_start.astype(jnp.float32), (self.num_agents, 1)
-        )
-        obs = jnp.concatenate([obs, start], axis=1)  # (N_i, 2N+1)
+        # one masked view per remembered round, oldest -> newest, then concat
+        per_round = jax.vmap(self._obs_one_round)(state.history)  # (memory, N_i, 2N)
+        per_round = jnp.where(state.is_start, 0.0, per_round)
+        obs = jnp.transpose(per_round, (1, 0, 2)).reshape(self.num_agents, -1)  # (N_i, memory*2N)
+        start = jnp.broadcast_to(state.is_start.astype(jnp.float32), (self.num_agents, 1))
+        obs = jnp.concatenate([obs, start], axis=1)        # (N_i, memory*2N + 1)
         return {a: obs[i] for i, a in enumerate(self.agents)}
 
     # ----------------------------------------------------------------- step
     @partial(jax.jit, static_argnums=(0,))
     def reset(self, key: chex.PRNGKey) -> Tuple[Dict[str, chex.Array], State]:
         state = State(
-            last_actions=jnp.zeros(self.num_agents, dtype=jnp.int32),
+            history=jnp.zeros((self.memory, self.num_agents), dtype=jnp.int32),
             step=0,
             is_start=jnp.array(True),
             done=jnp.zeros(self.num_agents, dtype=bool),
@@ -147,8 +152,10 @@ class HeterogeneousIPD(MultiAgentEnv):
 
         new_step = state.step + 1
         done = new_step >= self.num_steps
+        # shift history: drop oldest round, append the new joint action
+        new_history = jnp.concatenate([state.history[1:], a.astype(jnp.int32)[None, :]], axis=0)
         new_state = State(
-            last_actions=a.astype(jnp.int32),
+            history=new_history,
             step=new_step,
             is_start=jnp.array(False),
             done=jnp.full((self.num_agents,), done),
