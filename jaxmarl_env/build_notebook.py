@@ -140,7 +140,58 @@ if os.path.exists(csv):
 else:
     print("coop_table.csv not found")""")
 
-md("""## 5. Cooperation dynamics — phase portraits
+md("""## 5. CRLD flow plots — the dynamics of cooperation, done properly
+
+The trajectory-only portraits above show *a* path, but not the **flow** that
+produced it. In the CRLD (deterministic learning-dynamics) framework we can draw
+the actual **vector field** of the learning update in strategy space — this is
+`pyCRLD`'s `fp.plot_strategy_flow` — with trajectories overlaid. The flow field
+needs the analytic dynamics object (`mae`), so it is a CRLD construct: it exists
+for the social-dilemma games, not for the sampled deep-RL runs.
+
+The cell below runs the canonical example *live* (pyCRLD now runs in the same
+Python 3.11 environment as JaxMARL — forced onto CPU for the small CRLD compute).""")
+
+code("""import os as _os
+_os.environ.setdefault("JAX_PLATFORMS", "cpu")   # CRLD compute is tiny; CPU avoids GPU setup
+import sys as _sys
+_sys.path.insert(0, REPO)
+import numpy as _np
+from pyCRLD.Agents.StrategyActorCritic import stratAC
+from pyCRLD.Environments.SocialDilemma import SocialDilemma
+from pyCRLD.Utils import FlowPlot as fp
+
+env = SocialDilemma(R=1.0, T=0.8, S=-0.5, P=0.0)
+mae = stratAC(env=env, learning_rates=0.1, discount_factors=0.9)
+_np.random.seed(0)
+xtraj, reached = mae.trajectory(mae.random_softmax_strategy(), Tmax=10000, tolerance=1e-5)
+
+fig, axs = plt.subplots(1, 2, figsize=(9, 4)); plt.subplots_adjust(wspace=0.3)
+xs = ([0], [0], [0]); ys = ([1], [0], [0])
+ax = fp.plot_strategy_flow(mae, xs, ys, use_RPEarrows=False,
+                           flowarrow_points=_np.linspace(0.01, 0.99, 9), axes=[axs[0]])
+fp.plot_trajectories([xtraj], xs, ys, cols=["purple"], axes=ax)
+axs[0].set_xlabel("Agent 0  P(cooperate)"); axs[0].set_ylabel("Agent 1  P(cooperate)")
+axs[0].set_title("Flow plot")
+axs[1].plot(xtraj[:, 0, 0, 0], label="Agent 0", c="red")
+axs[1].plot(xtraj[:, 1, 0, 0], label="Agent 1", c="blue")
+axs[1].set_xlabel("Time steps"); axs[1].set_ylabel("Cooperation probability")
+axs[1].legend(); axs[1].set_title("Trajectory")
+plt.show()""")
+
+md("""Sweeping the temptation `T` moves the game along the dilemma axis — and the
+flow reorganizes from cooperation-attracting (Harmony) to defection-attracting
+(Prisoner's Dilemma). Purple lines are trajectories from several random starts.""")
+
+code("""img = os.path.join(RESULTS, "payoff_sweep.png")
+if os.path.exists(img):
+    from matplotlib import image as mpimg
+    fig, ax = plt.subplots(figsize=(13, 4)); ax.imshow(mpimg.imread(img)); ax.axis("off")
+    plt.show()
+else:
+    print("run scratch_repro/flowplots.py to generate payoff_sweep.png")""")
+
+md("""## 6. Cooperation dynamics — phase portraits (deep RL)
 
 For the games where **cooperation** is genuinely defined (the mixed-motive
 social dilemma), we can draw the *dynamics of cooperation* directly, in the
@@ -158,7 +209,8 @@ differ in *how* they get there and how much residual cooperation survives.
 axis is not defined for them — for those, the reward curves in Section 2 are the
 learning dynamics.)*""")
 
-code("""coop = sorted(glob.glob(os.path.join(RESULTS, "coop_*.npy")))
+code("""coop = sorted(f for f in glob.glob(os.path.join(RESULTS, "coop_*.npy"))
+              if "vs_n" not in f)   # regime trajectories only
 if coop:
     names = {"full":"Full obs","blind":"Blind","self":"Self only","others":"Others only",
              "coop":"Coop-tracking","def":"Def-tracking"}
@@ -185,7 +237,7 @@ if coop:
 else:
     print("coop_*.npy not present yet — run coop_trajectories.py")""")
 
-md("""## 6. What was added to this repository
+md("""## 7. What was added to this repository
 
 | path | what it is |
 |---|---|

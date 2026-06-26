@@ -4,25 +4,36 @@ This brings the observability experiments from the CRLD study into the
 **sampled, deep-RL** regime, so they can be trained with JaxMARL's PPO baselines,
 scaled to many agents, and run on GPU.
 
-## Why a separate environment
+## Unified Python 3.11 environment
 
-The CRLD side of this repo runs on **Python 3.8 / jax 0.4.13** (see the repo
-root). JaxMARL needs a newer interpreter and JAX, so it lives in its own
-virtualenv, created with [`uv`](https://docs.astral.sh/uv/):
+Both stacks — **JaxMARL** (deep RL) and **pyCRLD** (the deterministic
+learning-dynamics / flow plots) — now run in one Python 3.11 virtualenv,
+`.venv-jaxmarl`, created with [`uv`](https://docs.astral.sh/uv/):
 
 ```bash
 # from the repo root
 uv venv --python 3.11 .venv-jaxmarl
-uv pip install --python .venv-jaxmarl/bin/python jaxmarl "fastcore>=1.5.27" pydoe
-uv pip install --python .venv-jaxmarl/bin/python "jax==0.4.38" "jaxlib==0.4.38"
+PY=.venv-jaxmarl/bin/python
+# JaxMARL + deep-RL deps; jax pinned to JaxMARL's tested 0.4.38
+uv pip install --python $PY jaxmarl "fastcore>=1.5.27"
+uv pip install --python $PY "jax[cuda12]==0.4.38" "jaxlib==0.4.38"
+# pyCRLD deps: FlowPlot imports `pyDOE` (capitalised); the maintained package is
+# pyDOE2, so install it and add a one-line shim module named pyDOE
+uv pip install --python $PY pyDOE2 nbformat nbconvert ipykernel pandas
+printf 'from pyDOE2 import *\nfrom pyDOE2 import lhs\n' \
+  > .venv-jaxmarl/lib/python3.11/site-packages/pyDOE.py
 ```
 
-(`jax`/`jaxlib` are pinned to 0.4.38 — the version JaxMARL ships with — because
-some transitive deps will otherwise pull a much newer JAX that JaxMARL has not
-been tested against. For GPU, install the matching CUDA `jaxlib` wheel.)
+Notes:
+- `jax`/`jaxlib` are pinned to **0.4.38** (JaxMARL's version); newer transitive
+  deps (e.g. `distrax`→`tfp-nightly`) will otherwise bump JAX and break JaxMARL.
+- The compute nodes' system `ptxas` (12.2) is older than the bundled CUDA (12.9),
+  so GPU jobs prepend the bundled `ptxas` to `PATH` (see `slurm_sweep.sh`).
+- CRLD/pyCRLD compute is tiny — run those cells with `JAX_PLATFORMS=cpu` to skip
+  GPU setup entirely (the notebook does this).
 
-Run everything below with that interpreter, e.g.
-`../.venv-jaxmarl/bin/python smoke_test.py`.
+Run everything with that interpreter, e.g. `../.venv-jaxmarl/bin/python smoke_test.py`.
+The CRLD flow plots are in `../scratch_repro/flowplots.py`.
 
 ## Files
 
