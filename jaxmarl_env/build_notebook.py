@@ -568,6 +568,41 @@ md("""**My read on the arena:**
   matters is itself a property of the game: reciprocity games need to see the
   partner; foraging-style arenas mostly don't.""")
 
+md("""## 7g. All the baselines — IPPO / A2C / IQL / MAPPO / VDN / QMIX
+
+The canonical JaxMARL baseline families on a *cooperative* task
+(MPE simple_spread, shared reward, higher = better): the policy-gradient methods
+**IPPO**, **A2C**, and **MAPPO** (centralized critic); the independent value method
+**IQL**; and the value-mixing methods **VDN** (sum) and **QMIX** (monotonic mixing
+network).""")
+
+code("""img = os.path.join(RESULTS, "coop_baselines.png")
+if os.path.exists(img):
+    from matplotlib import image as mpimg
+    fig, ax = plt.subplots(figsize=(7.5, 5)); ax.imshow(mpimg.imread(img)); ax.axis("off")
+    plt.show()
+    bf = os.path.join(RESULTS, "coop_baselines.npy")
+    if os.path.exists(bf):
+        d = np.load(bf, allow_pickle=True).item()
+        display(pd.DataFrame({k: [round(float(np.asarray(v)[0]), 2),
+                                  round(float(np.asarray(v)[-1]), 2),
+                                  round(float(np.asarray(v).max()), 2)] for k, v in d.items()},
+                             index=["start", "final", "best"]).T)
+else:
+    print("run coop_baselines.py to generate the baseline comparison")""")
+
+md("""**My read on the baselines:** the **policy-gradient** methods win cleanly —
+IPPO, MAPPO and A2C all reach ~-0.78 and stay stable; MAPPO's centralized critic
+gives no edge over IPPO here. The **value-based** methods struggle: IQL plateaus
+worse (~-1.0), and **VDN/QMIX peak near -1.0 then go unstable and diverge** (QMIX
+worst). That is the *opposite* of the usual story (VDN/QMIX are normally strong on
+cooperative tasks) and I read it as an **implementation/tuning** effect, not a
+fundamental one: these are deliberately simple, single-file value-mixing learners
+with **no replay buffer** and online TD updates, which are known to be unstable —
+the published VDN/QMIX use large replay buffers, target-network tuning, and longer
+training. So treat the value-mixing curves as "naive-implementation" baselines, not
+the tuned ceiling. (Honest caveat; all runs are single-seed.)""")
+
 md("""## 8. What was added to this repository
 
 | path | what it is |
