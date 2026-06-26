@@ -191,7 +191,36 @@ if os.path.exists(img):
 else:
     print("run scratch_repro/flowplots.py to generate payoff_sweep.png")""")
 
-md("""## 6. Cooperation dynamics — phase portraits (deep RL)
+md("""### Observation heterogeneity, with the flow field
+
+Now the actual research question, *with arrows*: a **memory-1** IPD where Agent 1's
+observability is degraded, shown in the state where both agents just cooperated
+(where reciprocity lives). The colored arrows are the learning-dynamics flow; the
+two purple lines are trajectories from random starts. Under **full** observability
+the flow has structure that can sustain cooperation; as Agent 1 loses sight of its
+own action (**self-aware**), the other's action (**non-self-aware**), or everything
+(**blind**), the flow reorganizes toward mutual defection — the blind field points
+almost uniformly to (0, 0).""")
+
+code("""img = os.path.join(RESULTS, "memory_observability.png")
+if os.path.exists(img):
+    from matplotlib import image as mpimg
+    fig, ax = plt.subplots(figsize=(14, 4)); ax.imshow(mpimg.imread(img)); ax.axis("off")
+    plt.show()
+else:
+    print("run scratch_repro/flowplots.py to generate memory_observability.png")""")
+
+md("""## 6. Cooperation phase portraits in deep RL — *why these have no arrows*
+
+The plots below are the **sampled deep-RL** analogue: P(cooperate) trajectories
+from IPPO on the same observability regimes. They have **no flow-field arrows on
+purpose** — a flow field is the *analytic* learning-dynamics vector field, which
+only exists for the CRLD model (Section 5). Neural-network policies trained by
+sampling give you the realized *path*, but not a closed-form update direction at
+every point in strategy space, so there is nothing to draw arrows from. (This is
+the same reason the broader JaxMARL games in Section 2 get reward curves, not flow
+plots.) Here every regime collapses to mutual defection — the deep-RL echo of the
+CRLD result.
 
 For the games where **cooperation** is genuinely defined (the mixed-motive
 social dilemma), we can draw the *dynamics of cooperation* directly, in the
