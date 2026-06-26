@@ -10,12 +10,13 @@ nb = nbf.v4.new_notebook(); C = []
 def md(s): C.append(nbf.v4.new_markdown_cell(s))
 def code(s): C.append(nbf.v4.new_code_cell(s))
 
+# Only the four genuinely-distinct 2x2 games. The coin_game-PD and arena-PD CRLD
+# reductions are just relabeled Prisoner's Dilemmas (identical dynamics), so they
+# are NOT shown here; the *real* arena lives in results_notebook (STORM deep RL).
 GAMES = [("ipd", "Prisoner's Dilemma (IPD)"),
          ("harmony", "Harmony"),
          ("staghunt", "Stag Hunt"),
-         ("snowdrift", "Snowdrift / Chicken"),
-         ("coin", "coin_game-PD"),
-         ("arena", "STORM arena-PD")]
+         ("snowdrift", "Snowdrift / Chicken")]
 ALGOS = [("ac", "CRLD actor-critic  (~ IPPO/A2C, policy gradient)"),
          ("sarsa", "CRLD SARSA  (~ IQL, value-based)")]
 NS = [2, 3, 4]
@@ -29,8 +30,9 @@ learning rule pushes the joint policy at every point) with two purple learning
 trajectories, drawn in the state where both agents just cooperated.
 
 We sweep three axes:
-- **Game** — Prisoner's Dilemma, Harmony, Stag Hunt, Snowdrift/Chicken, plus the
-  coin_game and STORM-arena Prisoner's Dilemmas.
+- **Game** — the four distinct 2x2 social dilemmas: Prisoner's Dilemma, Harmony,
+  Stag Hunt, Snowdrift/Chicken. (coin_game and STORM-arena reduce to a Prisoner's
+  Dilemma, so they are not repeated here; the real arena is in the deep-RL notebook.)
 - **Algorithm** — CRLD actor-critic (policy gradient) vs CRLD SARSA (value-based).
 - **Players** — N = 2, 3, 4 (for N>2 the grid is a 2-D projection onto agents 0,1).
 
