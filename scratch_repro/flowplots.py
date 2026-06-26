@@ -42,7 +42,7 @@ def canonical_example():
     axs[1].set_xlabel("Time steps")
     axs[1].set_ylabel("Cooperation probability")
     axs[1].legend(); axs[1].set_title("Trajectory")
-    fig.savefig(os.path.join(OUT, "canonical.png"), dpi=150, bbox_inches="tight")
+    fig.savefig(os.path.join(OUT, "canonical.png"), dpi=300, bbox_inches="tight")
     plt.close(fig)
     print(f"[canonical] fixed point reached={reached}, "
           f"end coop=({xtraj[-1,0,0,0]:.2f},{xtraj[-1,1,0,0]:.2f})")
@@ -73,7 +73,7 @@ def payoff_sweep():
     fig.suptitle("Cooperation dynamics (CRLD flow + trajectories) across the dilemma axis",
                  fontsize=13)
     fig.tight_layout(rect=[0, 0, 1, 0.96])
-    fig.savefig(os.path.join(OUT, "payoff_sweep.png"), dpi=150, bbox_inches="tight")
+    fig.savefig(os.path.join(OUT, "payoff_sweep.png"), dpi=300, bbox_inches="tight")
     plt.close(fig)
     print("[payoff_sweep] saved")
 
@@ -103,7 +103,7 @@ def observability_example():
         axs[k].set_ylabel("Agent 1  P(cooperate)")
     fig.suptitle("Cooperation dynamics under observation heterogeneity", fontsize=13)
     fig.tight_layout(rect=[0, 0, 1, 0.96])
-    fig.savefig(os.path.join(OUT, "observability.png"), dpi=150, bbox_inches="tight")
+    fig.savefig(os.path.join(OUT, "observability.png"), dpi=300, bbox_inches="tight")
     plt.close(fig)
     print("[observability] saved")
 
@@ -186,7 +186,7 @@ def memory_observability():
     fig.suptitle("Cooperation flow field by Agent-1 observability regime (memory-1 IPD, "
                  "after mutual cooperation)", fontsize=13)
     fig.tight_layout(rect=[0, 0, 1, 0.96])
-    fig.savefig(os.path.join(OUT, "memory_observability.png"), dpi=150, bbox_inches="tight")
+    fig.savefig(os.path.join(OUT, "memory_observability.png"), dpi=300, bbox_inches="tight")
     plt.close(fig)
     print("[memory_observability] saved (6 regimes)")
 
@@ -218,7 +218,7 @@ def game_menagerie():
     fig.suptitle("Cooperation dynamics across the four canonical 2x2 games (CRLD flow fields)",
                  fontsize=13)
     fig.tight_layout(rect=[0, 0, 1, 0.94])
-    fig.savefig(os.path.join(OUT, "game_menagerie.png"), dpi=150, bbox_inches="tight")
+    fig.savefig(os.path.join(OUT, "game_menagerie.png"), dpi=300, bbox_inches="tight")
     plt.close(fig)
     print("[game_menagerie] saved")
 

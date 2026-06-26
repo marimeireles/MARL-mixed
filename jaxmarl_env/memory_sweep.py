@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import algorithms as A
 
 RESULTS = os.path.join(os.path.dirname(__file__), "results")
-MEMS = [1, 2, 3, 4]
+MEMS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 ALGOS = list(A.ALGOS)
 COLORS = {"IPPO": "#0254a3", "A2C": "#2a8c5a", "IQL": "#d1495b"}
 

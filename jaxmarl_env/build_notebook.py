@@ -25,6 +25,7 @@ code("""import os, glob, json
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+plt.rcParams.update({"figure.dpi": 140, "savefig.dpi": 140})   # higher-res inline figures
 
 HERE = os.path.dirname(os.path.abspath("__file__")) if "__file__" in dir() else os.getcwd()
 RESULTS = os.path.join(HERE, "results")
@@ -466,15 +467,19 @@ if os.path.exists(img):
 else:
     print("run memory_sweep.py to generate the memory sweep")""")
 
-md("""**My read on memory:** more memory does **not** buy more cooperation here — it
-is flat-to-slightly-negative. The reason is that the cooperative strategies that
-matter (tit-for-tat, win-stay-lose-shift) are already **memory-1** strategies, so
-one round of history is enough to support reciprocity. Adding rounds doesn't add
-any *needed* capability; it only multiplies the observation space (obs grows
-2N per extra round), which **dilutes** learning at a fixed sample budget. IPPO/A2C
-were already defecting; IQL stays cooperative but gets noisier as the state space
-grows. So memory depth is not the cooperation lever — observability and the
-algorithm family are.""")
+md("""**My read on memory (now swept to 10):** more memory does **not** buy more
+cooperation — and at enough depth it actively **destroys** it. IPPO/A2C are flat
+(they defect at every memory length). IQL is the striking case: its cooperation
+holds through memory~4 (0.72-0.95) and then **falls off a cliff to ~0.05 for
+memory ≥ 5** and stays there. The reason: the cooperative strategies that matter
+(tit-for-tat, win-stay-lose-shift) are already **memory-1** strategies, so extra
+history adds no *needed* capability — it only multiplies the observation space
+(it grows by 2N per round: memory-10 is a 41-dim observation). Past a threshold,
+that blow-up is more than the fixed sample budget can fit, and the value-based
+learner can no longer find the cooperative fixed point, so it defaults to
+defection. So memory depth is not a cooperation lever — beyond what reciprocity
+needs, it is a *liability*; observability and the algorithm family are what
+matter.""")
 
 md("""## 7e. 🍲 Overcooked — image observations via a CNN
 
