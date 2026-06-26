@@ -131,47 +131,64 @@ def _mask(label, pos):
     return ",".join(p) + "|"
 
 
+def _oset_for(regime, base):
+    """Agent-1's observation set for each regime (base entries are 'a0,a1,.')."""
+    out = []
+    for s in base:
+        p = s.strip("|").split(",")            # [a0, a1, state]
+        a0 = p[0]
+        if regime == "full":      q = p[:]
+        elif regime == "self":    q = [".", p[1], p[2]]     # mask other, keep own
+        elif regime == "others":  q = [p[0], ".", p[2]]     # keep other, mask own
+        elif regime == "blind":   q = [".", ".", "."]
+        elif regime == "coop":    q = p[:] if a0 == "c" else [".", p[1], p[2]]  # see other iff it cooperated
+        elif regime == "def":     q = p[:] if a0 == "d" else [".", p[1], p[2]]  # see other iff it defected
+        else: raise ValueError(regime)
+        out.append(",".join(q) + "|")
+    return out
+
+
 def memory_observability():
     """Memory-1 IPD: how Agent-1's observability reshapes the cooperation flow,
-    in the state where both agents just cooperated (where reciprocity lives)."""
+    in the state where both agents just cooperated (where reciprocity lives).
+    All six observability regimes, each with its learning-dynamics flow field."""
     from pyCRLD.Environments.MultipleObsSocialDilemma import MultipleObsSocialDilemma
     from pyCRLD.Environments.HistoryEmbedding import HistoryEmbedded
     from pyCRLD.Agents.POStrategyActorCritic import POstratAC
 
-    regimes = [("Full observability", None),
-               ("Self-aware\n(sees own action)", 0),       # mask a0 -> keep own a1
-               ("Non-self-aware\n(sees other's action)", 1),  # mask a1 -> keep a0
+    regimes = [("Full observability", "full"),
+               ("Self-aware\n(sees own action)", "self"),
+               ("Non-self-aware\n(sees other's action)", "others"),
+               ("Cooperation-tracking\n(sees other iff it cooperated)", "coop"),
+               ("Defection-tracking\n(sees other iff it defected)", "def"),
                ("Blind", "blind")]
-    fig, axs = plt.subplots(1, len(regimes), figsize=(4.2 * len(regimes), 4.2))
-    plt.subplots_adjust(wspace=0.3)
+    ncol = 3; nrow = 2
+    fig, axes = plt.subplots(nrow, ncol, figsize=(4.4 * ncol, 4.3 * nrow))
+    plt.subplots_adjust(wspace=0.3, hspace=0.35)
     x = ([0], [0], [0]); y = ([1], [0], [0])     # state 0 = (c, c) last round
     for k, (title, reg) in enumerate(regimes):
+        ax0 = axes[k // ncol][k % ncol]
         env = MultipleObsSocialDilemma(rewards=1, temptations=1.2, suckers_payoffs=-0.5,
                                        punishments=0, observation_value=[1, 1])
         memo = HistoryEmbedded(env, h=(1, 1, 1))
-        base = list(memo.Oset[0])
-        if reg == "blind":
-            memo.Oset[1] = [".,.,.|" for _ in base]
-            memo.O[1] = _obs_matrix(memo.Oset[1])
-        elif reg is not None:
-            memo.Oset[1] = [_mask(s, reg) for s in base]
-            memo.O[1] = _obs_matrix(memo.Oset[1])
+        memo.Oset[1] = _oset_for(reg, list(memo.Oset[0]))
+        memo.O[1] = _obs_matrix(memo.Oset[1])
         mae = POstratAC(env=memo, learning_rates=0.1, discount_factors=0.9)
         ax = fp.plot_strategy_flow(mae, x, y, use_RPEarrows=False, NrRandom=24,
-                                   flowarrow_points=np.linspace(0.01, 0.99, 9), axes=[axs[k]])
+                                   flowarrow_points=np.linspace(0.01, 0.99, 9), axes=[ax0])
         for seed in range(2):
             np.random.seed(seed)
             xt, _ = mae.trajectory(mae.random_softmax_strategy(), Tmax=8000, tolerance=1e-5)
             fp.plot_trajectories([xt], x, y, cols=["purple"], axes=ax)
-        axs[k].set_title(title, fontsize=10)
-        axs[k].set_xlabel("Agent 0  P(cooperate)")
-        axs[k].set_ylabel("Agent 1  P(cooperate)")
-    fig.suptitle("Cooperation dynamics after mutual cooperation, by Agent-1 observability "
-                 "(memory-1 IPD)", fontsize=13)
-    fig.tight_layout(rect=[0, 0, 1, 0.95])
+        ax0.set_title(title, fontsize=10)
+        ax0.set_xlabel("Agent 0  P(cooperate)")
+        ax0.set_ylabel("Agent 1  P(cooperate)")
+    fig.suptitle("Cooperation flow field by Agent-1 observability regime (memory-1 IPD, "
+                 "after mutual cooperation)", fontsize=13)
+    fig.tight_layout(rect=[0, 0, 1, 0.96])
     fig.savefig(os.path.join(OUT, "memory_observability.png"), dpi=150, bbox_inches="tight")
     plt.close(fig)
-    print("[memory_observability] saved")
+    print("[memory_observability] saved (6 regimes)")
 
 
 def game_menagerie():

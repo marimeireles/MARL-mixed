@@ -241,16 +241,19 @@ if os.path.exists(img):
 else:
     print("run algo_phase.py to generate algo_phase_full.png")""")
 
-md("""### Observation heterogeneity, with the flow field
+md("""### Observation heterogeneity, with the flow field — all six regimes
 
-Now the actual research question, *with arrows*: a **memory-1** IPD where Agent 1's
-observability is degraded, shown in the state where both agents just cooperated
-(where reciprocity lives). The colored arrows are the learning-dynamics flow; the
-two purple lines are trajectories from random starts. Under **full** observability
-the flow has structure that can sustain cooperation; as Agent 1 loses sight of its
-own action (**self-aware**), the other's action (**non-self-aware**), or everything
-(**blind**), the flow reorganizes toward mutual defection — the blind field points
-almost uniformly to (0, 0).""")
+Now the actual research question, *with arrows*, for **every** observability
+regime: a **memory-1** IPD where Agent 1's observation is degraded in a different
+way, shown in the state where both agents just cooperated (where reciprocity
+lives). Coloured arrows = the learning-dynamics flow; the two purple lines =
+trajectories from random starts. The six regimes are **full**, **self-aware**
+(sees own action only), **non-self-aware** (sees the other's only),
+**cooperation-tracking** (sees the other only when it cooperated),
+**defection-tracking** (sees it only when it defected), and **blind**. Under full
+observability the flow has structure that can sustain cooperation; as Agent 1's
+view is masked the flow reorganises toward mutual defection — the **blind** field
+points almost uniformly at (0, 0).""")
 
 code("""img = os.path.join(RESULTS, "memory_observability.png")
 if os.path.exists(img):
