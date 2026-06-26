@@ -207,6 +207,40 @@ if os.path.exists(img):
 else:
     print("run scratch_repro/flowplots.py to generate payoff_sweep.png")""")
 
+md("""### Dynamics for *more games* — the four canonical 2x2 games
+
+The same flow machinery applies to any 2x2 game, and each game has a
+qualitatively different cooperation dynamic (R=1, P=0 fixed; T, S vary):
+**Harmony** (cooperation dominant → flows to (1,1)), **Stag Hunt** (bistable: two
+basins, cooperate or defect, split by a separatrix), **Snowdrift/Chicken**
+(anti-coordination → an interior/off-diagonal attractor), and the **Prisoner's
+Dilemma** (defection dominant → flows to (0,0)).""")
+
+code("""img = os.path.join(RESULTS, "game_menagerie.png")
+if os.path.exists(img):
+    from matplotlib import image as mpimg
+    fig, ax = plt.subplots(figsize=(15, 4)); ax.imshow(mpimg.imread(img)); ax.axis("off")
+    plt.show()
+else:
+    print("run scratch_repro/flowplots.py to generate game_menagerie.png")""")
+
+md("""### Dynamics for *more algorithms* — paths over the flow field
+
+Deep-RL algorithms have no analytic flow field, but their learning *paths* are
+dynamics too. Below, the grey arrows are the CRLD memoryless-IPD prediction (which
+points to defection); the coloured lines are the actual IPPO / A2C / IQL
+trajectories on the memory-1 IPD. **IPPO and A2C ride the grey flow down to (0,0);
+IQL climbs *against* it to (1,1)** — value-based learning plus memory escapes the
+basin the memoryless dynamics predict. That deviation is the whole story.""")
+
+code("""img = os.path.join(RESULTS, "algo_phase_full.png")
+if os.path.exists(img):
+    from matplotlib import image as mpimg
+    fig, ax = plt.subplots(figsize=(6.5, 6.2)); ax.imshow(mpimg.imread(img)); ax.axis("off")
+    plt.show()
+else:
+    print("run algo_phase.py to generate algo_phase_full.png")""")
+
 md("""### Observation heterogeneity, with the flow field
 
 Now the actual research question, *with arrows*: a **memory-1** IPD where Agent 1's
@@ -375,6 +409,41 @@ Net: step size sets *speed and stability*, and for the value-based and
 unregularised actor-critic learners it also moves the **basin boundary** — small
 rates are pro-cooperation — exactly the lever we identified on the CRLD side.""")
 
+md("""## 7c. More general-sum games, across algorithms
+
+The IPD is one general-sum game; here are the same three algorithms on several
+others available in JaxMARL — `coin_game` (the canonical deep-RL social dilemma),
+and the general-sum MPE games (`simple_tag` predator-prey, `simple_adversary`,
+`simple_push`). We plot the reward dynamics per algorithm.
+
+On the **"arena" question:** the closest thing JaxMARL has to an arena is **STORM**
+(the "in-the-matrix" gridworld games, e.g. `storm_2p`), which embeds general-sum
+matrix games spatially. They are general-sum, but their observation is an
+image/grid that collapses to nothing when flattened, so a feed-forward policy
+can't use them — they need a CNN encoder (a clean next step, not done here).""")
+
+code("""img = os.path.join(RESULTS, "gen_compare.png")
+if os.path.exists(img):
+    from matplotlib import image as mpimg
+    fig, ax = plt.subplots(figsize=(12, 7)); ax.imshow(mpimg.imread(img)); ax.axis("off")
+    plt.show()
+else:
+    print("run gen_compare.py to generate the general-sum comparison")""")
+
+md("""**My read across games:** there is no universally-best algorithm — the ranking
+*flips with the game*. On the IPD, **IQL** was the only one to cooperate; but on
+the MPE games (`tag`, `adversary`, `push`) **IQL diverges** (reward falls), while
+the policy-gradient methods **IPPO** (most robust) and **A2C** steadily improve.
+Why: those MPE tasks are highly non-stationary multi-agent control problems
+(pursuit, keep-away) with several simultaneously-adapting opponents. Independent
+Q-learning bootstraps off a moving target whose drift it cannot model, so its
+value estimates chase a target that keeps moving and destabilise — the same
+bootstrapping that *helped* it lock into the IPD's cooperative fixed point *hurts*
+it here. Policy-gradient methods optimise the current return directly and degrade
+more gracefully. So "which algorithm cooperates / wins?" is not a property of the
+algorithm alone — it is the algorithm × game × (as we saw) the observability and
+learning rate, together.""")
+
 md("""## 8. What was added to this repository
 
 | path | what it is |
@@ -387,8 +456,12 @@ md("""## 8. What was added to this repository
 | `jaxmarl_env/sweep_table.py` | regime x N cooperation table for the IPD |
 | `jaxmarl_env/coop_trajectories.py` | IPPO cooperation phase portraits (deep RL) |
 | `jaxmarl_env/coop_vs_n.py` | cooperation vs #agents x regime sweep |
-| `jaxmarl_env/algorithms.py` | A2C + IQL trainers (cooperation-logging) |
-| `jaxmarl_env/algo_compare.py` | IPPO/A2C/IQL comparison figure |
+| `jaxmarl_env/algorithms.py` | A2C + IQL trainers for the IPD (cooperation-logging) |
+| `jaxmarl_env/algo_compare.py` | IPPO/A2C/IQL comparison across regimes (IPD) |
+| `jaxmarl_env/lr_sweep.py` | cooperation vs learning rate, per algorithm |
+| `jaxmarl_env/algo_phase.py` | algorithm paths over the CRLD flow field |
+| `jaxmarl_env/gen_algos.py` | **generic** IPPO/A2C/IQL for any discrete JaxMARL game |
+| `jaxmarl_env/gen_compare.py` | the three algorithms on general-sum games |
 | `scratch_repro/flowplots.py` | **CRLD flow plots** (vector field + trajectories) |
 | `jaxmarl_env/results/` | per-env `.npz` curves, `.png`, `.status` |
 | `scratch_repro/` | CRLD reproduction scripts (deterministic IPD dynamics) |

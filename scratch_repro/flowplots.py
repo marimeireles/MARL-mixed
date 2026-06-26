@@ -174,8 +174,41 @@ def memory_observability():
     print("[memory_observability] saved")
 
 
+def game_menagerie():
+    """CRLD flow fields for the four canonical symmetric 2x2 games (R=1, P=0).
+    Each game has a qualitatively different cooperation dynamic."""
+    games = [
+        ("Harmony\n(C dominant)",        dict(R=1, T=0.5, S=0.5, P=0)),
+        ("Stag Hunt\n(bistable)",         dict(R=1, T=0.5, S=-0.5, P=0)),
+        ("Snowdrift / Chicken\n(anti-coordination)", dict(R=1, T=1.5, S=0.5, P=0)),
+        ("Prisoner's Dilemma\n(D dominant)", dict(R=1, T=1.5, S=-0.5, P=0)),
+    ]
+    fig, axs = plt.subplots(1, 4, figsize=(17, 4.3))
+    plt.subplots_adjust(wspace=0.3)
+    x = ([0], [0], [0]); y = ([1], [0], [0])
+    for k, (title, pay) in enumerate(games):
+        env = SocialDilemma(**pay)
+        mae = stratAC(env=env, learning_rates=0.1, discount_factors=0.9)
+        ax = fp.plot_strategy_flow(mae, x, y, use_RPEarrows=False,
+                                   flowarrow_points=np.linspace(0.01, 0.99, 11), axes=[axs[k]])
+        for seed in range(5):           # several trajectories to reveal the basins
+            np.random.seed(seed)
+            xt, _ = mae.trajectory(mae.random_softmax_strategy(), Tmax=10000, tolerance=1e-5)
+            fp.plot_trajectories([xt], x, y, cols=["purple"], axes=ax, lws=[1.3])
+        axs[k].set_title(title, fontsize=10)
+        axs[k].set_xlabel("Agent 0  P(cooperate)")
+        axs[k].set_ylabel("Agent 1  P(cooperate)")
+    fig.suptitle("Cooperation dynamics across the four canonical 2x2 games (CRLD flow fields)",
+                 fontsize=13)
+    fig.tight_layout(rect=[0, 0, 1, 0.94])
+    fig.savefig(os.path.join(OUT, "game_menagerie.png"), dpi=150, bbox_inches="tight")
+    plt.close(fig)
+    print("[game_menagerie] saved")
+
+
 if __name__ == "__main__":
     canonical_example()
     payoff_sweep()
     memory_observability()
+    game_menagerie()
     print("saved to", OUT)
