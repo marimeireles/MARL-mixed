@@ -173,6 +173,11 @@ So: **arrows = the rule everywhere; purple = one run obeying that rule.** The
 flow field needs the analytic dynamics object (`mae`), which is why it only
 exists for the CRLD social-dilemma games, not the sampled deep-RL runs.
 
+> **Which algorithm?** Unless a figure says otherwise, every flow plot in this
+> section uses **CRLD actor-critic** (`stratAC`/`POstratAC`) — the deterministic
+> limit of *policy-gradient* learning (the analytic twin of IPPO/A2C). The
+> "flow field is algorithm-specific" subsection below contrasts it with SARSA.
+
 The cell below runs the canonical example *live* (pyCRLD now runs in the same
 Python 3.11 environment as JaxMARL — forced onto CPU for the small CRLD compute).""")
 
@@ -257,9 +262,30 @@ observability the flow has structure that can sustain cooperation; as Agent 1's
 view is masked the flow reorganises toward mutual defection — the **blind** field
 points almost uniformly at (0, 0).""")
 
-code('showcap("memory_observability.png", "Cooperation flow field for each of Agent-1\'s six '
-     'observability regimes (memory-1 IPD). Full obs keeps structure that can sustain '
-     'cooperation; Blind -> arrows point straight to mutual defection.", figsize=(14, 4))')
+code('showcap("memory_observability.png", "Algorithm = CRLD ACTOR-CRITIC. Cooperation flow '
+     "field for each of Agent-1's six observability regimes (memory-1 IPD). Full obs keeps "
+     'structure that can sustain cooperation; Blind -> arrows point straight to defection.", '
+     'figsize=(14, 4))')
+
+md("""### The flow field is **algorithm-specific** — actor-critic vs SARSA
+
+Everything above uses **CRLD actor-critic** (the deterministic limit of *policy
+gradient*, the analytic twin of IPPO/A2C). But the flow field is a property of the
+*learning rule*, so we can draw it for a different CRLD algorithm — **SARSA**
+(value-based, the analytic twin of IQL). On the same memory-1 IPD, in the state
+where both agents just cooperated, the two algorithms flow to **opposite corners**:
+actor-critic to mutual defection (0,0), SARSA to partial cooperation (~0.4) — the
+analytic version of our deep-RL result that **IPPO defects but IQL cooperates**.""")
+
+code('''showcap("algorithm_flow.png",
+        "Same game, two algorithms. CRLD actor-critic (left) flows to defection (0,0); "
+        "CRLD SARSA (right) sustains partial cooperation - the flow field depends on the "
+        "learning rule, mirroring IPPO-vs-IQL.", figsize=(9.2, 4.4))''')
+
+md("""*(The per-regime observability grid can in principle be drawn for SARSA too,
+but the repo's partial-observability SARSA agent is incomplete — its TD-error is not
+wired up — so that grid is actor-critic only for now. The full-vs-SARSA comparison
+above still shows the key algorithm difference.)*""")
 
 md("""## 6. Cooperation phase portraits in deep RL — *why these have no arrows*
 
@@ -507,38 +533,44 @@ the (shaped) return directly and make steady progress. Once again: **the best
 algorithm is a property of the game, not the algorithm** — IQL wins the matrix
 dilemma, IPPO wins the spatial cooperative task.""")
 
-md("""## 7f. The STORM arena — general-sum, N agents, observability
+md("""## 7f. The STORM arena — general-sum, N agents, observability, all algorithms
 
 STORM "in-the-matrix" (`storm_np`) is the **arena**: a gridworld where agents move,
 collect red ("cooperate") / blue ("defect") coins into an inventory, and resolve a
 **Prisoner's Dilemma** matrix game on contact. It is general-sum, **CNN-observed**
-(egocentric 5x5x14 grid), and scales to **arbitrary agent counts** — exactly the
-setting you asked for. We train CNN-IPPO and vary two things.""")
+(egocentric 5x5x14 grid), and scales to **arbitrary agent counts**. We vary group
+size (to 8M steps), the algorithm, and four observability regimes.""")
 
-code("""for nm, cap in [("storm_nagents.png", "Number of agents (N = 2, 4, 8)"),
-                ("storm_obs.png", "Observability at N=2 (full vs blind-to-others)")]:
-    p = os.path.join(RESULTS, nm)
-    if os.path.exists(p):
-        from matplotlib import image as mpimg
-        fig, ax = plt.subplots(figsize=(7, 4.3)); ax.imshow(mpimg.imread(p)); ax.axis("off")
-        ax.set_title(cap, fontsize=10); plt.show()
-    else:
-        print("run storm_arena.py to generate", nm)""")
+code('''showcap("storm_nagents_long.png",
+        "Per-agent reward by group size, 8M steps. N=2 climbs to ~0.30 and N=4 to ~0.25, but "
+        "N=8 stays stuck at ~0.05 even with 2.7x more training - large-group collapse is "
+        "STRUCTURAL, not a budget artifact.", figsize=(7, 4.3))''')
+
+code('''showcap("storm_algos.png",
+        "IPPO vs A2C vs IQL in the arena (N=2). IPPO wins (~0.22) >> A2C (~0.12) > IQL "
+        "(~0.05) - policy-gradient dominates, value-based struggles, same as Overcooked.",
+        figsize=(7, 4.3))''')
+
+code('''showcap("storm_obs_combos.png",
+        "Four observability regimes (N=2): full / blind-to-others / self-only / fully-blind. "
+        "All reach ~0.19-0.24 - observability barely matters; even fully-blind agents still "
+        "collect coins.", figsize=(7, 4.3))''')
 
 md("""**My read on the arena:**
-- **Group size:** per-agent reward is healthy and similar at **N=2 and N=4**
-  (~0.22) but **collapses at N=8** (~0.04). In the arena, more agents means a much
-  harder coordination / credit-assignment problem — encounters multiply, a single
-  shared policy can't organise a large group, and interference/free-riding wins.
-  Cooperative payoff does **not** scale to large groups (echoing the N-agent IPD
-  result, now in an embodied arena).
-- **Observability:** masking the "other-agent-present" channel (**blind to others**)
-  is **indistinguishable from full observability** (~0.22 vs ~0.24). Unlike the
-  matrix IPD — where reward is *purely* reciprocal and observability was decisive —
-  arena reward is dominated by **coin collection** (your own inventory), which
-  barely depends on tracking the other agent's position. So *which* observation
-  matters is itself a property of the game: reciprocity games need to see the
-  partner; foraging-style arenas mostly don't.""")
+- **Group size (now 8M steps):** N=2 climbs to ~0.30 and N=4 to ~0.25 with more
+  training, but **N=8 stays collapsed (~0.05)** — extra training does *not* rescue
+  it. So the large-group failure is **structural**, not a budget artifact: a single
+  shared policy can't organise 8 agents in the arena (encounters multiply,
+  interference/free-riding wins). Cooperative payoff does not scale to large groups.
+- **Algorithm:** **IPPO ≫ A2C > IQL** (0.22 / 0.12 / 0.05) — policy-gradient
+  dominates the arena, value-based struggles, the same ranking we saw on Overcooked
+  and simple_spread.
+- **Observability:** all four regimes (full / blind-to-others / self-only /
+  fully-blind) land at ~0.19–0.24 — observability **barely matters** here. Unlike
+  the matrix IPD (purely reciprocal, observability decisive), arena reward is
+  dominated by **coin collection** (your own inventory), which hardly depends on
+  seeing the other agent. So *which* observation matters is itself a property of the
+  game: reciprocity games need to see the partner; foraging arenas mostly don't.""")
 
 md("""## 7g. All the baselines — IPPO / A2C / IQL / MAPPO / VDN / QMIX
 

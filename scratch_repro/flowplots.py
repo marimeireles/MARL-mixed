@@ -148,13 +148,51 @@ def _oset_for(regime, base):
     return out
 
 
-def memory_observability():
+def algorithm_flow():
+    """The flow field is ALGORITHM-specific. Memory-1 IPD, post-mutual-cooperation
+    state: CRLD actor-critic (policy gradient) vs CRLD SARSA (value-based). The
+    analytic twin of the deep-RL result that IPPO defects but IQL cooperates."""
+    from pyCRLD.Environments.MultipleObsSocialDilemma import MultipleObsSocialDilemma
+    from pyCRLD.Environments.HistoryEmbedding import HistoryEmbedded
+    from pyCRLD.Agents.StrategyActorCritic import stratAC as AC
+    from pyCRLD.Agents.StrategySARSA import stratSARSA as SARSA
+
+    algos = [("CRLD Actor-Critic\n(policy gradient ~ IPPO/A2C)", AC),
+             ("CRLD SARSA\n(value-based ~ IQL)", SARSA)]
+    fig, axs = plt.subplots(1, 2, figsize=(9.2, 4.4))
+    plt.subplots_adjust(wspace=0.3)
+    x = ([0], [0], [0]); y = ([1], [0], [0])
+    for k, (title, Agent) in enumerate(algos):
+        env = MultipleObsSocialDilemma(rewards=1, temptations=1.2, suckers_payoffs=-0.5,
+                                       punishments=0, observation_value=[1, 1])
+        memo = HistoryEmbedded(env, h=(1, 1, 1))
+        mae = Agent(env=memo, learning_rates=0.1, discount_factors=0.9)
+        ax = fp.plot_strategy_flow(mae, x, y, use_RPEarrows=False,
+                                   flowarrow_points=np.linspace(0.01, 0.99, 11), axes=[axs[k]])
+        for seed in range(3):
+            np.random.seed(seed)
+            xt, _ = mae.trajectory(mae.random_softmax_strategy(), Tmax=8000, tolerance=1e-5)
+            fp.plot_trajectories([xt], x, y, cols=["purple"], axes=ax)
+        axs[k].set_title(title, fontsize=10)
+        axs[k].set_xlabel("Agent 0  P(cooperate)"); axs[k].set_ylabel("Agent 1  P(cooperate)")
+    fig.suptitle("Cooperation flow field by ALGORITHM (memory-1 IPD, after mutual cooperation)",
+                 fontsize=12)
+    fig.tight_layout(rect=[0, 0, 1, 0.95])
+    fig.savefig(os.path.join(OUT, "algorithm_flow.png"), dpi=300, bbox_inches="tight")
+    plt.close(fig)
+    print("[algorithm_flow] saved (actor-critic vs SARSA)")
+
+
+def memory_observability(agent_cls=None, tag="ac", agent_label="CRLD actor-critic"):
     """Memory-1 IPD: how Agent-1's observability reshapes the cooperation flow,
     in the state where both agents just cooperated (where reciprocity lives).
-    All six observability regimes, each with its learning-dynamics flow field."""
+    All six observability regimes, each with its learning-dynamics flow field.
+    `agent_cls` is the CRLD partial-observability learner (default POstratAC)."""
     from pyCRLD.Environments.MultipleObsSocialDilemma import MultipleObsSocialDilemma
     from pyCRLD.Environments.HistoryEmbedding import HistoryEmbedded
     from pyCRLD.Agents.POStrategyActorCritic import POstratAC
+    if agent_cls is None:
+        agent_cls = POstratAC
 
     regimes = [("Full observability", "full"),
                ("Self-aware\n(sees own action)", "self"),
@@ -173,7 +211,7 @@ def memory_observability():
         memo = HistoryEmbedded(env, h=(1, 1, 1))
         memo.Oset[1] = _oset_for(reg, list(memo.Oset[0]))
         memo.O[1] = _obs_matrix(memo.Oset[1])
-        mae = POstratAC(env=memo, learning_rates=0.1, discount_factors=0.9)
+        mae = agent_cls(env=memo, learning_rates=0.1, discount_factors=0.9)
         ax = fp.plot_strategy_flow(mae, x, y, use_RPEarrows=False, NrRandom=24,
                                    flowarrow_points=np.linspace(0.01, 0.99, 9), axes=[ax0])
         for seed in range(2):
@@ -183,12 +221,14 @@ def memory_observability():
         ax0.set_title(title, fontsize=10)
         ax0.set_xlabel("Agent 0  P(cooperate)")
         ax0.set_ylabel("Agent 1  P(cooperate)")
-    fig.suptitle("Cooperation flow field by Agent-1 observability regime (memory-1 IPD, "
-                 "after mutual cooperation)", fontsize=13)
+    fig.suptitle(f"Cooperation flow field by Agent-1 observability regime — {agent_label} "
+                 "(memory-1 IPD)", fontsize=13)
     fig.tight_layout(rect=[0, 0, 1, 0.96])
-    fig.savefig(os.path.join(OUT, "memory_observability.png"), dpi=300, bbox_inches="tight")
+    out = os.path.join(OUT, f"memory_observability_{tag}.png" if tag != "ac"
+                       else "memory_observability.png")
+    fig.savefig(out, dpi=300, bbox_inches="tight")
     plt.close(fig)
-    print("[memory_observability] saved (6 regimes)")
+    print(f"[memory_observability] saved ({agent_label}, 6 regimes)")
 
 
 def game_menagerie():
@@ -226,6 +266,12 @@ def game_menagerie():
 if __name__ == "__main__":
     canonical_example()
     payoff_sweep()
-    memory_observability()
+    memory_observability()                                   # actor-critic (default)
+    try:
+        from pyCRLD.Agents.APOStrategySarsa import stratSARSA as POSARSA
+        memory_observability(agent_cls=POSARSA, tag="sarsa", agent_label="CRLD SARSA")
+    except Exception as e:
+        print("[memory_observability sarsa] skipped:", e)
+    algorithm_flow()
     game_menagerie()
     print("saved to", OUT)

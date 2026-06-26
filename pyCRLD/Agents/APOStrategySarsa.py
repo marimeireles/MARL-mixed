@@ -15,6 +15,7 @@ import jax.numpy as jnp
 from fastcore.utils import *
 
 from .StrategyBase import strategybase
+from .POBase import aPObase   # bugfix: was referenced but never imported
 from ..Utils.Helpers import *
 
 # %% ../../nbs/Agents/03_APOStrategySarsa.ipynb 3

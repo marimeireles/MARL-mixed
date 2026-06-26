@@ -10,3 +10,7 @@
   IQL  : +0.0032 -> +0.0541 (final-10 +0.0479)
   saved results/storm_algos.{png,npy}
 === storm_nagents_long: number of agents (timesteps=8000000) ===
+  N=2: +0.0024 -> +0.2965 (final-10 +0.2826)
+  N=4: +0.0034 -> +0.2491 (final-10 +0.2470)
+  N=8: +0.0050 -> +0.0494 (final-10 +0.0488)
+  saved results/storm_nagents_long.{png,npy}
