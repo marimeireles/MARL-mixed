@@ -592,16 +592,19 @@ else:
     print("run coop_baselines.py to generate the baseline comparison")""")
 
 md("""**My read on the baselines:** the **policy-gradient** methods win cleanly —
-IPPO, MAPPO and A2C all reach ~-0.78 and stay stable; MAPPO's centralized critic
-gives no edge over IPPO here. The **value-based** methods struggle: IQL plateaus
-worse (~-1.0), and **VDN/QMIX peak near -1.0 then go unstable and diverge** (QMIX
-worst). That is the *opposite* of the usual story (VDN/QMIX are normally strong on
-cooperative tasks) and I read it as an **implementation/tuning** effect, not a
-fundamental one: these are deliberately simple, single-file value-mixing learners
-with **no replay buffer** and online TD updates, which are known to be unstable —
-the published VDN/QMIX use large replay buffers, target-network tuning, and longer
-training. So treat the value-mixing curves as "naive-implementation" baselines, not
-the tuned ceiling. (Honest caveat; all runs are single-seed.)""")
+**IPPO and MAPPO** reach ~-0.78, A2C just behind (~-0.86) — and MAPPO's centralized
+critic gives **no measurable edge** over IPPO on this small 3-agent task. The
+**value-based** methods trail (IQL -1.01, QMIX -1.09, VDN -1.22). Interestingly, at
+their *peak* VDN (-0.93) and QMIX (-1.00) do faintly edge IQL (-1.01) — weakly
+consistent with the theory that value decomposition helps on cooperative tasks —
+but they are unstable and their final/average reward is worse, so the prediction
+does **not** hold robustly here. Honest implementation note: these single-file
+value-mixing learners have **no replay buffer**; with the usual slow target-sync,
+QMIX hits the classic deadly-triad and diverges (to ~-2.6). Syncing the target
+network more often (every 10 updates) keeps it stable at -1.09 — the figure uses
+that. The published VDN/QMIX rely on big replay buffers and far more gradient steps
+to realise their advantage; treat these as honest *naive* baselines, not the tuned
+ceiling. (All runs single-seed.)""")
 
 md("""## 8. What was added to this repository
 
