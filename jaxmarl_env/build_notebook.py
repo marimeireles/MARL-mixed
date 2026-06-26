@@ -140,7 +140,52 @@ if os.path.exists(csv):
 else:
     print("coop_table.csv not found")""")
 
-md("""## 5. What was added to this repository
+md("""## 5. Cooperation dynamics — phase portraits
+
+For the games where **cooperation** is genuinely defined (the mixed-motive
+social dilemma), we can draw the *dynamics of cooperation* directly, in the
+style of pyCRLD's `fp.plot_trajectories`: train IPPO while logging each agent's
+cooperation frequency P(play C) per update, then trace the joint policy's path
+through the **(agent-1 cooperation, agent-2 cooperation)** plane.
+
+Below: the heterogeneous-observation memory-1 IPD (N=2) under each observability
+regime. `x` marks the (random) start, `o` the converged policy. Under every
+regime the trajectory collapses toward mutual defection (0, 0) — the deep-RL
+echo of the CRLD result that defection is the dominant attractor; the regimes
+differ in *how* they get there and how much residual cooperation survives.
+
+*(Most JaxMARL games are forced-cooperative or non-dilemma, so a C/D cooperation
+axis is not defined for them — for those, the reward curves in Section 2 are the
+learning dynamics.)*""")
+
+code("""coop = sorted(glob.glob(os.path.join(RESULTS, "coop_*.npy")))
+if coop:
+    names = {"full":"Full obs","blind":"Blind","self":"Self only","others":"Others only",
+             "coop":"Coop-tracking","def":"Def-tracking"}
+    order = ["full","others","coop","def","self","blind"]
+    have = {os.path.basename(f)[5:-4]: np.load(f) for f in coop}
+    regs = [r for r in order if r in have] + [r for r in have if r not in order]
+    ncol = 3; nrow = (len(regs)+ncol-1)//ncol
+    fig, axes = plt.subplots(nrow, ncol, figsize=(3.5*ncol, 3.3*nrow), squeeze=False)
+    for ax in axes.flat: ax.axis("off")
+    for k, r in enumerate(regs):
+        t = have[r]; ax = axes[k//ncol][k%ncol]; ax.axis("on")
+        ax.plot(t[:,0], t[:,1], lw=2, color="purple", alpha=0.9)
+        ax.scatter(t[0,0], t[0,1], color="purple", marker="x", s=45)
+        ax.scatter(t[-1,0], t[-1,1], color="purple", marker="o", s=45)
+        ax.plot([0,1],[0,1], ls=":", c="gray", lw=0.7)
+        ax.set_xlim(-0.03,1.03); ax.set_ylim(-0.03,1.03)
+        ax.set_title(names.get(r,r), fontsize=10)
+        ax.set_xlabel("Agent 1  P(C)"); ax.set_ylabel("Agent 2  P(C)")
+    fig.suptitle("Cooperation dynamics across observability regimes (IPD, N=2)", fontsize=13)
+    fig.tight_layout(rect=[0,0,1,0.97]); plt.show()
+    pd.DataFrame([{"regime":r,
+                   "start": tuple(np.round(have[r][0],2)),
+                   "end": tuple(np.round(have[r][-1],2))} for r in regs])
+else:
+    print("coop_*.npy not present yet — run coop_trajectories.py")""")
+
+md("""## 6. What was added to this repository
 
 | path | what it is |
 |---|---|

@@ -61,7 +61,31 @@ class Categorical:
                                                         self.log_p), axis=-1)
 
 
+class Gaussian:
+    """Diagonal Gaussian policy for continuous (Box) actions. `mask` selects the
+    valid action dims for each agent (padded dims are ignored / set to 0)."""
+
+    def __init__(self, mean, log_std, mask=None):
+        self.mean = mean
+        self.std = jnp.exp(log_std)
+        self.mask = jnp.ones_like(mean) if mask is None else mask.astype(mean.dtype)
+
+    def sample(self, seed):
+        noise = jax.random.normal(seed, self.mean.shape)
+        return jnp.clip((self.mean + self.std * noise) * self.mask, -1.0, 1.0)
+
+    def log_prob(self, a):
+        lp = -0.5 * (((a - self.mean) / self.std) ** 2
+                     + 2 * jnp.log(self.std) + jnp.log(2 * jnp.pi))
+        return jnp.sum(lp * self.mask, axis=-1)
+
+    def entropy(self):
+        ent = 0.5 * (jnp.log(2 * jnp.pi * jnp.e) + 2 * jnp.log(self.std))
+        return jnp.sum(ent * self.mask, axis=-1)
+
+
 class ActorCritic(nn.Module):
+    """Discrete (categorical) shared actor-critic."""
     action_dim: int
     hidden: int = 64
 
@@ -73,7 +97,25 @@ class ActorCritic(nn.Module):
         v = nn.tanh(nn.Dense(self.hidden, kernel_init=orthogonal(np.sqrt(2)))(x))
         v = nn.tanh(nn.Dense(self.hidden, kernel_init=orthogonal(np.sqrt(2)))(v))
         v = nn.Dense(1, kernel_init=orthogonal(1.0))(v)
-        return logits, jnp.squeeze(v, -1)
+        return (logits,), jnp.squeeze(v, -1)
+
+
+class ActorCriticContinuous(nn.Module):
+    """Continuous (diagonal-Gaussian) shared actor-critic."""
+    action_dim: int
+    hidden: int = 64
+
+    @nn.compact
+    def __call__(self, x):
+        a = nn.tanh(nn.Dense(self.hidden, kernel_init=orthogonal(np.sqrt(2)))(x))
+        a = nn.tanh(nn.Dense(self.hidden, kernel_init=orthogonal(np.sqrt(2)))(a))
+        mean = nn.Dense(self.action_dim, kernel_init=orthogonal(0.01))(a)
+        log_std = self.param("log_std", nn.initializers.constant(-0.5),
+                             (self.action_dim,))
+        v = nn.tanh(nn.Dense(self.hidden, kernel_init=orthogonal(np.sqrt(2)))(x))
+        v = nn.tanh(nn.Dense(self.hidden, kernel_init=orthogonal(np.sqrt(2)))(v))
+        v = nn.Dense(1, kernel_init=orthogonal(1.0))(v)
+        return (mean, jnp.broadcast_to(log_std, mean.shape)), jnp.squeeze(v, -1)
 
 
 class Transition(NamedTuple):
@@ -89,52 +131,70 @@ class Transition(NamedTuple):
 # ----------------------------------------------------------------- introspection
 def introspect(env):
     agents = env.agents
-    obs_dims, act_dims = [], []
+    # Measure observation widths from an ACTUAL reset: some JaxMARL envs report
+    # an observation_space shape that disagrees with the obs they emit.
+    obs0, _ = env.reset(jax.random.PRNGKey(0))
+    obs_dims, act_dims, kinds = [], [], set()
     for a in agents:
-        ospace = env.observation_space(a) if callable(getattr(env, "observation_space", None)) \
-            else env.observation_spaces[a]
         aspace = env.action_space(a) if callable(getattr(env, "action_space", None)) \
             else env.action_spaces[a]
-        if not isinstance(aspace, Discrete):
-            raise SkipEnv("continuous action space (needs Gaussian policy)")
-        obs_dims.append(int(np.prod(ospace.shape)))
-        act_dims.append(int(aspace.n))
+        if isinstance(aspace, Discrete):
+            kinds.add("discrete")
+            act_dims.append(int(aspace.n))
+        else:                                   # Box -> continuous
+            kinds.add("continuous")
+            act_dims.append(int(np.prod(aspace.shape)))
+        obs_dims.append(int(np.prod(np.asarray(obs0[a]).shape)))
+    if len(kinds) > 1:
+        raise SkipEnv("mixed discrete/continuous action spaces")
+    kind = kinds.pop()
     obs_dim, act_dim = max(obs_dims), max(act_dims)
     if obs_dim > MAX_OBS_DIM:
         raise SkipEnv(f"obs dim {obs_dim} too large (image obs -> needs CNN)")
     act_mask = np.zeros((len(agents), act_dim), bool)
     for i, n in enumerate(act_dims):
         act_mask[i, :n] = True
-    return agents, obs_dim, act_dim, jnp.array(act_mask), obs_dims
+    return agents, obs_dim, act_dim, jnp.array(act_mask), act_dims, kind
 
 
 # ------------------------------------------------------------------------- train
 def make_train(env, config, meta):
-    agents, obs_dim, act_dim, act_mask, obs_dims = meta
+    agents, obs_dim, act_dim, act_mask, act_dims, kind = meta
     nA = len(agents)
-    n_actors = nA * config["NUM_ENVS"]
-    config["NUM_UPDATES"] = config["TOTAL_TIMESTEPS"] // (
-        config["NUM_STEPS"] * config["NUM_ENVS"])
-    full_mask = jnp.repeat(act_mask, config["NUM_ENVS"], axis=0)  # (n_actors, act_dim)
+    NE = config["NUM_ENVS"]
+    n_actors = nA * NE
+    config["NUM_UPDATES"] = config["TOTAL_TIMESTEPS"] // (config["NUM_STEPS"] * NE)
+    full_mask = jnp.repeat(act_mask, NE, axis=0)        # (n_actors, act_dim)
+    Net = ActorCritic if kind == "discrete" else ActorCriticContinuous
+
+    def make_dist(out, mask):
+        if kind == "discrete":
+            return Categorical(out[0], mask=mask)
+        return Gaussian(out[0], out[1], mask=mask)
 
     def flat_pad(x):  # (num_envs, *obs_shape) -> (num_envs, obs_dim)
         x = x.reshape(x.shape[0], -1)
         if x.shape[1] < obs_dim:
             x = jnp.pad(x, ((0, 0), (0, obs_dim - x.shape[1])))
+        elif x.shape[1] > obs_dim:
+            x = x[:, :obs_dim]
         return x
 
     def batchify(d):
-        return jnp.concatenate([flat_pad(d[a]) for a in agents], axis=0)  # (nA*envs,obs)
+        return jnp.concatenate([flat_pad(d[a]) for a in agents], axis=0)
 
     def batch_rew(d):
         return jnp.concatenate([d[a].reshape(-1) for a in agents], axis=0)
 
-    def unbatchify(x):
-        x = x.reshape(nA, config["NUM_ENVS"])
-        return {a: x[i] for i, a in enumerate(agents)}
+    def format_action(action):
+        if kind == "discrete":
+            x = action.reshape(nA, NE)
+            return {a: x[i] for i, a in enumerate(agents)}
+        x = action.reshape(nA, NE, act_dim)             # slice padded dims per agent
+        return {a: x[i][:, :act_dims[i]] for i, a in enumerate(agents)}
 
     def train(rng):
-        net = ActorCritic(act_dim, config["HIDDEN"])
+        net = Net(act_dim, config["HIDDEN"])
         rng, _r = jax.random.split(rng)
         params = net.init(_r, jnp.zeros((1, obs_dim)))
         tx = optax.chain(optax.clip_by_global_norm(config["MAX_GRAD_NORM"]),
@@ -148,12 +208,12 @@ def make_train(env, config, meta):
             def env_step(runner, _):
                 ts, env_state, last_obs, rng = runner
                 obs_b = batchify(last_obs)
-                logits, value = net.apply(ts.params, obs_b)
-                pi = Categorical(logits, mask=full_mask)
+                out, value = net.apply(ts.params, obs_b)
+                pi = make_dist(out, full_mask)
                 rng, _r = jax.random.split(rng)
                 action = pi.sample(_r)
                 lp = pi.log_prob(action)
-                env_act = unbatchify(action)
+                env_act = format_action(action)
                 rng, _r = jax.random.split(rng)
                 obsv, env_state, reward, done, info = jax.vmap(env.step)(
                     jax.random.split(_r, config["NUM_ENVS"]), env_state, env_act)
@@ -186,8 +246,8 @@ def make_train(env, config, meta):
                     traj, adv, tgt = batch
 
                     def loss_fn(p):
-                        logits, value = net.apply(p, traj.obs)
-                        pi = Categorical(logits, mask=traj.mask)
+                        out, value = net.apply(p, traj.obs)
+                        pi = make_dist(out, traj.mask)
                         lp = pi.log_prob(traj.action)
                         vcl = traj.value + (value - traj.value).clip(
                             -config["CLIP_EPS"], config["CLIP_EPS"])

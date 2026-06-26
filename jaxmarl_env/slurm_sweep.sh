@@ -21,7 +21,8 @@ set -euo pipefail
 cd /nas/ucb/marimeireles/MARL-mixed/jaxmarl_env
 
 PY=../.venv-jaxmarl/bin/python
-ENV_NAME=$(sed -n "${SLURM_ARRAY_TASK_ID}p" envs.txt)
+ENVFILE="${ENVFILE:-envs.txt}"
+ENV_NAME=$(sed -n "${SLURM_ARRAY_TASK_ID}p" "${ENVFILE}")
 echo "[$(date)] task ${SLURM_ARRAY_TASK_ID}: ${ENV_NAME} on $(hostname)"
 
 # --- GPU --------------------------------------------------------------------
