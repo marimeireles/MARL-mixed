@@ -1,0 +1,1 @@
+failed:ValueError('Incompatible shapes for broadcasting: shapes=[(128, 8), (4, 8), ()]')

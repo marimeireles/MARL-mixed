@@ -2,3 +2,13 @@
 **/__pycache__/
 .DS_Store
 nbs/Analysis
+# JaxMARL / deep-RL additions
+.venv-jaxmarl/
+.venv*/
+jaxmarl_env/slurm_logs/
+# LaTeX build artifacts
+*.aux
+*.bbl
+*.blg
+paper/*.log
+paper/*.out
