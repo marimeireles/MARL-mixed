@@ -490,6 +490,17 @@ if os.path.exists(img):
 else:
     print("run img_compare.py (CNN, shaped reward) to generate the Overcooked comparison")""")
 
+md("""**My read on Overcooked:** the CNN + shaped reward work — **IPPO learns to
+deliver dishes** (sparse reward climbs to ~0.34), **A2C** learns slowly (~0.10),
+and **IQL flat-lines (~0)**. Note this is the *opposite* ranking from the IPD,
+where IQL was the cooperation champion. Overcooked is a sparse-reward,
+long-horizon *spatial coordination* task; independent Q-learning has to propagate
+a rare reward back through many steps while its partner is also changing, and its
+bootstrapped value estimates never get traction. Policy-gradient methods optimise
+the (shaped) return directly and make steady progress. Once again: **the best
+algorithm is a property of the game, not the algorithm** — IQL wins the matrix
+dilemma, IPPO wins the spatial cooperative task.""")
+
 md("""## 8. What was added to this repository
 
 | path | what it is |
