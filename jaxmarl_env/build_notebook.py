@@ -448,6 +448,32 @@ more gracefully. So "which algorithm cooperates / wins?" is not a property of th
 algorithm alone — it is the algorithm × game × (as we saw) the observability and
 learning rate, together.""")
 
+md("""### Cooperation dynamics on coin_game (and a note on Overcooked)
+
+The reward curves above are useful, but you asked for **cooperation** dynamics on
+these games specifically. In **coin_game**, cooperation is well-defined: picking up
+your *own*-colour coin is cooperation, taking the *other* agent's coin (+1 to you,
+−2 to them) is defection. We recompute that event each step and log the
+cooperation fraction — the coin_game analogue of P(cooperate).
+
+Note the **opposite** of the IPD: here **IPPO learns to cooperate** (own-coin
+fraction climbs to ~0.72), while A2C/IQL stay nearer chance. Why: in coin_game,
+grabbing your own coin is both safe and rewarding, so the cooperative action is
+not strictly dominated the way defection dominates the matrix IPD — and on-policy
+policy gradient finds it.
+
+(**Overcooked** has no separate cooperation axis — it is a *fully cooperative*
+game with a single shared reward, so there is no defect option; its dish-delivery
+reward curve in §7e *is* its cooperation signal.)""")
+
+code("""img = os.path.join(RESULTS, "coin_coop.png")
+if os.path.exists(img):
+    from matplotlib import image as mpimg
+    fig, ax = plt.subplots(figsize=(7, 4.4)); ax.imshow(mpimg.imread(img)); ax.axis("off")
+    plt.show()
+else:
+    print("run coin_coop.py to generate the coin_game cooperation dynamics")""")
+
 md("""## 7d. Does longer memory help cooperation?
 
 Everything above used memory-1 (agents condition on the previous round). The IPD
