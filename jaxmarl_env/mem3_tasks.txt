@@ -1,0 +1,14 @@
+ipd 2 ac
+ipd 2 sarsa
+harmony 2 ac
+harmony 2 sarsa
+staghunt 2 ac
+staghunt 2 sarsa
+snowdrift 2 ac
+snowdrift 2 sarsa
+coin 2 ac
+coin 2 sarsa
+arena 2 ac
+arena 2 sarsa
+arena 3 ac
+arena 3 sarsa
