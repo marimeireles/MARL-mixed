@@ -186,7 +186,153 @@ there — and intrinsic fluctuations **roughly double the cooperation rate (up t
 > deterministic actor-critic flow defects — fluctuations + value bootstrapping,
 > exactly as the paper describes.""")
 
-md(r"""## References
+md(r"""# Empirical findings from the flow grids (candidate paper results)
+
+Reading the 16 observability flow grids (`flow_grids_notebook.ipynb`), here are the
+patterns — your observations, my verdict on each, and a few additional results that
+look paper-worthy. Grids are embedded under each point.""")
+
+code(r'''import glob
+def show(fname, title, figsize=(13, 8)):
+    p = os.path.join(os.getcwd(), "results", fname)
+    if not os.path.exists(p):
+        print("(missing:", fname, ")"); return
+    from matplotlib import image as mpimg
+    fig, ax = plt.subplots(figsize=figsize); ax.imshow(mpimg.imread(p)); ax.axis("off")
+    ax.set_title(title, fontsize=11, loc="left", color="#114"); plt.show()''')
+
+md(r"""## F1. Self-awareness beats opponent-awareness  ✅ (agree)
+
+> *Your observation:* in the IPD, being **self-aware** (seeing your own last action)
+> is more beneficial than being **non-self-aware** (seeing only the opponent's).
+
+I agree, and there's a crisp mechanism: the cooperative memory-1 strategies that
+matter — **win-stay–lose-shift** and tit-for-tat — are conditioned on *your own*
+last move. You literally cannot "stay" or "shift" if you don't know what you did.
+Seeing only the opponent is not enough to *execute* reciprocity. So self-awareness
+is the load-bearing observation; opponent-awareness alone leaves the agent unable
+to close the reciprocity loop. The same pattern holds in **coin_game** (slightly
+improved by self-awareness, slightly hurt by non-self-awareness).""")
+code('show("obsgrid_ipd_ac_N2.png", "IPD, actor-critic, N=2 — self-aware (top-mid) holds more cooperation than non-self-aware (top-right)")')
+code('show("obsgrid_coin_ac_N2.png", "coin_game, actor-critic, N=2 — same asymmetry")')
+
+md(r"""## F2. Stag Hunt amplifies the self / non-self gap  ✅ (agree, with one nuance)
+
+> *Your observation:* in Stag Hunt the self/non-self effect is even stronger — no
+> self-awareness goes to defection, self-awareness to cooperation.
+
+Agreed and it's the strongest single demonstration of F1. Because Stag Hunt is
+**bistable** (two basins — cooperate or defect — split by a separatrix), the
+observability change doesn't just shade the outcome, it **decides which basin you
+fall into**: self-aware trajectories climb to **(1,1)**, non-self-aware ones never
+reach it. *Nuance for the paper:* non-self-aware here lands on a **low / asymmetric**
+state (one agent ~0.4), not pure (0,0) defection — so "fails to coordinate on the
+cooperative equilibrium" is more precise than "goes to defection".""")
+code('show("obsgrid_staghunt_ac_N2.png", "Stag Hunt, actor-critic, N=2 — self-aware reaches (1,1); non-self-aware does not")')
+
+md(r"""## F3. Conditional (coop/def-tracking) observation barely matters  ✅ (agree)
+
+> *Your observation:* tracking the opponent only when it cooperates / only when it
+> defects doesn't change the outcomes for IPD / Harmony / Chicken / Stag Hunt.
+
+Agreed — the cooperation-tracking and defection-tracking panels look essentially
+like full observability in every game. Interpretation: once the agent keeps its
+**own** action (which all three of full / coop-track / def-track do), it already has
+what reciprocity needs; *filtering which of the opponent's moves it also sees* is a
+second-order effect. The first-order lever is self- vs non-self-awareness (F1), not
+the conditional content.""")
+
+md(r"""## F4. Snowdrift/Chicken: the **algorithm selects the equilibrium**  ⭐ (new result)
+
+> *Your observation:* in Snowdrift the actor-critic results look "weird"; in SARSA
+> they are "completely clean — what's going on?"
+
+This is the most interesting thing in the whole matrix. Snowdrift/Chicken has
+**three** equilibria: two *pure anti-coordination* outcomes $(C,D)$ and $(D,C)$, and
+one *symmetric mixed* interior point near $(0.5,0.5)$. **The two learning rules pick
+different ones:**
+
+- **Actor-critic (policy gradient)** flows to the **pure anti-coordination corners**
+  (off-diagonal) — like the two-population replicator dynamics, where the interior
+  mixed point is a saddle. That's why it looks "weird/asymmetric": the symmetric
+  start is repelled toward an asymmetric C-vs-D split.
+- **SARSA (value-based)** converges **cleanly to the symmetric mixed interior point**
+  $(0.5,0.5)$ from everywhere — and, crucially, in **all six observability regimes
+  identically**. That's why it's "completely clean".
+
+So Chicken is a case of **algorithm-dependent equilibrium selection**: the same game
+yields *asymmetric specialisation* under policy gradient but a *symmetric mixed*
+convention under value-based learning. That's a clean, citable result.""")
+code('show("obsgrid_snowdrift_ac_N2.png", "Snowdrift, actor-critic — flows to the off-diagonal (anti-coordination) corners")')
+code('show("obsgrid_snowdrift_sarsa_N2.png", "Snowdrift, SARSA — converges to the symmetric mixed point (0.5,0.5), the SAME in all 6 regimes")')
+
+md(r"""## F5. Can we extract clean sentences from SARSA? Mostly **no** — except Snowdrift
+
+> *Your question:* for SARSA everything turns much more chaotic — can clean
+> sentences still be extracted, or not?
+
+Honest answer: **not the way you can for actor-critic.** SARSA's attractors in the
+reciprocity games (PD, Stag Hunt) are *interior partial-cooperation* fixed points
+that **shift with the observability regime**, and the background flow is a 2-D
+average that renders noisily — so the per-regime story is muddy. The one robust
+SARSA statement across games is the qualitative one: **value-based learning sustains
+more cooperation than policy gradient** (e.g. IPD: SARSA ~0.4 vs actor-critic ~0).
+
+**Snowdrift is the exception (and explains F4's "clean"):** its interior attractor
+is set by the payoff *anti-symmetry*, not by reciprocity, so it is **invariant to
+the observation regime** — all six panels collapse to the same clean picture. In the
+reciprocity games there is no such regime-invariant attractor, hence the mess.""")
+code('show("obsgrid_ipd_sarsa_N2.png", "IPD, SARSA, N=2 — sustains partial cooperation (~0.4) but the per-regime structure is noisier than actor-critic")')
+
+md(r"""## F6. Players: cooperation can *rise* with N — but the 2-D picture degrades  ✅/⚠️
+
+> *Your observations (arena):* with 3 players we see even more cooperation; with 4
+> players it becomes really confusing; and SARSA at N=4 is an empty graph.
+
+Two separate things are going on:
+1. **Real effect:** in the pairwise-averaged N-player dilemma, cooperation **rises**
+   with N (a defection spoils only 1 of N−1 pairwise terms, shrinking the temptation
+   gradient). So N=3 genuinely shows more cooperation than N=2 — that is a result.
+2. **Artifact:** for N>2 the plot is a **2-D projection** of a $2^N$-state,
+   high-dimensional strategy space (averaging over the hidden agents). At **N=4** the
+   actor-critic field is heavily scattered and trajectories zig-zag (nearby-in-2-D
+   points are far apart in the true space), and **SARSA N=4 fails numerically** —
+   the projected flow returns NaN, so the panel is empty (just the start markers).
+
+**Recommendation for the paper:** present the N-player (arena) result at **N=2 and
+N=3 only**; flag N=4 as the point where the 2-D projection breaks down rather than a
+finding.""")
+code('show("obsgrid_arena_ac_N3.png", "Arena (N-player), actor-critic, N=3 — readable, more cooperation than N=2")')
+code('show("obsgrid_arena_ac_N4.png", "Arena, actor-critic, N=4 — a noisy 2-D projection (interpret with care)")')
+
+md(r"""## F7. Clarification — the arena's "IPPO/A2C" label
+
+> *Your question:* for the arena, why "IPPO/A2C" — shouldn't it be one or the other?
+> Did we only try actor-critic?
+
+**IPPO and A2C are the same algorithm family** — both are policy-gradient
+actor-critic methods (IPPO just adds PPO clipping). The single **CRLD actor-critic**
+flow is the *deterministic limit of both*, which is why the label reads "~ IPPO/A2C":
+it means "this one analytic dynamics stands in for both", **not** "we ran two
+algorithms". For the *deep-RL* arena (the STORM gridworld in `results_notebook`), the
+N-agent and observability experiments used **IPPO** specifically; a separate
+algorithm comparison there ran IPPO vs A2C vs IQL.""")
+
+md(r"""## Summary of observations (your words → my verdict)
+
+| # | observation | verdict |
+|---|---|---|
+| F1 | IPD: self-aware > non-self-aware | ✅ agree (reciprocity needs your *own* action) |
+| F2 | Stag Hunt amplifies the self/non-self gap | ✅ agree (bistable → observability picks the basin); non-self → asymmetric, not pure (0,0) |
+| F3 | coop/def-tracking doesn't change outcomes | ✅ agree (own-action channel carries reciprocity) |
+| F4 | Snowdrift AC weird / SARSA clean | ⭐ **algorithm-dependent equilibrium selection** — AC → pure anti-coord corners, SARSA → symmetric mixed point |
+| F5 | SARSA is chaotic, hard to read | ✅ agree — only robust claim is "SARSA cooperates more"; clean only for Snowdrift |
+| F6 | more players → more cooperation; N=4 confusing; SARSA N=4 empty | ✅ rise-with-N is real; ⚠️ N=4 is a projection artifact (SARSA N=4 = NaN) |
+| coin | same pattern as IPD; SARSA coin more coop but still toward defection | ✅ agree |
+
+---
+
+## References
 
 - W. Barfuss, J. M. Meylahn. **Intrinsic fluctuations of reinforcement learning
   promote cooperation.** *Scientific Reports* 13, 1309 (2023).

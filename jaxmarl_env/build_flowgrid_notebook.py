@@ -13,13 +13,17 @@ def code(s): C.append(nbf.v4.new_code_cell(s))
 # Only the four genuinely-distinct 2x2 games. The coin_game-PD and arena-PD CRLD
 # reductions are just relabeled Prisoner's Dilemmas (identical dynamics), so they
 # are NOT shown here; the *real* arena lives in results_notebook (STORM deep RL).
-GAMES = [("ipd", "Prisoner's Dilemma (IPD)"),
-         ("harmony", "Harmony"),
-         ("staghunt", "Stag Hunt"),
-         ("snowdrift", "Snowdrift / Chicken")]
+# The 2-player social dilemmas are inherently 2-player, so they are shown at N=2
+# only. The MANY-PLAYER analysis belongs to the arena (the N-player social
+# dilemma), shown at N=2,3,4. (game_key, label, [player counts]).
+GAMES = [("ipd",       "Prisoner's Dilemma (IPD)", [2]),
+         ("harmony",   "Harmony",                  [2]),
+         ("staghunt",  "Stag Hunt",                [2]),
+         ("snowdrift", "Snowdrift / Chicken",      [2]),
+         ("coin",      "coin_game (Prisoner's Dilemma reduction)", [2]),
+         ("arena",     "STORM arena (N-player social dilemma)",    [2, 3, 4])]
 ALGOS = [("ac", "CRLD actor-critic  (~ IPPO/A2C, policy gradient)"),
          ("sarsa", "CRLD SARSA  (~ IQL, value-based)")]
-NS = [2, 3, 4]
 
 md("""# CRLD observability flow grids — the full matrix
 
@@ -30,11 +34,15 @@ learning rule pushes the joint policy at every point) with two purple learning
 trajectories, drawn in the state where both agents just cooperated.
 
 We sweep three axes:
-- **Game** — the four distinct 2x2 social dilemmas: Prisoner's Dilemma, Harmony,
-  Stag Hunt, Snowdrift/Chicken. (coin_game and STORM-arena reduce to a Prisoner's
-  Dilemma, so they are not repeated here; the real arena is in the deep-RL notebook.)
-- **Algorithm** — CRLD actor-critic (policy gradient) vs CRLD SARSA (value-based).
-- **Players** — N = 2, 3, 4 (for N>2 the grid is a 2-D projection onto agents 0,1).
+- **Game** — the four distinct 2x2 social dilemmas (Prisoner's Dilemma, Harmony,
+  Stag Hunt, Snowdrift/Chicken) plus the coin_game reduction, all at **N=2** (these
+  are inherently two-player). The **arena** is the *N-player* social dilemma, shown
+  at **N=2, 3, 4** — the many-player analysis lives here, not on the 2-player games.
+- **Algorithm** — CRLD actor-critic (policy gradient, the analytic limit of *both*
+  IPPO and A2C) vs CRLD SARSA (value-based, the analytic limit of IQL).
+- **Players** — for N>2 the grid is a 2-D projection onto agents 0,1 (averaging over
+  the rest), so it gets noisier with N; N=4 is at the limit of what the projection
+  can show (SARSA N=4 fails numerically).
 
 How to read it: arrows pointing into a corner = the learning dynamics drive the
 joint policy there. (0,0) = mutual defection, (1,1) = mutual cooperation.""")
@@ -54,19 +62,21 @@ def show(fname, title, figsize=(13, 8)):
     ax.set_title(title, fontsize=11, loc="left", color="#114"); plt.show()
 """)
 
-for gkey, gname in GAMES:
+for gkey, gname, gns in GAMES:
     md(f"## {gname}")
     for akey, alabel in ALGOS:
-        for N in NS:
+        for N in gns:
             fname = f"obsgrid_{gkey}_{akey}_N{N}.png"
             title = f"{gname}  -  {alabel}  -  N={N}"
             code(f'show({fname!r}, {title!r})')
 
 md("""## Key findings & honest caveats
 
-**Cooperation vs number of players (a surprise).** In this *pairwise-averaged* PD,
-cooperation does **not** get harder with more players — for the IPD it gets
-*easier*: from random starts, cooperation at the reciprocity state rises with N.
+**Cooperation vs number of players (a surprise) — the arena / N-player dilemma.**
+In the *pairwise-averaged* N-player social dilemma, cooperation does **not** get
+harder with more players — for the Prisoner's Dilemma it gets *easier*: from random
+starts, cooperation at the reciprocity state rises with N (numbers below are for
+the canonical PD/Stag-Hunt/Snowdrift payoffs, illustrating the mechanism).
 
 | game (full obs, P(C) at reciprocity state) | N=2 | N=3 | N=4 |
 |---|---|---|---|
