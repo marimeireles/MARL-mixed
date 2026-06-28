@@ -93,7 +93,35 @@ def memory_basin():
     print("wrote", out)
 
 
+def algorithm_compare(memory=2):
+    """IPD full-observability flow under actor-critic vs SARSA (value-based)."""
+    from pyCRLD.Agents.APOStrategySarsa import stratSARSA as POSARSA
+    fig, axes = plt.subplots(1, 2, figsize=(4.7 * 2, 4.4))
+    for ax0, (cls, lab) in zip(axes, [(POstratAC, "Actor-critic (policy gradient)"),
+                                       (POSARSA, "SARSA (value-based)")]):
+        memo = _ipd(memory)
+        mae = cls(env=memo, learning_rates=0.1, discount_factors=0.9)
+        si = _allc_state(memo)
+        x = ([0], [si], [0]); y = ([1], [si], [0])
+        ax = fp.plot_strategy_flow(mae, x, y, use_RPEarrows=False, NrRandom=16,
+                                   flowarrow_points=np.linspace(0.01, 0.99, 9), axes=[ax0])
+        for seed in range(3):
+            np.random.seed(seed)
+            xt, _ = mae.trajectory(mae.random_softmax_strategy(), Tmax=6000, tolerance=1e-5)
+            fp.plot_trajectories([xt], x, y, cols=["purple"], axes=ax)
+        ax0.set_title(lab, fontsize=11)
+        ax0.set_xlabel("Agent 1  P(cooperate)", fontsize=9)
+        ax0.set_ylabel("Agent 2  P(cooperate)", fontsize=9)
+    fig.suptitle(f"Learning rule and cooperation: full-observability IPD flow (memory-{memory})",
+                 fontsize=12)
+    fig.tight_layout(rect=[0, 0, 1, 0.93])
+    out = os.path.join(FIGS, "fig_algorithm.png")
+    fig.savefig(out, dpi=150, bbox_inches="tight"); plt.close(fig)
+    print("wrote", out)
+
+
 if __name__ == "__main__":
     obs_flow_grid(2)
     memory_basin()
+    algorithm_compare(2)
     print("done")
