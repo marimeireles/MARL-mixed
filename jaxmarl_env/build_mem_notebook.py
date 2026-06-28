@@ -10,12 +10,16 @@ nb = nbf.v4.new_notebook(); C = []
 def md(s): C.append(nbf.v4.new_markdown_cell(s))
 def code(s): C.append(nbf.v4.new_code_cell(s))
 
+# The arena (N-player) state space is (2^N)^M, which the CRLD einsum intermediates
+# blow past quickly. It is tractable for N=2,3,4 only at memory-1/2; for memory>=3
+# we cap the arena at N=2 (N>=3 is too large — see the size note below).
+ARENA_NS = [2, 3, 4] if M <= 2 else [2]
 GAMES = [("ipd", "Prisoner's Dilemma (IPD)", [2]),
          ("harmony", "Harmony", [2]),
          ("staghunt", "Stag Hunt", [2]),
          ("snowdrift", "Snowdrift / Chicken", [2]),
          ("coin", "coin_game (PD reduction)", [2]),
-         ("arena", "STORM arena (N-player)", [2, 3, 4])]
+         ("arena", "STORM arena (N-player)", ARENA_NS)]
 ALGOS = [("ac", "CRLD actor-critic  (~ IPPO/A2C)"),
          ("sarsa", "CRLD SARSA  (~ IQL)")]
 
@@ -65,9 +69,25 @@ for gkey, gname, gns in GAMES:
         md(f"## {gname}")
         for c in cells:
             code(c)
-if skipped:
-    md("> **Not shown (state space too large at this memory — OOM):** "
-       + "; ".join(skipped) + ".")
+if M >= 3:
+    s2, s3, s4 = 4 ** M, 8 ** M, 16 ** M
+    md(f"""## Why the arena stops at N=2 here (state-space size)
+
+The N-player arena has $(2^N)^{{{M}}}$ states, and the CRLD einsum *intermediates*
+grow faster still, so at memory-{M} only **N=2** is tractable:
+
+| arena | states at memory-{M} | status |
+|---|---|---|
+| N=2 (shown) | {s2:,} | cheap |
+| N=3 (omitted) | {s3:,} | too large — cancelled |
+| N=4 (omitted) | {s4:,} | too large |
+
+At memory-4 the arena N=3 case ({8**4:,} states) **OOM-killed at 16 GB and did not
+finish even at 96 GB after ~30 min**; at memory-3 ({8**3:,} states) it ran for 20+
+min without finishing. Both were cancelled. The 2-player games and arena N=2 are
+cheap by comparison.""")
+elif skipped:
+    md("> **Not shown (state space too large at this memory):** " + "; ".join(skipped) + ".")
 
 md(f"""## What memory-{M} changes (vs memory-1)
 
