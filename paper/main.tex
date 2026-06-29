@@ -49,7 +49,7 @@ Our approach is to treat the learning process itself as a dynamical system. In t
 
 \subsection{Learning dynamics}
 
-We simulate two agents, \(i \in \{1,2\}\), each choosing an action \(a^i \in \{c,d\}\). Rather than noisy, sample-based simulations, we use \emph{collective reinforcement learning dynamics} (CRLD) \cite{10, 9, 14}, the deterministic, infinite-batch (strategy-averaged) limit of temporal-difference learning: it replaces stochastic value updates with deterministic equations in \emph{strategy space} that are efficient and analytically transparent. Each agent holds a policy \(x^i(a\mid o)\) over actions given an \emph{observation} \(o\), which need not coincide with the true state \(s\)---the lever for perceptual heterogeneity (Section~\ref{sec:obs}). The policy updates along the strategy-averaged temporal-difference error \(\delta^i\) via the policy-space replicator--mutator map \cite{9, 14} (not a tabular value update):
+We model the two agents, $i\in\{1,2\}$ choosing $a^i\in\{c,d\}$, with \emph{collective reinforcement learning dynamics} (CRLD) \cite{10, 9, 14}: the deterministic, infinite-batch limit of temporal-difference learning, which replaces stochastic value updates with an exact map in policy space. We use this machinery as given---it is prior work---and recall only what we need. Each agent's policy $x^i(a\mid o)$ (over actions $a$ given an \emph{observation} $o$) evolves by a replicator--mutator step along its strategy-averaged temporal-difference error $\delta^i$:
 
 \begin{equation}
 x^i_{t+1}(a\mid o) \;=\;
@@ -58,25 +58,28 @@ x^i_{t+1}(a\mid o) \;=\;
 \label{eq:update}
 \end{equation}
 
-where \(\alpha_i \in (0,1]\) is the learning rate and \(\beta_i>0\) is the choice intensity (inverse temperature) controlling the exploration--exploitation trade-off. Equation~\eqref{eq:update} replaces the explicit \(\epsilon\)-greedy action selection and tabular SARSA value update of standard RL; in the deterministic limit, softmax action selection with intensity \(\beta_i\) is folded directly into the policy and its update.
+with learning rate $\alpha_i$, choice intensity $\beta_i$, and discount $\gamma_i$. The error $\delta^i$ is the standard expected, on-policy TD error (immediate reward plus discounted successor value minus baseline; the infinite-batch limit of Expected SARSA \cite{13}), whose closed form we take unchanged from \cite{14, 15}. These parameters can differ per agent; we hold them equal ($\alpha=0.1$, $\gamma=0.9$, $\beta=1$) so that observability is the sole heterogeneity.
 
-The strategy-averaged temporal-difference error for actor--critic learning is
+\paragraph{Heterogeneous observations.}
+Our modification is to make the agents heterogeneous \emph{observers}. The true state $s\in\mathcal{S}$ is the joint two-round history, but agent $i$ acts on an observation $o^i$ drawn from a \emph{per-agent} observation model $\Omega^i(o^i\mid s)\in\{0,1\}$ that may alias several true states onto one observation. A full observer uses the identity model ($o^i\equiv s$); a partial observer's $\Omega^i$ masks chosen coordinates of the most recent round, leaving the agent with the uniform posterior over the states consistent with what it saw,
 
 \begin{equation}
-\delta^i_t(o,a) \;=\; (1-\gamma_i)\,\bar{R}^i(o,a)\;+\;\gamma_i\,\overline{V}^i_{\text{next}}(o,a)\;-\;\overline{V}^i(o),
-\label{eq:tderror}
+b^i(s\mid o^i) \;=\; \frac{\Omega^i(o^i\mid s)}{\sum_{s'}\Omega^i(o^i\mid s')},
+\label{eq:belief}
 \end{equation}
 
-where \(\gamma_i \in [0,1)\) is the discount factor, \(\bar{R}^i(o,a)\) the strategy-averaged immediate reward, \(\overline{V}^i(o)\) the value of observation \(o\) under the joint policy, and \(\overline{V}^i_{\text{next}}(o,a)\) the strategy-averaged successor value; the \((1-\gamma_i)\) prefactor puts immediate and future returns on the same scale \cite{14}. Using the expected successor value makes this the deterministic, on-policy form of TD learning (the infinite-batch limit of Expected SARSA \cite{13}); the values \(\overline{V}^i\) solve the corresponding Bellman system in closed form. Under partial observability all averages additionally integrate the belief over true states induced by the observation model, following the partially observable CRLD formulation \cite{15}.
+and every strategy-average entering $\delta^i$ is taken under $b^i$ \cite{15}. \emph{Heterogeneity is precisely the choice of different $\Omega^i$ across agents}: here Agent~1 keeps the full model while Agent~2's $\Omega^2$ realizes one of the masking regimes of Section~\ref{sec:obs}. Concretely, we extend \texttt{pyCRLD} to carry a separate observation tensor per agent rather than a single shared one.
 
 \paragraph{The dynamics as a flow.}
-Equations~\eqref{eq:update}--\eqref{eq:tderror} define a deterministic map on the joint policy---equivalently, a vector field (a \emph{flow}) on strategy space. From any joint policy the learning rule points in a definite direction, the fixed points where the flow vanishes are the learned equilibria, and the \emph{cooperation rate} we report is precisely the measure of the basin of attraction of the cooperative fixed point under random initial policies. Visualizing this flow (Figures~\ref{fig:flowgrid}--\ref{fig:memory}) exposes \emph{why} a scenario does or does not cooperate, complementing the reward statistics with the geometry behind them.
-
-Because \(\alpha_i,\beta_i,\) and \(\gamma_i\) can be set per agent, this framework natively supports \emph{heterogeneous} agents that differ in learning speed and effective risk tolerance. In this paper we hold these parameters equal across agents (Appendix) so that the sole heterogeneity under study is observability.
+Equation~\eqref{eq:update} defines a deterministic map on the joint policy---equivalently, a vector field (a \emph{flow}) on strategy space. From any joint policy the learning rule points in a definite direction, the fixed points where the flow vanishes are the learned equilibria, and the \emph{cooperation rate} we report is the measure of the basin of attraction of the cooperative fixed point under random initial policies. Visualizing this flow (Figures~\ref{fig:flowgrid}--\ref{fig:memory}) exposes \emph{why} a scenario does or does not cooperate, complementing the reward statistics with the geometry behind them.
 
 \subsection{Environment}
 
-The environment is the Iterated Prisoner's Dilemma (IPD). The one-shot payoffs (Table~\ref{tab:payoff}) are $R=1$ (mutual cooperation), temptation $T=1.2$, sucker $S=-0.5$, and punishment $P=0$, satisfying $T>R>P>S$ and $2R>T+S$. We embed the stage game into a \emph{memory-two} history (an agent's state is the previous two rounds' outcomes)---the smallest history rich enough to host the reciprocal strategies (win-stay--lose-shift, tit-for-tat) that direct reciprocity relies on \cite{11, 16}, yet low-dimensional enough for exhaustive analysis.
+Our focal environment is the Iterated Prisoner's Dilemma (IPD), whose one-shot payoffs (Table~\ref{tab:payoff}) are $R=1$ (mutual cooperation), temptation $T=1.2$, sucker $S=-0.5$, and punishment $P=0$, satisfying $T>R>P>S$ and $2R>T+S$. The Prisoner's Dilemma is, however, only one of the four canonical symmetric two-action social dilemmas: reordering the same four payoffs yields \emph{Harmony} (cooperation is dominant), the \emph{Stag Hunt} (a bistable coordination game), and \emph{Snowdrift}/\emph{Chicken} (anti-coordination). We run our full analysis---observability, memory, and learning rule---across all four games, so that we can separate effects driven by the Prisoner's Dilemma's specific incentive structure from those that hold across dilemmas; the exact payoffs of the other three games are given in the Appendix (Table~\ref{tab:games}). Results in the main text are reported for the IPD unless stated otherwise.
+
+We embed each stage game into a \emph{memory-two} history (an agent's state is the previous two rounds' outcomes)---the smallest history rich enough to host the reciprocal strategies (win-stay--lose-shift, tit-for-tat) that direct reciprocity relies on \cite{11, 16}, yet low-dimensional enough for exhaustive analysis.
+
+These matrix games are also the incentive cores of richer, spatially and temporally extended multi-agent environments. Two that we study come from the JaxMARL suite \cite{17}: the \emph{coin game}, in which two agents move on a grid and pick up own- versus other-coloured coins---a spatial Prisoner's Dilemma---and the in-the-matrix \emph{arena} (\textsc{storm}), in which $N$ agents forage coloured resources and, on meeting, play a matrix game set by their inventories---a temporally extended, $N$-player social dilemma. The coin game's incentive core is the Prisoner's Dilemma analyzed here, and the arena generalizes it to $N>2$, letting us ask whether the observability and learning-rule effects survive beyond the dyad.
 
 \begin{table}[htbp]
   \caption{Payoff matrix for the Iterated Prisoner's Dilemma (row agent, column agent).}
@@ -116,7 +119,7 @@ We probe each setting two ways: by the \emph{flow geometry} in policy space (Fig
 \end{figure}
 
 \paragraph{Self-observability is the load-bearing perceptual channel.}
-Reading the heterogeneous IPD as a flow (Figure~\ref{fig:flowgrid}) shows cooperation living in a basin that observability controls. Under full observability a cooperative fixed point at $(1,1)$ is reachable, but it shares the space with a large defection basin---about $14\%$ of random initializations cooperate---so even symmetric, complete information does not make cooperation typical. Degrading the partial observer shrinks the cooperative basin, and \emph{which} coordinate is hidden matters far more than how much is hidden. When Agent~2 cannot see its \emph{own} last action (non-self-aware), the flow drains uniformly to defection: an agent that cannot identify its own move cannot ``stay'' or ``shift'' relative to it, so the substrate for direct reciprocity is gone. Losing sight of the \emph{partner} instead (self-aware) is far milder---a cooperative basin survives---and merely \emph{conditioning} which of the partner's moves are visible (cooperation- vs.\ defection-tracking) is close to full observability. It is self-observability, not partner-observability, that reciprocity is built on. Across initializations the two agents converge to nearly the same policy: the failure mode of heterogeneity is \emph{shared} defection, not one agent exploiting the other (Appendix, Figure~\ref{fig:summary}).
+Reading the heterogeneous IPD as a flow (Figure~\ref{fig:flowgrid}) shows cooperation living in a basin that observability controls. Under full observability a cooperative fixed point at $(1,1)$ is reachable, but it shares the space with a large defection basin---about $14\%$ of random initializations cooperate---so even symmetric, complete information does not make cooperation typical. Degrading the partial observer shrinks the cooperative basin, and \emph{which} coordinate is hidden matters far more than how much is hidden. When Agent~2 cannot see its \emph{own} last action (non-self-aware), the flow drains uniformly to defection: an agent that cannot identify its own move cannot ``stay'' or ``shift'' relative to it, so the substrate for direct reciprocity is gone. Losing sight of the \emph{partner} instead (self-aware) is far milder---a cooperative basin survives---and merely \emph{conditioning} which of the partner's moves are visible (cooperation- vs.\ defection-tracking) is close to full observability. It is self-observability, not partner-observability, that reciprocity is built on. Across initializations the two agents converge to nearly the same policy, so the failure mode of heterogeneity is \emph{shared} defection rather than one agent exploiting the other.
 
 \paragraph{Memory creates and enlarges the cooperative basin.}
 That cooperative basin is not intrinsic to the game---it is built by \emph{memory}. Re-running the full-observability dynamics at memory one, two, and four (Figure~\ref{fig:memory}) shows that at memory one the flow does not reach mutual cooperation from our initializations; a cooperative fixed point at $(1,1)$ becomes reachable only at memory two, and its basin enlarges at memory four. Longer histories let agents represent richer reciprocal strategies (memory-$k$ tit-for-tat / win-stay--lose-shift) that turn cooperation into a deterministic attractor. This is the deterministic counterpart of the finite-batch \emph{intrinsic fluctuations} known to promote cooperation in the memory-one IPD \cite{8}: memory and sampling noise enlarge the same cooperative basin by different routes.
@@ -129,7 +132,10 @@ That cooperative basin is not intrinsic to the game---it is built by \emph{memor
 \end{figure}
 
 \paragraph{The learning rule co-determines the attractor.}
-Whether cooperation is reachable at all also depends on the learning rule (Appendix, Figure~\ref{fig:algorithm}). Policy-gradient (actor--critic) learning is \emph{bistable}: depending on initialization it converges either to mutual cooperation $(1,1)$ or to mutual defection $(0,0)$, with most random starts in the defection basin. Value-based (SARSA) learning instead converges, from almost any start, to a single \emph{interior} partial-cooperation fixed point---it never collapses to total defection, but never reaches full cooperation either. The same game, payoffs, and observability thus produce qualitatively different cooperative outcomes under the two rules, so the choice of algorithm is part of the cooperation question, not an implementation detail. (In anti-coordination variants the two rules select different equilibria outright; see the supplementary flow-grid matrix.)
+Whether cooperation is reachable at all also depends on the learning rule (Appendix, Figure~\ref{fig:algorithm}). Policy-gradient (actor--critic) learning is \emph{bistable}: depending on initialization it converges either to mutual cooperation $(1,1)$ or to mutual defection $(0,0)$, with most random starts in the defection basin. Value-based (SARSA) learning instead converges, from almost any start, to a single \emph{interior} partial-cooperation fixed point---it never collapses to total defection, but never reaches full cooperation either. The same game, payoffs, and observability thus produce qualitatively different cooperative outcomes under the two rules, so the choice of algorithm is part of the cooperation question, not an implementation detail. (In Snowdrift/Chicken the gap is starker still---the two rules select different equilibria outright, a point we return to in Section~\ref{sec:future}.)
+
+\paragraph{The effects survive beyond the dyad and the matrix game.}
+The observability and learning-rule effects are not artifacts of the two-player matrix game. In the $N$-player arena, analyzed in the same deterministic limit, self-observability remains the load-bearing channel (Appendix, Figure~\ref{fig:arena_obs}), and cooperation need not fall as agents are added---in this pairwise-averaged dilemma it can even rise with $N$. The findings also transfer out of the deterministic limit: the same heterogeneous IPD learned by \emph{sampled} deep RL reproduces the algorithm ordering---value-based IQL climbs to near-full cooperation while policy-gradient IPPO collapses to defection (Appendix, Figure~\ref{fig:deeprl})---while the spatial, temporally extended coin game and arena \cite{17} make cooperation harder overall, with a pronounced collapse at large $N$ (Appendix, Figure~\ref{fig:arena_n}).
 
 \section{Discussion}
 
@@ -138,8 +144,11 @@ Reading multi-agent learning as a flow turns ``does cooperation emerge?'' into t
 A unifying reading is that cooperation here is gated by how much reciprocal structure the learners can both \emph{represent} and \emph{stabilize}. Memory and finite-batch intrinsic fluctuations \cite{8} expand the same basin by different routes---more representable history versus noise that escapes the defection trap---which suggests they are partly interchangeable; whether fluctuations can rescue the non-self-aware case that memory alone cannot is a natural test. Equally, the dominant failure mode throughout is \emph{shared} defection rather than exploitation: perceptual asymmetry costs both agents the cooperative surplus instead of letting the better-informed one dominate.
 
 \section{Future work and limitations}
+\label{sec:future}
 
-Natural next steps are to (i) sweep $\beta$ and $\gamma$ to map where, if anywhere, observational heterogeneity becomes cooperation-promoting; (ii) reintroduce finite-batch fluctuations \cite{8} to test whether they rescue cooperation under partial observability where memory alone cannot; and (iii) extend beyond the IPD to public-goods, bargaining, and common-pool games, eventually connecting these low-dimensional dynamics to deep-RL and language-model agents. The present conclusions are correspondingly bounded: the IPD captures a narrow slice of strategic behavior; CRLD assumes deterministic, infinite-batch update rules rather than human idiosyncrasy; outcomes depend on the chosen parameters and on the single regime we report; and cooperation rates are statements about the measure of a basin of attraction under random initial policies, not about any single trajectory.
+The result we find most provocative---and least understood---is \emph{algorithm-driven equilibrium selection}. In Snowdrift/Chicken, value-based learning reliably settles on the symmetric, mutually cooperative mixed equilibrium, whereas policy-gradient is drawn instead to the asymmetric anti-coordination outcomes: one learning rule discovers a ``good'' cooperative solution that the other simply does not find. We have no mechanistic account of \emph{why} a learning rule prefers one equilibrium over another, nor of which rules induce cooperative selection in which games. A predictive theory of this would matter well beyond our setting---it would tell a designer which learner to deploy to obtain a desired social outcome---and we think it is the most promising thread to pull next.
+
+Beyond it, natural steps are to (i) sweep $\beta$ and $\gamma$ to map where observational heterogeneity becomes cooperation-promoting; (ii) reintroduce finite-batch fluctuations \cite{8} to test whether they rescue the non-self-aware case that memory alone cannot; and (iii) push the deep-RL coin game and arena \cite{17} further, and on to language-model agents. The present conclusions are correspondingly bounded: the matrix games capture a narrow slice of strategic behavior; CRLD assumes deterministic, infinite-batch update rules rather than human idiosyncrasy; outcomes depend on the chosen parameters and the regimes we report; and cooperation rates are statements about the measure of a basin of attraction under random initial policies, not about any single trajectory.
 
 \section{Acknowledgments}
 
@@ -165,9 +174,29 @@ An earlier exploratory writeup by the authors reported that knowledge-asymmetric
 
 \subsection{Parameters}
 
-For all experiments we use learning rate $\alpha=0.1$, discount factor $\gamma=0.9$, and choice intensity $\beta=1$, identical across both agents. Memory length is two ($h=(2,2,2)$ in the history-embedding convention). Each scenario uses $N=1{,}200$ random softmax initial policies; trajectories run up to $4{,}000$ steps with fixed-point tolerance $10^{-5}$.
+For all experiments we use learning rate $\alpha=0.1$, discount factor $\gamma=0.9$, and choice intensity $\beta=1$, identical across both agents. Memory length is two ($h=(2,2,2)$ in the history-embedding convention) except in the memory sweep (Figure~\ref{fig:memory}), which varies it. Each scenario uses $N=1{,}200$ random softmax initial policies; trajectories run up to $4{,}000$ steps with fixed-point tolerance $10^{-5}$.
 
-\subsection{Learning rule and aggregate statistics}
+\subsection{Game family}
+
+The four canonical symmetric two-action social dilemmas studied here share the structure of Table~\ref{tab:payoff} and differ only in the payoff values (Table~\ref{tab:games}), i.e.\ in the ordering of $R,T,S,P$. This ordering determines the equilibrium structure---cooperation-dominant (Harmony), a single defective dominant strategy (Prisoner's Dilemma), bistable coordination (Stag Hunt), or anti-coordination (Snowdrift/Chicken)---and lets us test which observability, memory, and learning-rule effects are specific to the Prisoner's Dilemma.
+
+\begin{table}[h!]
+  \caption{Payoffs of the four social dilemmas (mutual cooperation $R$, temptation $T$, sucker $S$, punishment $P$) and their defining inequality.}
+  \label{tab:games}
+  \centering
+  \begin{tabular}{lccccl}
+    \toprule
+    Game & $R$ & $T$ & $S$ & $P$ & ordering \\
+    \midrule
+    Prisoner's Dilemma & $1$ & $1.2$ & $-0.5$ & $0$ & $T>R>P>S$ \\
+    Harmony & $1$ & $0.5$ & $0.5$ & $0$ & $R>T,\ S>P$ \\
+    Stag Hunt & $1$ & $0.5$ & $-0.5$ & $0$ & $R>T>P>S$ \\
+    Snowdrift / Chicken & $1$ & $1.5$ & $0.5$ & $0$ & $T>R>S>P$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsection{Learning rule}
 
 \begin{figure}[htbp]
   \centering
@@ -176,20 +205,29 @@ For all experiments we use learning rate $\alpha=0.1$, discount factor $\gamma=0
   \label{fig:algorithm}
 \end{figure}
 
+\subsection{Richer environments: $N$-player and deep RL}
+
+The Results claim that the effects survive beyond the two-player matrix game rests on the following supplementary analyses. Figure~\ref{fig:arena_obs} repeats the observability flow grid for the $N$-player arena ($N=3$, deterministic CRLD): self-awareness remains the load-bearing channel, exactly as in the dyad. Figure~\ref{fig:deeprl} leaves the deterministic limit altogether and trains sampled deep-RL agents on the same heterogeneous-observation IPD; the value-based learner (IQL) reaches near-full cooperation while the policy-gradient learners (IPPO, A2C) decay toward defection, reproducing the deterministic algorithm ordering. Figure~\ref{fig:arena_n} shows the spatial, temporally extended STORM arena \cite{17}, where cooperation is harder to reach and collapses as the number of agents grows to $N=8$.
+
 \begin{figure}[htbp]
   \centering
-  \includegraphics[width=0.88\textwidth]{figures/summary.png}
-  \caption{Aggregate over observability scenarios, $N=1{,}200$ random initial conditions each. (a) Mutual-cooperation rate decreases monotonically as Agent~2's observability is degraded, from full observability to the non-self-aware case. (b) Mean reward per agent; the full and partial observers earn nearly the same reward---the gap is small and both fall far short of the cooperative payoff $R=1$ (shared defection, not exploitation).}
-  \label{fig:summary}
+  \includegraphics[width=\textwidth]{figures/fig_arena_obs.png}
+  \caption{$N$-player arena ($N=3$), deterministic CRLD observability flow grid (actor--critic). As in the two-player IPD, self-awareness (top-middle) preserves a cooperative basin while non-self-awareness (top-right) and blindness drain toward defection---the observability finding is not specific to the dyad.}
+  \label{fig:arena_obs}
 \end{figure}
 
-\subsection{Representative trajectory}
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.92\textwidth]{figures/fig_deeprl.png}
+  \caption{Sampled deep RL on the heterogeneous-observation IPD (away from the deterministic limit). (a) Cooperation over training under full observability: value-based IQL rises toward full cooperation, policy-gradient IPPO collapses to defection, A2C decays slowly. (b) Final cooperation by observability regime and algorithm: the value-based/policy-gradient ordering holds across regimes. This reproduces, under sampling, the algorithm dependence found in the deterministic flow.}
+  \label{fig:deeprl}
+\end{figure}
 
 \begin{figure}[htbp]
   \centering
-  \includegraphics[width=0.8\textwidth]{figures/reward_trajectory.png}
-  \caption{A representative learning trajectory under mixed observability. Average reward per agent versus learning step; the agents settle near the defection payoff, consistent with the aggregate finding that defection is the modal attractor.}
-  \label{fig:trajectory}
+  \includegraphics[width=0.72\textwidth]{figures/fig_arena_n.png}
+  \caption{STORM in-the-matrix arena \cite{17} (deep-RL, IPPO): mean reward per agent over training for $N=2,4,8$ agents. Cooperation is harder than in the dyadic matrix game and collapses at $N=8$---an effect of the spatial, temporally extended setting that the deterministic dyadic analysis does not capture.}
+  \label{fig:arena_n}
 \end{figure}
 
 \subsection{Observation maps}
