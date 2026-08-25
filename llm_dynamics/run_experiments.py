@@ -18,6 +18,9 @@ Commands
   reciprocity-figure  overlay one or more saved probes (e.g. base vs
                       RL-trained checkpoints) and played logs on the
                       fixed-opponent CRLD flow in the reciprocity plane
+  portrait            redraw cooperation/reciprocity portraits from any
+                      logged rounds/*.jsonl (background rebuilt from the
+                      rows' own b,c,w,q,memory / game,memory)
   demo                offline end-to-end run with mock models ("base" =
                       selfish, "trained" = reciprocal) producing every
                       figure type; sanity-checks the pipeline
@@ -320,6 +323,50 @@ def cmd_reciprocity_figure(args) -> None:
     print(f"[reciprocity-figure] saved {out}")
 
 
+# ── portrait from logs ────────────────────────────────────────────────────
+
+def cmd_portrait(args) -> None:
+    """Redraw the cooperation-plane (and reciprocity-plane) portrait of any
+    logged games. The CRLD background is built from the rows' metadata
+    (b,c,w,q,memory for donors; game,memory for matrix games)."""
+    from . import donors_crld as dc
+    from . import plots
+
+    sets = {Path(f).stem: dg.read_jsonl(f) for f in args.logs}
+    r0 = next(iter(sets.values()))[0]
+    if "b" in r0:
+        b, c, w, q = r0["b"], r0["c"], r0["w"], r0["q"]
+        mem = r0.get("memory")
+        cm = mem if (mem is not None and mem <= MAX_CRLD_MEMORY) else args.memory
+        memo = dc.donors_memo_env(b, c, memory=cm, q=q)
+        mae = dc.build_mae(memo, w=w, algo=args.algo, q=q)
+        title = (f"{r0['opponent_strategy']} | b={b:g} c/b={c/b:g} w={w:g} q={q:g} | "
+                 f"LLM memory {'full' if mem is None else mem} | CRLD {args.algo} (memory {cm})")
+        gamma = w
+    else:
+        pay = mg.GAMES[r0["game"]]
+        cm = min(r0["memory"], MAX_CRLD_MEMORY)
+        memo = dc.build_memo_env(pay["R"], pay["T"], pay["S"], pay["P"], memory=cm)
+        mae = dc.build_mae(memo, w=args.gamma, algo=args.algo)
+        title = (f"{pay['label']} | {r0['opponent_strategy']} | LLM memory {r0['memory']} | "
+                 f"CRLD {args.algo} (memory {cm})")
+        gamma = args.gamma
+    stem = Path(args.out).stem if args.out else "portrait_" + Path(args.logs[0]).stem
+    out = Path(args.out) if args.out else RESULTS / "portraits" / f"{stem}.png"
+    plots.cooperation_portrait(mae, dc.allc_state(memo), sets, title, out,
+                               partner_label=r0["opponent_strategy"], window=args.window)
+    print(f"[portrait] saved {out}")
+    if args.reciprocity:
+        X_opp = dc.strategy_policy(r0["opponent_strategy"], memo, agent=1)
+        m = cm
+        flow = dc.fixed_opponent_flow(mae, memo, X_opp, dc.uniform_state(memo, "c", "c", m),
+                                      dc.uniform_state(memo, "c", "d", m), NrRandom=args.flow_samples)
+        trajs = {k: plots.conditional_coop_series(v) for k, v in sets.items()}
+        out2 = out.with_name(out.stem + "_reciprocity.png")
+        plots.reciprocity_portrait(flow, {}, trajs, title, out2)
+        print(f"[portrait] saved {out2}")
+
+
 # ── demo ──────────────────────────────────────────────────────────────────
 
 def cmd_demo(args) -> None:
@@ -448,6 +495,17 @@ def main() -> None:
     p.add_argument("--flow-samples", type=int, default=8)
     p.add_argument("--out", default=None)
     p.set_defaults(func=cmd_reciprocity_figure)
+
+    p = sub.add_parser("portrait", help="redraw portraits from logged games")
+    p.add_argument("logs", nargs="+", help="rounds/*.jsonl files (same cell; one line each)")
+    p.add_argument("--algo", choices=["ac", "sarsa"], default="ac")
+    p.add_argument("--memory", type=int, default=1, help="CRLD memory when LLM memory is full/too large")
+    p.add_argument("--gamma", type=float, default=0.9, help="CRLD discount for matrix games")
+    p.add_argument("--window", type=int, default=8)
+    p.add_argument("--reciprocity", action="store_true", help="also draw the reciprocity-plane path")
+    p.add_argument("--flow-samples", type=int, default=6)
+    p.add_argument("--out", default=None)
+    p.set_defaults(func=cmd_portrait)
 
     p = sub.add_parser("demo")
     _add_client_args(p)

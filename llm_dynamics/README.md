@@ -120,6 +120,9 @@ eval $RUN reciprocity-figure \
              llm_dynamics/results/probes/trained.json \
     --opponent tit_for_tat
 
+# redraw the dynamics of any logged games (background rebuilt from the log metadata):
+eval $RUN portrait llm_dynamics/results/<sweep>/<strategy>/rounds/<cell>_s*.jsonl --reciprocity
+
 # PD variations at different memories:
 eval $RUN matrix-sweep --api-base http://host:8000 --model Qwen/Qwen3-8B \
     --games ipd,chicken,staghunt,harmony --memories 1,2,4 \
