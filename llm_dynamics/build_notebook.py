@@ -225,10 +225,15 @@ for f in ['llm_dynamics/results/qwen32b_base_reciprocity_tft.png',
 
 md(r"""### 5.4 v2 — strategies (incl. suspicious TFT) × (w,q) × memory, and × games × memory
 
-Each cell is **cooperation rate (BR-optimal rate, welfare-optimal rate) / BR captured / welfare captured**.
-The cooperation rate is descriptive, not a target: the parenthesised numbers are
-the rates the two oracles would show (e.g. vs TFT over 20 known rounds the
-best response is C×19, D → 0.95; the welfare optimum → 1.00; vs AllD both → 0).
+Each cell is **agreement with the reference policy · model payoff / reference
+payoff · best-response captured · welfare captured**. The *reference policy*
+is the normative "match the partner" behaviour: all-C against AllC and against
+every conditional cooperator (TFT, suspicious TFT, TF2T, Grim — vs Grim one
+defection triggers permanent defection, so all-C dominates all-D), all-D
+against AllD in the donors game / PD / Stag Hunt, and all-C against AllD in
+Chicken / Harmony (there $S>P$: swerving beats crashing). The two DP optima (best response = max own payoff; welfare = max
+joint payoff) are kept as bounds: the reference equals the welfare optimum vs
+cooperators and the best response vs AllD.
 (Reads `results/qwen32b_base_v2_tables.md`; shows *pending* until job 1183853 finishes.)""")
 code(r"""from IPython.display import Markdown
 f = 'llm_dynamics/results/qwen32b_base_v2_tables.md'

@@ -104,6 +104,18 @@ def fixed_policy_value(strategy: str, horizon: int, payoff, action: str) -> floa
     return total
 
 
+# Normative "match the partner" reference: what a sensible reciprocator
+# should do against each fixed strategy over the whole game. Conditional
+# cooperators (TFT, suspicious TFT, TF2T, Grim) -> always cooperate (vs Grim a
+# single D triggers permanent D, so all-C dominates all-D); unconditional
+# partners are matched; random -> defect (unresponsive).
+REFERENCE_ACTION = {
+    "always_cooperate": C, "always_defect": D, "random": D,
+    "tit_for_tat": C, "suspicious_tit_for_tat": C, "tit_for_two_tats": C,
+    "grim_trigger": C,
+}
+
+
 def analyze_game(rows: list[dict]) -> dict:
     rows = sorted(rows, key=lambda r: r["round"])
     strategy = rows[0]["opponent_strategy"]
@@ -130,7 +142,16 @@ def analyze_game(rows: list[dict]) -> dict:
     allc = sum(fixed_policy_value(strategy, len(s), payoff, C) for s in segs)
     alld = sum(fixed_policy_value(strategy, len(s), payoff, D) for s in segs)
     br_seq = best_response_value(strategy, len(segs[0]), payoff)[1]
+    ref_action = REFERENCE_ACTION[strategy]
+    if strategy == "always_defect" and "game" in rows[0]:
+        # game-aware: stage-game best response to a defector (C when S > P)
+        ref_action = C if payoff(C, D) > payoff(D, D) else D
+    reference = sum(fixed_policy_value(strategy, len(s), payoff, ref_action) for s in segs)
+    agreement = sum(r["model_action"] == ref_action for r in rows) / len(rows)
     return dict(model=model, best_response=br, allc=allc, alld=alld,
+                reference=reference, reference_action=ref_action,
+                reference_captured=model / reference if reference else float("nan"),
+                agreement=agreement,
                 captured=model / br if br else float("nan"),
                 regret_per_round=(br - model) / len(rows),
                 joint=joint, social_optimum=social,
@@ -169,16 +190,18 @@ def regret_table(results_dir: str | Path) -> dict:
         out[key] = {k: S.mean(x[k] for x in lst) for k in
                     ("model", "best_response", "allc", "alld", "captured",
                      "regret_per_round", "joint", "social_optimum",
-                     "welfare_captured", "coop", "br_coop", "social_coop")}
+                     "welfare_captured", "coop", "br_coop", "social_coop",
+                     "reference", "reference_captured", "agreement")}
+        out[key]["reference_action"] = lst[0]["reference_action"]
         out[key]["br_seq"] = lst[0]["br_seq_first_segment"]
         out[key]["n"] = len(lst)
     return out
 
 
 def _fmt(v: dict) -> str:
-    """model coop rate (BR-optimal rate, welfare-optimal rate) / BR captured / welfare captured"""
-    return (f"{v['coop']:.2f} ({v['br_coop']:.2f}, {v['social_coop']:.2f}) / "
-            f"{v['captured']:.2f} / {v['welfare_captured']:.2f}")
+    """agreement with reference policy | model/reference payoff | BR captured | welfare captured"""
+    return (f"{v['agreement']:.2f} · {v['model']:.0f}/{v['reference']:.0f} · "
+            f"{v['captured']:.2f} · {v['welfare_captured']:.2f}")
 
 
 def comparison_markdown(results_dirs: list[str]) -> str:
@@ -195,7 +218,7 @@ def comparison_markdown(results_dirs: list[str]) -> str:
         cols = sorted({(k[2], k[1]) for k in donors})
         strats = sorted({k[0] for k in donors})
         for mem in mems:
-            out.append(f"\n### Donors game — LLM memory {mem}  (cell = coop rate (BR-optimal rate, welfare-optimal rate) / BR captured / welfare captured)\n")
+            out.append(f"\n### Donors game — LLM memory {mem}  (cell = agreement with reference · model/reference payoff · BR captured · welfare captured; reference = all-C vs AllC and conditional cooperators, stage-game best response vs AllD)\n")
             out.append("| vs | " + " | ".join(f"{w} {q}" for w, q in cols) + " |")
             out.append("|---|" + "---|" * len(cols))
             for st_ in strats:
@@ -206,7 +229,7 @@ def comparison_markdown(results_dirs: list[str]) -> str:
         mems = sorted({k[2] for k in matrix}, key=lambda m: int(m[1:]))
         games = sorted({k[1] for k in matrix})
         strats = sorted({k[0] for k in matrix})
-        out.append("\n### Matrix games  (cell = coop rate (BR-optimal rate, welfare-optimal rate) / BR captured / welfare captured)\n")
+        out.append("\n### Matrix games  (cell = agreement with reference · model/reference payoff · BR captured · welfare captured; reference = all-C vs AllC and conditional cooperators, stage-game best response vs AllD)\n")
         out.append("| vs | memory | " + " | ".join(games) + " |")
         out.append("|---|---|" + "---|" * len(games))
         for st_ in strats:
