@@ -1,0 +1,9 @@
+game,memory,seed,num_rounds,opponent_strategy,model,cooperation_rate,opp_cooperation_rate,parse_failures,mean_payoff
+ipd,1,0,40,tit_for_tat,mock:trained-reciprocal,0.825,0.825,0,2.825
+ipd,1,1,40,tit_for_tat,mock:trained-reciprocal,1.0,1.0,0,3.0
+ipd,1,0,40,always_defect,mock:trained-reciprocal,0.075,0.0,0,0.925
+ipd,1,1,40,always_defect,mock:trained-reciprocal,0.225,0.0,0,0.775
+chicken,1,0,40,tit_for_tat,mock:trained-reciprocal,0.825,0.825,0,3.0
+chicken,1,1,40,tit_for_tat,mock:trained-reciprocal,1.0,1.0,0,3.0
+chicken,1,0,40,always_defect,mock:trained-reciprocal,0.075,0.0,0,0.075
+chicken,1,1,40,always_defect,mock:trained-reciprocal,0.225,0.0,0,0.225

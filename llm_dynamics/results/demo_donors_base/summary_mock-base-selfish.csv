@@ -1,0 +1,17 @@
+b,c,w,q,seed,num_rounds,opponent_strategy,swap_mode,model,n_swaps,cooperation_rate,opp_cooperation_rate,parse_failures,total_payoff_raw,c_over_b,direct_reciprocity_favored,indirect_reciprocity_favored
+4.0,2.0,0.25,0.25,0,40,tit_for_tat,same,mock:base-selfish,34,0.225,0.925,0,210.0,0.5,False,False
+4.0,2.0,0.25,0.25,1,40,tit_for_tat,same,mock:base-selfish,31,0.475,0.95,0,194.0,0.5,False,False
+4.0,2.0,0.75,0.25,0,40,tit_for_tat,same,mock:base-selfish,17,0.15,0.525,0,152.0,0.5,True,False
+4.0,2.0,0.75,0.25,1,40,tit_for_tat,same,mock:base-selfish,14,0.475,0.65,0,146.0,0.5,True,False
+4.0,2.0,0.25,0.75,0,40,tit_for_tat,same,mock:base-selfish,33,0.225,0.9,0,206.0,0.5,False,True
+4.0,2.0,0.25,0.75,1,40,tit_for_tat,same,mock:base-selfish,32,0.475,0.9,0,186.0,0.5,False,True
+4.0,2.0,0.75,0.75,0,40,tit_for_tat,same,mock:base-selfish,12,0.225,0.475,0,138.0,0.5,True,True
+4.0,2.0,0.75,0.75,1,40,tit_for_tat,same,mock:base-selfish,13,0.425,0.625,0,146.0,0.5,True,True
+4.0,2.0,0.25,0.25,0,40,always_defect,same,mock:base-selfish,34,0.225,0.0,0,62.0,0.5,False,False
+4.0,2.0,0.25,0.25,1,40,always_defect,same,mock:base-selfish,31,0.4,0.0,0,48.0,0.5,False,False
+4.0,2.0,0.75,0.25,0,40,always_defect,same,mock:base-selfish,17,0.125,0.0,0,70.0,0.5,True,False
+4.0,2.0,0.75,0.25,1,40,always_defect,same,mock:base-selfish,14,0.325,0.0,0,54.0,0.5,True,False
+4.0,2.0,0.25,0.75,0,40,always_defect,same,mock:base-selfish,33,0.225,0.0,0,62.0,0.5,False,True
+4.0,2.0,0.25,0.75,1,40,always_defect,same,mock:base-selfish,32,0.4,0.0,0,48.0,0.5,False,True
+4.0,2.0,0.75,0.75,0,40,always_defect,same,mock:base-selfish,12,0.1,0.0,0,72.0,0.5,True,True
+4.0,2.0,0.75,0.75,1,40,always_defect,same,mock:base-selfish,13,0.25,0.0,0,60.0,0.5,True,True
