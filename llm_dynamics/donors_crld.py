@@ -239,7 +239,11 @@ def strategy_policy(strategy: str, memo, agent: int = 1,
         elif strategy == "grim_trigger":
             p = 0.0 if "d" in theirs else 1.0
         elif strategy == "wsls":
-            p = 1.0 if rounds[-1][0] == rounds[-1][1] else 0.0
+            own_last = rounds[-1][agent]
+            p = (1.0 if own_last == "c" else 0.0) if theirs[-1] == "c" \
+                else (0.0 if own_last == "c" else 1.0)
+        elif strategy == "generous_tit_for_tat":
+            p = 1.0 if theirs[-1] == "c" else 0.3
         else:
             raise ValueError(strategy)
         pc[s] = p

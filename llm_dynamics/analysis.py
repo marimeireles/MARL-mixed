@@ -50,6 +50,17 @@ def _fsm(strategy: str):
         return (False,), (lambda s: D if s[0] else C), lambda s, a: (s[0] or a == D,)
     if strategy == "random":
         return (), lambda s: "RANDOM", lambda s, a: s
+    if strategy == "generous_tit_for_tat":
+        # after a model D the partner cooperates w.p. GTFT_FORGIVE: expected payoff
+        return (C,), (lambda s: C if s[0] == C else ("MIX", st.GTFT_FORGIVE)), lambda s, a: (a,)
+    if strategy == "wsls":
+        # state = (partner's own last, model's last); partner opens C
+        def move(s):
+            own, other = s
+            if own is None:
+                return C
+            return own if other == C else (D if own == C else C)
+        return (None, None), move, lambda s, a: (move(s), a)
     raise ValueError(strategy)
 
 
@@ -71,6 +82,8 @@ def _welfare_fn(row: dict):
 def _expected(payoff, a, o):
     if o == "RANDOM":
         return 0.5 * payoff(a, C) + 0.5 * payoff(a, D)
+    if isinstance(o, tuple) and o[0] == "MIX":
+        return o[1] * payoff(a, C) + (1 - o[1]) * payoff(a, D)
     return payoff(a, o)
 
 
@@ -112,7 +125,7 @@ def fixed_policy_value(strategy: str, horizon: int, payoff, action: str) -> floa
 REFERENCE_ACTION = {
     "always_cooperate": C, "always_defect": D, "random": D,
     "tit_for_tat": C, "suspicious_tit_for_tat": C, "tit_for_two_tats": C,
-    "grim_trigger": C,
+    "grim_trigger": C, "wsls": C, "generous_tit_for_tat": C,
 }
 
 

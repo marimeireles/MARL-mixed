@@ -146,6 +146,24 @@ md(r"""## 3. How the LLM is measured
     welfare optimum is to be exploited (joint 6/round vs 4), so a perfect
     reciprocator scores BR 1.00 / welfare 0.67.
 
+### 3.0 Opponent strategies (all nine)
+
+| strategy | rule | reference behaviour |
+|---|---|---|
+| AllC | C every round | all C |
+| AllD | D every round | all D (all C in Chicken / Harmony, where $S>P$) |
+| TFT | opens C, mirrors your last move | all C |
+| TF2T | opens C, defects after two consecutive D | all C |
+| Grim | C until your first D, then D forever | all C |
+| Random | C/D with prob ½ | D |
+| suspicious TFT | opens **D**, then mirrors | all C |
+| WSLS (Pavlov) | repeat if you cooperated, switch if you defected | all C |
+| generous TFT | TFT, forgives a D with prob 0.3 | all C |
+
+The first six are donorSim's training pool (`OPPONENT_POOL`); the last three
+are added here. Each is also a pinned CRLD policy (fixed-opponent flows) and a
+finite-state machine for the dynamic programs.
+
 ### 3.1 Fidelity to the training environment (deliberate choices)
 * Donors prompts are byte-faithful to the `direct_indirect` rollout (rules,
   $w$/$q$ phrasing, $q$-gated reputation report, `/no_think`, round-result
@@ -177,7 +195,7 @@ md(r"""## 4. Experiment registry (base model = `Qwen/Qwen3-32B`, the pre-RL chec
 | id | SLURM jobs | design | outputs |
 |---|---|---|---|
 | **v1** | server 1183776 / client 1183777 (2026-08-25, 1h13m) | donors: {TFT, AllD, AllC} × q,w ∈ {0,.5,1}, b=4, c/b=.5, 2 seeds × 20 rounds, full memory; probes m1 at 4 (w,q) corners + m2; matrix: 4 games × m ∈ {1,2} × {TFT, AllD} × 1 seed × 20 rounds; matrix probes m1,m2 | `results/qwen32b_base_donors_sweep/`, `results/qwen32b_base_matrix_sweep/`, `results/probes/qwen32b_base_*`, `results/qwen32b_base_reciprocity_tft.png` |
-| **v2** | server 1183852 / client 1183853 (2026-08-25) | donors: {TFT, **suspicious TFT**, AllC, AllD, TF2T, Grim} × q,w ∈ {0,.5,1} × LLM memory {full,1,2,4} × 2 seeds × 20 rounds; matrix: same 6 strategies × 4 games × m ∈ {1,2,3,4,6} × 2 seeds; probes to m=3 both framings | `results/qwen32b_base_donors_v2/<strategy>/`, `results/qwen32b_base_matrix_v2/<strategy>/`, `results/qwen32b_base_v2_tables.md` |
+| **v2** | server 1183852 / clients 1183853 + supplementary (2026-08-25) | donors: **all 9 strategies** {TFT, suspicious TFT, AllC, AllD, TF2T, Grim, Random, WSLS, generous TFT} × q,w ∈ {0,.5,1} × LLM memory {full,1,2,4} × 2 seeds × 20 rounds; matrix: same 9 strategies × 4 games × m ∈ {1,2,3,4,6} × 2 seeds; probes to m=3 both framings | `results/qwen32b_base_donors_v2/<strategy>/`, `results/qwen32b_base_matrix_v2/<strategy>/`, `results/qwen32b_base_v2_tables.md` |
 | offline | — | `demo`: mock base-selfish vs mock trained-reciprocal through the identical code path | `results/demo_*` |
 
 Memory ceiling: CRLD backgrounds stop at $m=3$ ($4^m$ states; `MAX_CRLD_MEMORY`);

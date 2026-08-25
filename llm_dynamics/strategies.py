@@ -32,7 +32,12 @@ OPPONENT_POOL: list[tuple[str, float]] = [
 
 # Suspicious tit-for-tat: identical to tit_for_tat except it opens with D.
 # Not in the training pool; used to test how the opening move steers the dyad.
-STRATEGIES = [name for name, _ in OPPONENT_POOL] + ["suspicious_tit_for_tat"]
+# Extra classics outside the training pool: suspicious TFT (opens D),
+# win-stay-lose-shift / Pavlov (repeat if last outcome matched, else switch),
+# generous TFT (mirrors, but forgives a defection with prob GTFT_FORGIVE).
+STRATEGIES = [name for name, _ in OPPONENT_POOL] + [
+    "suspicious_tit_for_tat", "wsls", "generous_tit_for_tat"]
+GTFT_FORGIVE = 0.3
 
 
 def opponent_first_move(strategy: str, rng: random.Random) -> str:
@@ -43,8 +48,10 @@ def opponent_first_move(strategy: str, rng: random.Random) -> str:
     return COOPERATE
 
 
-def opponent_response(strategy: str, other_history: list[str], rng: random.Random) -> str:
-    """Next move of a fixed strategy given the OTHER player's full history."""
+def opponent_response(strategy: str, other_history: list[str], rng: random.Random,
+                      own_history: Optional[list[str]] = None) -> str:
+    """Next move of a fixed strategy given the OTHER player's full history
+    (and, for outcome-based strategies like WSLS, its own history)."""
     if strategy == "always_cooperate":
         return COOPERATE
     if strategy == "always_defect":
@@ -63,6 +70,16 @@ def opponent_response(strategy: str, other_history: list[str], rng: random.Rando
         return COOPERATE
     if strategy == "grim_trigger":
         return DEFECT if DEFECT in other_history else COOPERATE
+    if strategy == "generous_tit_for_tat":
+        if not other_history or other_history[-1] == COOPERATE:
+            return COOPERATE
+        return COOPERATE if rng.random() < GTFT_FORGIVE else DEFECT
+    if strategy == "wsls":
+        if not other_history or not own_history:
+            return COOPERATE
+        own, other = own_history[-1], other_history[-1]
+        # "win" = partner cooperated (payoff >= mutual C); stay, else shift
+        return own if other == COOPERATE else (DEFECT if own == COOPERATE else COOPERATE)
     return COOPERATE
 
 

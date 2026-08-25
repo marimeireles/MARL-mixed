@@ -122,7 +122,7 @@ def run_matrix_game(client, *, game_key: str, memory: int, num_rounds: int,
         if not opp_hist:
             opp_move = st.opponent_first_move(opponent_strategy, rng)
         else:
-            opp_move = st.opponent_response(opponent_strategy, model_hist, rng)
+            opp_move = st.opponent_response(opponent_strategy, model_hist, rng, own_history=opp_hist)
 
         payoff = matrix_payoff(decision, opp_move, game["R"], game["T"],
                                game["S"], game["P"])

@@ -32,6 +32,29 @@ would do.
 All of this lives in `donors_crld.py` (built on `pyCRLD`, reusing the
 observability machinery of `scratch_repro/mem_obs_grids.py`).
 
+## Opponent strategies
+
+All nine are scripted, deterministic except where noted, and react to the
+LLM's *prior* rounds only (simultaneous moves). The first six are donorSim's
+training pool; the last three are added here.
+
+| strategy | rule | reference (what a sensible reciprocator should do) |
+|---|---|---|
+| `always_cooperate` | C every round | all C (welfare optimum; the payoff optimum is to exploit) |
+| `always_defect` | D every round | all D — except Chicken / Harmony where S > P, so all C |
+| `tit_for_tat` | opens C, then mirrors your last move | all C (a payoff-maximizer also defects on the known last round) |
+| `tit_for_two_tats` | opens C, defects only after two consecutive D from you | all C |
+| `grim_trigger` | C until your first D, then D forever | all C (one defection costs the rest of the game) |
+| `random` | C or D with prob ½ (stochastic) | D (unresponsive partner) |
+| `suspicious_tit_for_tat` | opens **D**, then mirrors — "half the TFT games start with D" | all C (absorb one sucker round, then mutual C) |
+| `wsls` (Pavlov) | opens C; repeats its move if you cooperated, switches if you defected | all C |
+| `generous_tit_for_tat` | TFT that forgives a D with prob 0.3 (stochastic) | all C |
+
+Every strategy is also available as a *pinned CRLD policy* (`donors_crld.strategy_policy`)
+for the fixed-opponent flow fields, and as a finite-state machine in
+`analysis.py` for the best-response / welfare dynamic programs (stochastic ones
+via expected payoff).
+
 ## The measurement
 
 * **Continuous order parameter.** `p_cooperate` is read from the top-k

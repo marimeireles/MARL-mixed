@@ -136,7 +136,7 @@ def run_donors_game(client, *, b: float, c: float, w: float, q: float,
         if not opp_hist:
             opp_move = st.opponent_first_move(strategy, rng)
         else:
-            opp_move = st.opponent_response(strategy, model_hist, rng)
+            opp_move = st.opponent_response(strategy, model_hist, rng, own_history=opp_hist)
 
         payoff = st.round_payoff(decision, opp_move, b, c, normalized=True)
         payoff_raw = st.round_payoff(decision, opp_move, b, c, normalized=False)
