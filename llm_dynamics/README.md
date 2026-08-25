@@ -136,6 +136,7 @@ litellm/torch needed on the client side.
 | `policy_probe.py` | P(C \| history state) probes, both framings |
 | `plots.py` | cooperation portraits, reciprocity portraits, sweep heatmaps |
 | `run_experiments.py` | CLI (see `--help`) |
+| `analysis.py` | best-response regret: oracle optimum vs each fixed strategy (DP over its state machine, per partner segment) vs the model’s captured payoff; `python -m llm_dynamics.analysis results/<sweep_dir>` |
 | `results/demo_*` | output of the offline `demo` command |
 
 ## Caveats
