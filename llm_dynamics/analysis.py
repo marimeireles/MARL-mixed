@@ -121,8 +121,12 @@ def analyze_game(rows: list[dict]) -> dict:
     model = sum(r[pay_key] for r in rows)
     joint = sum(payoff(r["model_action"], r["opp_action"]) +
                 payoff(r["opp_action"], r["model_action"]) for r in rows)
-    br = sum(best_response_value(strategy, len(s), payoff)[0] for s in segs)
-    social = sum(best_response_value(strategy, len(s), welfare)[0] for s in segs)
+    br_vs = [best_response_value(strategy, len(s), payoff) for s in segs]
+    so_vs = [best_response_value(strategy, len(s), welfare) for s in segs]
+    br = sum(v for v, _ in br_vs)
+    social = sum(v for v, _ in so_vs)
+    br_coop = sum(seq.count("C") for _, seq in br_vs) / len(rows)
+    social_coop = sum(seq.count("C") for _, seq in so_vs) / len(rows)
     allc = sum(fixed_policy_value(strategy, len(s), payoff, C) for s in segs)
     alld = sum(fixed_policy_value(strategy, len(s), payoff, D) for s in segs)
     br_seq = best_response_value(strategy, len(segs[0]), payoff)[1]
@@ -131,6 +135,7 @@ def analyze_game(rows: list[dict]) -> dict:
                 regret_per_round=(br - model) / len(rows),
                 joint=joint, social_optimum=social,
                 welfare_captured=joint / social if social else float("nan"),
+                br_coop=br_coop, social_coop=social_coop,
                 br_seq_first_segment=br_seq, n_segments=len(segs))
 
 
@@ -164,14 +169,16 @@ def regret_table(results_dir: str | Path) -> dict:
         out[key] = {k: S.mean(x[k] for x in lst) for k in
                     ("model", "best_response", "allc", "alld", "captured",
                      "regret_per_round", "joint", "social_optimum",
-                     "welfare_captured", "coop")}
+                     "welfare_captured", "coop", "br_coop", "social_coop")}
         out[key]["br_seq"] = lst[0]["br_seq_first_segment"]
         out[key]["n"] = len(lst)
     return out
 
 
 def _fmt(v: dict) -> str:
-    return f"{v['coop']:.2f} / {v['captured']:.2f} / {v['welfare_captured']:.2f}"
+    """model coop rate (BR-optimal rate, welfare-optimal rate) / BR captured / welfare captured"""
+    return (f"{v['coop']:.2f} ({v['br_coop']:.2f}, {v['social_coop']:.2f}) / "
+            f"{v['captured']:.2f} / {v['welfare_captured']:.2f}")
 
 
 def comparison_markdown(results_dirs: list[str]) -> str:
@@ -188,7 +195,7 @@ def comparison_markdown(results_dirs: list[str]) -> str:
         cols = sorted({(k[2], k[1]) for k in donors})
         strats = sorted({k[0] for k in donors})
         for mem in mems:
-            out.append(f"\n### Donors game — LLM memory {mem}  (cell = coop rate / best-response captured / welfare captured)\n")
+            out.append(f"\n### Donors game — LLM memory {mem}  (cell = coop rate (BR-optimal rate, welfare-optimal rate) / BR captured / welfare captured)\n")
             out.append("| vs | " + " | ".join(f"{w} {q}" for w, q in cols) + " |")
             out.append("|---|" + "---|" * len(cols))
             for st_ in strats:
@@ -199,7 +206,7 @@ def comparison_markdown(results_dirs: list[str]) -> str:
         mems = sorted({k[2] for k in matrix}, key=lambda m: int(m[1:]))
         games = sorted({k[1] for k in matrix})
         strats = sorted({k[0] for k in matrix})
-        out.append("\n### Matrix games  (cell = coop rate / best-response captured / welfare captured)\n")
+        out.append("\n### Matrix games  (cell = coop rate (BR-optimal rate, welfare-optimal rate) / BR captured / welfare captured)\n")
         out.append("| vs | memory | " + " | ".join(games) + " |")
         out.append("|---|---|" + "---|" * len(games))
         for st_ in strats:
