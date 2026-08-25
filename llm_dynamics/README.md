@@ -111,12 +111,18 @@ base-selfish`, `trained-reciprocal`, `soft-tft`, `wsls`, `grim-soft`,
 code path as a served model — use it to validate an experimental design
 before spending GPU time.
 
-Serving the checkpoints: donorSim's merged models (see
-`merge_fsdp_lora.py` / `hf_upload_and_verify.py` on neurips-methodology)
-behind `vllm serve <model> --port 8000`; the client requests
-`logprobs/top_logprobs` and toggles Qwen3 thinking via
-`chat_template_kwargs` (with automatic fallback for servers that reject
-it). Everything here is stdlib + this repo — no litellm/torch needed.
+Serving the checkpoints: **always via SLURM, never directly on rnn.**
+`llm_dynamics/slurm/serve_qwen32b.sbatch` serves base `Qwen/Qwen3-32B`
+on one A100-80GB (vllm-env, HF cache `/nas/ucb/marimeireles/cache`) and
+writes the endpoint to `llm_dynamics/logs/vllm_endpoint.txt` plus a
+`.ready` sentinel; `llm_dynamics/slurm/run_base_suite.sbatch` is a
+CPU-only client job that waits for the sentinel and runs the whole base
+suite (probes, q x w sweep, matrix sweep, figures). Adapt the model path /
+`--served-model-name` for trained checkpoints (merged via donorSim's
+`merge_fsdp_lora.py`). The client requests `logprobs/top_logprobs` and
+toggles Qwen3 thinking via `chat_template_kwargs` (auto-fallback for
+servers that reject it). Everything here is stdlib + this repo — no
+litellm/torch needed on the client side.
 
 ## Files
 
