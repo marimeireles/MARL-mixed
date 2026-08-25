@@ -1,4 +1,12 @@
-"""Best-response (regret) analysis of played games.
+"""Best-response (regret) and welfare (Pareto) analysis of played games.
+
+Two optima per game, both by dynamic programming over the fixed opponent's
+state machine and the same partner segments/horizon:
+  * best response  — max of the MODEL's payoff  -> `captured`
+  * social optimum — max of the JOINT payoff (model + opponent) -> `welfare_captured`.
+    Since the opponent is fixed, the Pareto frontier the model can reach is
+    a curve in (own, opponent) payoff space; the welfare optimum is its
+    utilitarian point, e.g. sustained mutual cooperation against TFT.
 
 For every logged game, compute the payoff an oracle best responder would
 have earned against the same fixed strategy over the same horizon and
@@ -54,6 +62,12 @@ def _payoff_fn(row: dict):
     return lambda a, o: matrix_payoff(a, o, g["R"], g["T"], g["S"], g["P"])
 
 
+def _welfare_fn(row: dict):
+    """Joint per-round payoff (model + opponent), symmetric games."""
+    pay = _payoff_fn(row)
+    return lambda a, o: pay(a, o) + pay(o, a)
+
+
 def _expected(payoff, a, o):
     if o == "RANDOM":
         return 0.5 * payoff(a, C) + 0.5 * payoff(a, D)
@@ -61,8 +75,9 @@ def _expected(payoff, a, o):
 
 
 def best_response_value(strategy: str, horizon: int, payoff) -> tuple[float, str]:
-    """Oracle optimum over a segment of `horizon` rounds and a compact
-    description of the optimal action sequence."""
+    """Oracle optimum of `payoff` over a segment of `horizon` rounds and the
+    optimal action sequence. Pass the model's payoff for the best response,
+    or the joint payoff for the welfare (Pareto/social) optimum."""
     init, move, nxt = _fsm(strategy)
 
     @lru_cache(maxsize=None)
@@ -102,14 +117,20 @@ def analyze_game(rows: list[dict]) -> dict:
             cur = []
         cur.append(r)
     segs.append(cur)
+    welfare = _welfare_fn(rows[0])
     model = sum(r[pay_key] for r in rows)
+    joint = sum(payoff(r["model_action"], r["opp_action"]) +
+                payoff(r["opp_action"], r["model_action"]) for r in rows)
     br = sum(best_response_value(strategy, len(s), payoff)[0] for s in segs)
+    social = sum(best_response_value(strategy, len(s), welfare)[0] for s in segs)
     allc = sum(fixed_policy_value(strategy, len(s), payoff, C) for s in segs)
     alld = sum(fixed_policy_value(strategy, len(s), payoff, D) for s in segs)
     br_seq = best_response_value(strategy, len(segs[0]), payoff)[1]
     return dict(model=model, best_response=br, allc=allc, alld=alld,
                 captured=model / br if br else float("nan"),
                 regret_per_round=(br - model) / len(rows),
+                joint=joint, social_optimum=social,
+                welfare_captured=joint / social if social else float("nan"),
                 br_seq_first_segment=br_seq, n_segments=len(segs))
 
 
@@ -142,14 +163,15 @@ def regret_table(results_dir: str | Path) -> dict:
     for key, lst in sorted(per.items()):
         out[key] = {k: S.mean(x[k] for x in lst) for k in
                     ("model", "best_response", "allc", "alld", "captured",
-                     "regret_per_round", "coop")}
+                     "regret_per_round", "joint", "social_optimum",
+                     "welfare_captured", "coop")}
         out[key]["br_seq"] = lst[0]["br_seq_first_segment"]
         out[key]["n"] = len(lst)
     return out
 
 
 def _fmt(v: dict) -> str:
-    return f"{v['coop']:.2f} / {v['captured']:.2f}"
+    return f"{v['coop']:.2f} / {v['captured']:.2f} / {v['welfare_captured']:.2f}"
 
 
 def comparison_markdown(results_dirs: list[str]) -> str:
@@ -166,7 +188,7 @@ def comparison_markdown(results_dirs: list[str]) -> str:
         cols = sorted({(k[2], k[1]) for k in donors})
         strats = sorted({k[0] for k in donors})
         for mem in mems:
-            out.append(f"\n### Donors game — LLM memory {mem}  (cell = coop rate / captured optimum)\n")
+            out.append(f"\n### Donors game — LLM memory {mem}  (cell = coop rate / best-response captured / welfare captured)\n")
             out.append("| vs | " + " | ".join(f"{w} {q}" for w, q in cols) + " |")
             out.append("|---|" + "---|" * len(cols))
             for st_ in strats:
@@ -177,7 +199,7 @@ def comparison_markdown(results_dirs: list[str]) -> str:
         mems = sorted({k[2] for k in matrix}, key=lambda m: int(m[1:]))
         games = sorted({k[1] for k in matrix})
         strats = sorted({k[0] for k in matrix})
-        out.append("\n### Matrix games  (cell = coop rate / captured optimum)\n")
+        out.append("\n### Matrix games  (cell = coop rate / best-response captured / welfare captured)\n")
         out.append("| vs | memory | " + " | ".join(games) + " |")
         out.append("|---|---|" + "---|" * len(games))
         for st_ in strats:
@@ -195,13 +217,14 @@ def main():
         return
     for d in sys.argv[1:]:
         print(f"\n== {d} ==")
-        print(f"{'cell':44s} {'model':>7s} {'best':>7s} {'AllC':>7s} {'AllD':>7s} "
-              f"{'captured':>9s} {'regret/rd':>9s}  best-response seq (1st segment)")
+        print(f"{'cell':40s} {'model':>6s} {'best':>6s} {'AllC':>6s} {'AllD':>6s} "
+              f"{'BRcapt':>7s} {'joint':>6s} {'social':>6s} {'Wcapt':>6s}  BR seq")
         for key, v in regret_table(d).items():
             cell = " ".join(key)
-            print(f"{cell:44s} {v['model']:7.1f} {v['best_response']:7.1f} "
-                  f"{v['allc']:7.1f} {v['alld']:7.1f} {v['captured']:9.2f} "
-                  f"{v['regret_per_round']:9.2f}  {v['br_seq']}")
+            print(f"{cell:40s} {v['model']:6.1f} {v['best_response']:6.1f} "
+                  f"{v['allc']:6.1f} {v['alld']:6.1f} {v['captured']:7.2f} "
+                  f"{v['joint']:6.1f} {v['social_optimum']:6.1f} "
+                  f"{v['welfare_captured']:6.2f}  {v['br_seq']}")
 
 
 if __name__ == "__main__":

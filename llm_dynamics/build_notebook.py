@@ -134,11 +134,17 @@ md(r"""## 3. How the LLM is measured
   two-agent flow; reciprocity-plane stars (probes) + paths (windowed conditional
   frequencies) over the fixed-opponent flow; $q\times w$ heatmaps with the
   $q=c/b$ line.
-* **Best-response regret** (`analysis.py`): oracle optimum vs the fixed strategy
-  by dynamic programming over its state machine, per partner segment (swaps wipe
-  the opponent's memory) — reported as *captured fraction* and regret/round,
-  next to AllC/AllD baselines. "Against AllD the model should AllD" is
-  `captured = 1.0`.
+* **Optimality gaps** (`analysis.py`), two optima by dynamic programming over
+  the fixed strategy's state machine, per partner segment (swaps wipe the
+  opponent's memory), same horizon:
+  - **best-response captured** = model payoff ÷ the max payoff an oracle could
+    extract from that strategy ("against AllD the model should AllD" ⇔ 1.0);
+  - **welfare captured** = joint payoff ÷ the max joint (model + partner) payoff
+    reachable against that strategy — the utilitarian point of the Pareto
+    frontier the model controls (mutual cooperation vs TFT/AllC). The two
+    disagree exactly where reciprocity and altruism disagree: vs AllD the
+    welfare optimum is to be exploited (joint 6/round vs 4), so a perfect
+    reciprocator scores BR 1.00 / welfare 0.67.
 
 ### 3.1 Fidelity to the training environment (deliberate choices)
 * Donors prompts are byte-faithful to the `direct_indirect` rollout (rules,
@@ -219,7 +225,7 @@ for f in ['llm_dynamics/results/qwen32b_base_reciprocity_tft.png',
 
 md(r"""### 5.4 v2 — strategies (incl. suspicious TFT) × (w,q) × memory, and × games × memory
 
-Each cell is **cooperation rate / captured fraction of the best-response payoff**.
+Each cell is **cooperation rate / best-response captured / welfare captured**.
 (Reads `results/qwen32b_base_v2_tables.md`; shows *pending* until job 1183853 finishes.)""")
 code(r"""from IPython.display import Markdown
 f = 'llm_dynamics/results/qwen32b_base_v2_tables.md'
@@ -238,9 +244,13 @@ md(r"""## 6. Findings so far (base model) and what to compare against
   vs AllD is 0.00 whenever a report is guaranteed ($q=1$) and 1.00 at $q=0,w\ge.5$;
   with one-shot strangers ($w=0$) and no information it hedges (0.50 vs AllC).
   After round 1 the last move dominates and $(w,q)$ stop mattering.
-* **Regret view:** ≈1.0 of optimum vs AllD and vs TFT with a stable partner
-  ($w=1$, 0.98); leaves a third on the table vs AllC (never exploits, 0.67) and
-  vs one-shot strangers (cooperates where the oracle defects).
+* **Optimality view:** best-response captured ≈1.0 vs AllD and vs TFT with a
+  stable partner ($w=1$, 0.98); leaves a third on the table vs AllC (never
+  exploits, 0.67) and vs one-shot strangers (cooperates where the oracle
+  defects). Welfare captured is 1.00 vs TFT and AllC at $w=1$ (it reaches the
+  Pareto-efficient mutual-cooperation point) and 0.67 vs AllD (it refuses to be
+  exploited) — i.e. the base model is on the reciprocal, not the altruistic,
+  side of that trade-off.
 * **Memory matters exactly as in the paper:** PD vs TFT at memory 1 falls into
   the TFT echo cycle (coop 0.35, captured 0.69); memory 2 escapes (0.95 / 1.00).
 * **Payoff-structure blindness:** the memory-1 probed policy is identical across
