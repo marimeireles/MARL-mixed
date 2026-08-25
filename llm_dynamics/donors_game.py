@@ -93,8 +93,14 @@ def run_donors_game(client, *, b: float, c: float, w: float, q: float,
                     num_rounds: int, opponent_strategy: str, seed: int = 0,
                     swap_mode: str = "same", temperature: float = 0.6,
                     max_tokens: int = 512, no_think: bool = True,
-                    parse_failure_action: str = "DEFECT") -> dict[str, Any]:
+                    parse_failure_action: str = "DEFECT",
+                    memory: Optional[int] = None) -> dict[str, Any]:
     """Play one dyadic game; returns {'rows': [...], 'summary': {...}}.
+
+    `memory` (None = full conversation, the training setting) truncates
+    the dialogue the model sees to the rules prompt plus the last
+    `memory` (assistant, round-result) turn pairs — a memory-m window in
+    the donors framing.
 
     Each row carries the per-round observables used by the phase
     portraits: the committed action, the continuous p_cooperate read from
@@ -117,7 +123,10 @@ def run_donors_game(client, *, b: float, c: float, w: float, q: float,
     n_swaps = 0
 
     for rnd in range(1, num_rounds + 1):
-        reply = client.chat(messages, temperature=temperature,
+        visible = messages
+        if memory is not None and len(messages) > 1 + 2 * memory:
+            visible = [messages[0]] + messages[-2 * memory:]
+        reply = client.chat(visible, temperature=temperature,
                             max_tokens=max_tokens)
         decision = st.parse_decision(reply["content"])
         parse_failed = decision is None
@@ -155,6 +164,7 @@ def run_donors_game(client, *, b: float, c: float, w: float, q: float,
             rounds_with_partner=len(model_hist),
             b=b, c=c, w=w, q=q, seed=seed,
             opponent_strategy=opponent_strategy, swap_mode=swap_mode,
+            memory=memory,
         ))
 
         is_last = rnd == num_rounds
@@ -195,6 +205,7 @@ def run_donors_game(client, *, b: float, c: float, w: float, q: float,
     summary = dict(
         b=b, c=c, w=w, q=q, seed=seed, num_rounds=num_rounds,
         opponent_strategy=opponent_strategy, swap_mode=swap_mode,
+        memory=memory,
         model=getattr(client, "model", "?"), n_swaps=n_swaps,
         cooperation_rate=(sum(coop) / len(coop)) if coop else None,
         opp_cooperation_rate=sum(opp_coop) / len(opp_coop),

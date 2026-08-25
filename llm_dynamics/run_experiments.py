@@ -46,6 +46,8 @@ from . import policy_probe as pp
 from .llm_client import make_client
 
 RESULTS = Path(__file__).resolve().parent / "results"
+# CRLD flow backgrounds are drawn only up to this memory (4^m states).
+MAX_CRLD_MEMORY = 3
 
 
 def _add_client_args(p: argparse.ArgumentParser) -> None:
@@ -92,13 +94,17 @@ def cmd_donors_sweep(args) -> None:
     c = args.b * args.c_over_b
     qs, ws = _floats(args.q_values), _floats(args.w_values)
     strategies = args.strategies.split(",")
+    memories = [None if m == "full" else int(m)
+                for m in getattr(args, "memories", "full").split(",")]
     out_dir = RESULTS / args.out
     out_dir.mkdir(parents=True, exist_ok=True)
     tag = _model_tag(args)
 
     summaries = []
     all_rows: dict[tuple, dict[int, list[dict]]] = {}
-    for strat in strategies:
+    for mem in memories:
+      mtag = "full" if mem is None else f"m{mem}"
+      for strat in strategies:
         for q in qs:
             for w in ws:
                 cell: dict[int, list[dict]] = {}
@@ -109,16 +115,18 @@ def cmd_donors_sweep(args) -> None:
                         num_rounds=args.rounds, opponent_strategy=strat,
                         seed=seed, swap_mode=args.swap_mode,
                         temperature=args.temperature,
-                        max_tokens=args.max_tokens, no_think=args.no_think)
+                        max_tokens=args.max_tokens, no_think=args.no_think,
+                        memory=mem)
                     cell[seed] = res["rows"]
                     summaries.append(res["summary"])
                     dg.write_jsonl(
                         out_dir / "rounds" /
-                        f"{tag}_{strat}_q{q:g}_w{w:g}_s{seed}.jsonl",
+                        f"{tag}_{strat}_q{q:g}_w{w:g}_{mtag}_s{seed}.jsonl",
                         res["rows"])
-                all_rows[(strat, q, w)] = cell
-                print(f"[donors-sweep] {tag} vs {strat} q={q:g} w={w:g}: "
-                      f"coop={np.mean([s['cooperation_rate'] or 0 for s in summaries[-args.seeds:]]):.2f}")
+                all_rows[(strat, q, w, mem)] = cell
+                print(f"[donors-sweep] {tag} vs {strat} q={q:g} w={w:g} mem={mtag}: "
+                      f"coop={np.mean([s['cooperation_rate'] or 0 for s in summaries[-args.seeds:]]):.2f}",
+                      flush=True)
 
     with open(out_dir / f"summary_{tag}.csv", "w", newline="") as f:
         wr = csv.DictWriter(f, fieldnames=list(summaries[0].keys()))
@@ -126,13 +134,15 @@ def cmd_donors_sweep(args) -> None:
         wr.writerows(summaries)
 
     # Heatmaps: cooperation rate over q x w, Nowak threshold marked.
-    for strat in strategies:
+    for mem in memories:
+      mtag = "full" if mem is None else f"m{mem}"
+      for strat in strategies:
         vals = np.full((len(ws), len(qs)), np.nan)
         for iq, q in enumerate(qs):
             for iw, w in enumerate(ws):
                 cs = [s["cooperation_rate"] for s in summaries
                       if s["opponent_strategy"] == strat
-                      and s["q"] == q and s["w"] == w
+                      and s["q"] == q and s["w"] == w and s["memory"] == mem
                       and s["cooperation_rate"] is not None]
                 if cs:
                     vals[iw, iq] = float(np.mean(cs))
@@ -143,21 +153,25 @@ def cmd_donors_sweep(args) -> None:
         plots.sweep_heatmap(
             vals, qs, ws, "q (reputation availability)",
             "w (re-encounter probability)",
-            f"donors game: {tag} vs {strat}  (b={b:g}, c/b={cb:g})",
-            out_dir / f"heatmap_{tag}_{strat}.png", threshold_line=thr)
+            f"donors game: {tag} vs {strat}  (b={b:g}, c/b={cb:g}, memory {mtag})",
+            out_dir / f"heatmap_{tag}_{strat}_{mtag}.png", threshold_line=thr)
 
-    # Cooperation-plane portraits over the CRLD flow, one per cell.
+    # Cooperation-plane portraits over the CRLD flow, one per cell. The
+    # CRLD background uses the LLM's memory when it is CRLD-feasible
+    # (<= MAX_CRLD_MEMORY states), else args.memory.
     if not args.skip_portraits:
-        for (strat, q, w), cell in all_rows.items():
-            memo = dc.donors_memo_env(b, c, memory=args.memory, q=q)
+        for (strat, q, w, mem), cell in all_rows.items():
+            cm = mem if (mem is not None and mem <= MAX_CRLD_MEMORY) else args.memory
+            mtag = "full" if mem is None else f"m{mem}"
+            memo = dc.donors_memo_env(b, c, memory=cm, q=q)
             mae = dc.build_mae(memo, w=w, algo=args.algo, q=q)
             si = dc.allc_state(memo)
             trajs = {f"seed {s}": rows for s, rows in cell.items()}
             plots.cooperation_portrait(
                 mae, si, trajs,
                 f"{tag} vs {strat} | b={b:g} c/b={c/b:g} w={w:g} q={q:g} | "
-                f"CRLD {args.algo} flow (memory {args.memory})",
-                out_dir / f"portrait_{tag}_{strat}_q{q:g}_w{w:g}.png",
+                f"LLM memory {mtag} | CRLD {args.algo} flow (memory {cm})",
+                out_dir / f"portrait_{tag}_{strat}_q{q:g}_w{w:g}_{mtag}.png",
                 partner_label=strat, window=args.window)
     print(f"[donors-sweep] results in {out_dir}")
 
@@ -194,21 +208,22 @@ def cmd_matrix_sweep(args) -> None:
                         f"{tag}_{game}_m{memory}_{strat}_s{seed}.jsonl",
                         res["rows"])
                 pay = mg.GAMES[game]
-                memo = dc.build_memo_env(pay["R"], pay["T"], pay["S"],
-                                         pay["P"], memory=memory)
-                mae = dc.build_mae(memo, w=args.gamma, algo=args.algo)
-                si = dc.allc_state(memo)
-                trajs = {f"seed {s}": rows for s, rows in cell.items()}
-                plots.cooperation_portrait(
-                    mae, si, trajs,
-                    f"{pay['label']} | {tag} vs {strat} | memory {memory} | "
-                    f"CRLD {args.algo} flow",
-                    out_dir / f"portrait_{tag}_{game}_m{memory}_{strat}.png",
-                    partner_label=strat, window=args.window)
+                if memory <= MAX_CRLD_MEMORY and not args.skip_portraits:
+                    memo = dc.build_memo_env(pay["R"], pay["T"], pay["S"],
+                                             pay["P"], memory=memory)
+                    mae = dc.build_mae(memo, w=args.gamma, algo=args.algo)
+                    si = dc.allc_state(memo)
+                    trajs = {f"seed {s}": rows for s, rows in cell.items()}
+                    plots.cooperation_portrait(
+                        mae, si, trajs,
+                        f"{pay['label']} | {tag} vs {strat} | memory {memory} | "
+                        f"CRLD {args.algo} flow",
+                        out_dir / f"portrait_{tag}_{game}_m{memory}_{strat}.png",
+                        partner_label=strat, window=args.window)
                 coop = np.mean([s["cooperation_rate"] or 0
                                 for s in summaries[-args.seeds:]])
                 print(f"[matrix-sweep] {tag} {game} m={memory} vs {strat}: "
-                      f"coop={coop:.2f}")
+                      f"coop={coop:.2f}", flush=True)
 
     with open(out_dir / f"summary_{tag}.csv", "w", newline="") as f:
         wr = csv.DictWriter(f, fieldnames=list(summaries[0].keys()))
@@ -380,6 +395,9 @@ def main() -> None:
     p.add_argument("--seeds", type=int, default=3)
     p.add_argument("--rounds", type=int, default=40)
     p.add_argument("--swap-mode", choices=["same", "pool"], default="same")
+    p.add_argument("--memories", default="full",
+                   help="LLM memory windows, e.g. 'full,1,2,4' (full = "
+                        "whole conversation, the training setting)")
     p.add_argument("--window", type=int, default=8)
     p.add_argument("--skip-portraits", action="store_true")
     p.add_argument("--out", default="donors_sweep")
@@ -396,6 +414,7 @@ def main() -> None:
     p.add_argument("--gamma", type=float, default=0.9,
                    help="CRLD discount for the flow background")
     p.add_argument("--window", type=int, default=8)
+    p.add_argument("--skip-portraits", action="store_true")
     p.add_argument("--out", default="matrix_sweep")
     p.set_defaults(func=cmd_matrix_sweep)
 
@@ -445,6 +464,7 @@ def main() -> None:
     p.add_argument("--games", default="ipd,chicken")
     p.add_argument("--memories", default="1")
     p.add_argument("--gamma", type=float, default=0.9)
+    p.add_argument("--skip-matrix-portraits", action="store_true")
     p.add_argument("--probe-temperature", type=float, default=0.0)
     p.add_argument("--samples", type=int, default=1)
     p.set_defaults(func=cmd_demo)

@@ -30,11 +30,13 @@ OPPONENT_POOL: list[tuple[str, float]] = [
     ("grim_trigger", 0.05),
 ]
 
-STRATEGIES = [name for name, _ in OPPONENT_POOL]
+# Suspicious tit-for-tat: identical to tit_for_tat except it opens with D.
+# Not in the training pool; used to test how the opening move steers the dyad.
+STRATEGIES = [name for name, _ in OPPONENT_POOL] + ["suspicious_tit_for_tat"]
 
 
 def opponent_first_move(strategy: str, rng: random.Random) -> str:
-    if strategy == "always_defect":
+    if strategy in ("always_defect", "suspicious_tit_for_tat"):
         return DEFECT
     if strategy == "random":
         return COOPERATE if rng.random() < 0.5 else DEFECT
@@ -51,6 +53,8 @@ def opponent_response(strategy: str, other_history: list[str], rng: random.Rando
         return COOPERATE if rng.random() < 0.5 else DEFECT
     if strategy == "tit_for_tat":
         return other_history[-1] if other_history else COOPERATE
+    if strategy == "suspicious_tit_for_tat":
+        return other_history[-1] if other_history else DEFECT
     if strategy == "tit_for_two_tats":
         if len(other_history) < 2:
             return COOPERATE

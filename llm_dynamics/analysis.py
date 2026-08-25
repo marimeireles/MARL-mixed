@@ -34,6 +34,8 @@ def _fsm(strategy: str):
         return (), lambda s: D, lambda s, a: s
     if strategy == "tit_for_tat":
         return (C,), lambda s: s[0], lambda s, a: (a,)
+    if strategy == "suspicious_tit_for_tat":
+        return (D,), lambda s: s[0], lambda s, a: (a,)
     if strategy == "tit_for_two_tats":
         return (C, C), (lambda s: D if s == (D, D) else C), lambda s, a: (s[1], a)
     if strategy == "grim_trigger":
@@ -111,6 +113,16 @@ def analyze_game(rows: list[dict]) -> dict:
                 br_seq_first_segment=br_seq, n_segments=len(segs))
 
 
+def _mem_tag(r0: dict) -> str:
+    m = r0.get("memory")
+    return "full" if m is None else f"m{m}"
+
+
+def _coop_rate(rows: list[dict]) -> float:
+    valid = [r for r in rows if not r.get("parse_failed")]
+    return (sum(r["model_action"] == C for r in valid) / len(valid)) if valid else float("nan")
+
+
 def regret_table(results_dir: str | Path) -> dict:
     """Aggregate over seeds: {(strategy, *params): {...}}."""
     files = glob.glob(str(Path(results_dir) / "rounds" / "*.jsonl"))
@@ -121,20 +133,66 @@ def regret_table(results_dir: str | Path) -> dict:
             continue
         r0 = rows[0]
         key = ((r0["opponent_strategy"],) +
-               ((f"q={r0['q']:g}", f"w={r0['w']:g}") if "q" in r0
-                else (r0["game"], f"m={r0['memory']}")))
-        per[key].append(analyze_game(rows))
+               ((f"q={r0['q']:g}", f"w={r0['w']:g}", _mem_tag(r0)) if "q" in r0
+                else (r0["game"], _mem_tag(r0))))
+        a = analyze_game(rows)
+        a["coop"] = _coop_rate(rows)
+        per[key].append(a)
     out = {}
     for key, lst in sorted(per.items()):
         out[key] = {k: S.mean(x[k] for x in lst) for k in
                     ("model", "best_response", "allc", "alld", "captured",
-                     "regret_per_round")}
+                     "regret_per_round", "coop")}
         out[key]["br_seq"] = lst[0]["br_seq_first_segment"]
         out[key]["n"] = len(lst)
     return out
 
 
+def _fmt(v: dict) -> str:
+    return f"{v['coop']:.2f} / {v['captured']:.2f}"
+
+
+def comparison_markdown(results_dirs: list[str]) -> str:
+    """Markdown tables 'coop rate / captured fraction of best response':
+    donors: strategies x (w,q), one table per memory window;
+    matrix:  strategies x games, one table per memory."""
+    donors, matrix = {}, {}
+    for d in results_dirs:
+        for key, v in regret_table(d).items():
+            (donors if key[1].startswith("q=") else matrix)[key] = v
+    out = []
+    if donors:
+        mems = sorted({k[3] for k in donors}, key=lambda m: (m != "full", m))
+        cols = sorted({(k[2], k[1]) for k in donors})
+        strats = sorted({k[0] for k in donors})
+        for mem in mems:
+            out.append(f"\n### Donors game — LLM memory {mem}  (cell = coop rate / captured optimum)\n")
+            out.append("| vs | " + " | ".join(f"{w} {q}" for w, q in cols) + " |")
+            out.append("|---|" + "---|" * len(cols))
+            for st_ in strats:
+                cells = [_fmt(donors[(st_, q, w, mem)]) if (st_, q, w, mem) in donors else "--"
+                         for w, q in cols]
+                out.append(f"| {st_} | " + " | ".join(cells) + " |")
+    if matrix:
+        mems = sorted({k[2] for k in matrix}, key=lambda m: int(m[1:]))
+        games = sorted({k[1] for k in matrix})
+        strats = sorted({k[0] for k in matrix})
+        out.append("\n### Matrix games  (cell = coop rate / captured optimum)\n")
+        out.append("| vs | memory | " + " | ".join(games) + " |")
+        out.append("|---|---|" + "---|" * len(games))
+        for st_ in strats:
+            for mem in mems:
+                cells = [_fmt(matrix[(st_, g, mem)]) if (st_, g, mem) in matrix else "--"
+                         for g in games]
+                out.append(f"| {st_} | {mem} | " + " | ".join(cells) + " |")
+    return "\n".join(out)
+
+
 def main():
+    if sys.argv[1:2] == ["table"]:
+        md = comparison_markdown(sys.argv[2:])
+        print(md)
+        return
     for d in sys.argv[1:]:
         print(f"\n== {d} ==")
         print(f"{'cell':44s} {'model':>7s} {'best':>7s} {'AllC':>7s} {'AllD':>7s} "

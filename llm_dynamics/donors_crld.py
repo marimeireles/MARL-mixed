@@ -232,8 +232,8 @@ def strategy_policy(strategy: str, memo, agent: int = 1,
             p = 0.0
         elif strategy == "random":
             p = 0.5
-        elif strategy == "tit_for_tat":
-            p = 1.0 if theirs[-1] == "c" else 0.0
+        elif strategy in ("tit_for_tat", "suspicious_tit_for_tat"):
+            p = 1.0 if theirs[-1] == "c" else 0.0  # opening move is not a state
         elif strategy == "tit_for_two_tats":
             p = 0.0 if (theirs[-1] == "d" and theirs[-2] == "d") else 1.0
         elif strategy == "grim_trigger":
