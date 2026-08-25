@@ -252,6 +252,16 @@ against AllD in the donors game / PD / Stag Hunt, and all-C against AllD in
 Chicken / Harmony (there $S>P$: swerving beats crashing). The two DP optima (best response = max own payoff; welfare = max
 joint payoff) are kept as bounds: the reference equals the welfare optimum vs
 cooperators and the best response vs AllD.
+
+**Unknown-partner view.** Those per-strategy yardsticks assume the partner is
+known, so an opening/probing cooperation against AllD counts as a loss. The
+last tables instead average the model's payoff over the strategy pool and
+compare it with (a) the best *blind* meta-policy — one fixed rule (all-C,
+all-D, TFT, TFT-with-last-round-D, probe-once, Grim, Pavlov) played without
+knowing the partner, under an equal prior and under donorSim's training-pool
+prior — and (b) the informed optimum (sum of best responses). Probing is
+worth it exactly when (a) is a cooperative opener, and the model's gap to (a)
+is the uncertainty-aware regret.
 (Reads `results/qwen32b_base_v2_tables.md`; shows *pending* until job 1183853 finishes.)""")
 code(r"""from IPython.display import Markdown
 f = 'llm_dynamics/results/qwen32b_base_v2_tables.md'

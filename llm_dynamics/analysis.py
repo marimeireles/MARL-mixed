@@ -255,8 +255,13 @@ def comparison_markdown(results_dirs: list[str]) -> str:
 
 def main():
     if sys.argv[1:2] == ["table"]:
-        md = comparison_markdown(sys.argv[2:])
-        print(md)
+        print(comparison_markdown(sys.argv[2:]))
+        print(pool_markdown(sys.argv[2:]))
+        # training-pool prior; strategies outside the pool get the mean pool weight
+        mean_w = S.mean(TRAINING_POOL_WEIGHTS.values())
+        wts = defaultdict(lambda: mean_w, TRAINING_POOL_WEIGHTS)
+        print(pool_markdown(sys.argv[2:], wts,
+                            "donorSim training-pool prior (AllD .30, TFT .20, TF2T .20, AllC .15, Random .10, Grim .05; others = mean)"))
         return
     for d in sys.argv[1:]:
         print(f"\n== {d} ==")
@@ -268,6 +273,130 @@ def main():
                   f"{v['allc']:6.1f} {v['alld']:6.1f} {v['captured']:7.2f} "
                   f"{v['joint']:6.1f} {v['social_optimum']:6.1f} "
                   f"{v['welfare_captured']:6.2f}  {v['br_seq']}")
+
+
+
+# ── Uncertainty-aware ("unknown partner") reference ───────────────────────
+#
+# The per-strategy tables score against the optimum for a KNOWN opponent,
+# so opening/probing cooperation against AllD counts as a loss there. Here
+# a fixed set of meta-policies that do not know the partner is played
+# against every strategy on the same partner segments; the best one under
+# the pool prior is the uncertainty-aware yardstick, and the model's
+# pool-averaged payoff is compared with it.
+
+def _meta_policy(name: str):
+    """Returns f(own_hist, opp_hist, t, horizon) -> action for the segment."""
+    if name == "all_c":
+        return lambda o, p, t, h: C
+    if name == "all_d":
+        return lambda o, p, t, h: D
+    if name == "tft":
+        return lambda o, p, t, h: (p[-1] if p else C)
+    if name == "tft_last_d":       # TFT, but defect on the known last round
+        return lambda o, p, t, h: D if t == h - 1 else (p[-1] if p else C)
+    if name == "probe_once":       # open C; if partner opened D give up for good
+        return lambda o, p, t, h: C if not p else (D if p[0] == D else (p[-1] if t < h - 1 else D))
+    if name == "grim":
+        return lambda o, p, t, h: D if D in p else C
+    if name == "pavlov":
+        return lambda o, p, t, h: C if not p else (o[-1] if p[-1] == C else (D if o[-1] == C else C))
+    raise ValueError(name)
+
+
+META_POLICIES = ["all_c", "all_d", "tft", "tft_last_d", "probe_once", "grim", "pavlov"]
+
+
+def meta_policy_value(name: str, strategy: str, seg_lengths: list[int], payoff,
+                      n_draws: int = 20) -> float:
+    """Expected total payoff of meta-policy `name` vs `strategy` over the
+    given partner segments (stochastic strategies averaged over draws)."""
+    import random as _r
+    pol = _meta_policy(name)
+    stochastic = strategy in ("random", "generous_tit_for_tat")
+    draws = n_draws if stochastic else 1
+    total = 0.0
+    for k in range(draws):
+        rng = _r.Random(1000 + k)
+        for h in seg_lengths:
+            own, opp = [], []
+            for t in range(h):
+                a = pol(own, opp, t, h)
+                o = st.opponent_first_move(strategy, rng) if not opp else \
+                    st.opponent_response(strategy, own, rng, own_history=opp)
+                total += payoff(a, o)
+                own.append(a); opp.append(o)
+    return total / draws
+
+
+def pool_table(results_dirs: list[str], weights: dict | None = None) -> dict:
+    """Per (w,q,memory) cell: model's pool-averaged payoff vs the best
+    blind meta-policy vs the informed optimum (sum of best responses).
+    weights: strategy -> prior weight (default: equal over strategies present)."""
+    files = [f for d in results_dirs for f in glob.glob(str(Path(d) / "rounds" / "*.jsonl"))]
+    games = defaultdict(lambda: defaultdict(list))   # cell -> strategy -> [rows...]
+    for f in files:
+        rows = [json.loads(l) for l in open(f) if l.strip()]
+        if not rows or "q" not in rows[0]:
+            continue
+        r0 = rows[0]
+        games[(f"w={r0['w']:g}", f"q={r0['q']:g}", _mem_tag(r0))][r0["opponent_strategy"]].append(rows)
+    out = {}
+    for cell, by_strat in sorted(games.items()):
+        strats = sorted(by_strat)
+        wts = {s_: (weights or {}).get(s_, 1.0) for s_ in strats}
+        Z = sum(wts.values())
+        model = informed = 0.0
+        meta = {m: 0.0 for m in META_POLICIES}
+        for s_, glist in by_strat.items():
+            payoff = _payoff_fn(glist[0][0])
+            pay_key = "payoff_raw"
+            m_val = S.mean(sum(r[pay_key] for r in rows) for rows in glist)
+            # segments of the first seed's game define the partner schedule
+            segs = []
+            cur = 0
+            for r in sorted(glist[0], key=lambda r: r["round"]):
+                if r.get("rounds_with_partner", r["round"]) == 1 and cur:
+                    segs.append(cur); cur = 0
+                cur += 1
+            segs.append(cur)
+            inf = sum(best_response_value(s_, h, payoff)[0] for h in segs)
+            model += wts[s_] / Z * m_val
+            informed += wts[s_] / Z * inf
+            for m in META_POLICIES:
+                meta[m] += wts[s_] / Z * meta_policy_value(m, s_, segs, payoff)
+        best_meta = max(meta, key=meta.get)
+        out[cell] = dict(strategies=strats, model=model, informed_optimum=informed,
+                         blind_optimum=meta[best_meta], blind_policy=best_meta,
+                         model_vs_blind=model / meta[best_meta],
+                         model_vs_informed=model / informed, meta=meta)
+    return out
+
+
+TRAINING_POOL_WEIGHTS = dict(st.OPPONENT_POOL)
+
+
+def pool_markdown(results_dirs: list[str], weights: dict | None = None,
+                  title: str = "equal prior over strategies present") -> str:
+    t = pool_table(results_dirs, weights)
+    if not t:
+        return ""
+    out = [f"\n### Unknown-partner view — {title} (pool-averaged payoff per game)\n",
+           "cell = model / best blind policy (which) / informed optimum; "
+           "strategies in pool: " + ", ".join(next(iter(t.values()))["strategies"]) + "\n",
+           "| memory | " + " | ".join(f"{w} {q}" for (w, q, m) in t if m == next(iter(t))[2]) + " |"]
+    mems = sorted({m for (_, _, m) in t}, key=lambda m: (m != "full", m))
+    cols = sorted({(w, q) for (w, q, _) in t})
+    out[-1] = "| memory | " + " | ".join(f"{w} {q}" for w, q in cols) + " |"
+    out.append("|---|" + "---|" * len(cols))
+    for m in mems:
+        cells = []
+        for w, q in cols:
+            v = t.get((w, q, m))
+            cells.append("--" if v is None else
+                         f"{v['model']:.0f} / {v['blind_optimum']:.0f} ({v['blind_policy']}) / {v['informed_optimum']:.0f}")
+        out.append(f"| {m} | " + " | ".join(cells) + " |")
+    return "\n".join(out)
 
 
 if __name__ == "__main__":
