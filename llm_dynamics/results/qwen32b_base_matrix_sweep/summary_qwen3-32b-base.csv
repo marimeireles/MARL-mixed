@@ -1,0 +1,17 @@
+game,memory,seed,num_rounds,opponent_strategy,model,cooperation_rate,opp_cooperation_rate,parse_failures,mean_payoff
+ipd,1,0,20,tit_for_tat,qwen3-32b-base,0.35,0.4,0,2.15
+ipd,1,0,20,always_defect,qwen3-32b-base,0.3,0.0,0,0.7
+ipd,2,0,20,tit_for_tat,qwen3-32b-base,0.95,1.0,0,3.1
+ipd,2,0,20,always_defect,qwen3-32b-base,0.25,0.0,0,0.75
+chicken,1,0,20,tit_for_tat,qwen3-32b-base,0.95,1.0,0,3.1
+chicken,1,0,20,always_defect,qwen3-32b-base,0.35,0.0,0,0.35
+chicken,2,0,20,tit_for_tat,qwen3-32b-base,0.95,1.0,0,3.1
+chicken,2,0,20,always_defect,qwen3-32b-base,0.25,0.0,0,0.25
+staghunt,1,0,20,tit_for_tat,qwen3-32b-base,0.95,1.0,0,4.9
+staghunt,1,0,20,always_defect,qwen3-32b-base,0.35,0.0,0,0.65
+staghunt,2,0,20,tit_for_tat,qwen3-32b-base,0.95,1.0,0,4.9
+staghunt,2,0,20,always_defect,qwen3-32b-base,0.2,0.0,0,0.8
+harmony,1,0,20,tit_for_tat,qwen3-32b-base,0.85,0.9,0,4.4
+harmony,1,0,20,always_defect,qwen3-32b-base,0.45,0.0,0,0.9
+harmony,2,0,20,tit_for_tat,qwen3-32b-base,0.85,0.9,0,4.4
+harmony,2,0,20,always_defect,qwen3-32b-base,0.3,0.0,0,0.6
