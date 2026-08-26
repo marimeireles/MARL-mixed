@@ -92,11 +92,13 @@ def conditional_coop_series(rows: list[dict], window: int = 12
 # ── Portrait building blocks ──────────────────────────────────────────────
 
 def crld_flow_background(ax, mae, si: int, NrRandom: int = 12,
-                         n_points: int = 9) -> None:
-    """Two-agent CRLD flow (grey) in the cooperation plane at state si."""
+                         n_points: int = 9, col="0.75") -> None:
+    """Two-agent CRLD flow in the cooperation plane at state si.
+    col="0.75" = grey background; col="LEN" = arrows coloured by flow
+    magnitude (viridis, the FlowPlot default)."""
     x = ([0], [si], [0])
     y = ([1], [si], [0])
-    fp.plot_strategy_flow(mae, x, y, use_RPEarrows=False, col="0.75",
+    fp.plot_strategy_flow(mae, x, y, use_RPEarrows=False, col=col,
                           NrRandom=NrRandom,
                           flowarrow_points=np.linspace(0.03, 0.97, n_points),
                           axes=[ax])

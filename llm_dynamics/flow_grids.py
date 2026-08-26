@@ -42,12 +42,14 @@ def _rows(path):
 
 
 def _panel(ax, mae, si, sets, title, partner, window=8, NrRandom=8):
-    plots.crld_flow_background(ax, mae, si, NrRandom=NrRandom, n_points=8)
-    cmap = plt.get_cmap("tab10")
+    """Arrows coloured by flow magnitude (viridis); the LLM's end-of-game
+    point per seed as a red dot (no trajectory lines)."""
+    plots.crld_flow_background(ax, mae, si, NrRandom=NrRandom, n_points=8, col="LEN")
     for k, (label, rows) in enumerate(sets.items()):
         xs = plots.sliding_p_coop(rows, window)
         ys = plots.sliding_coop(rows, key="opp_action", window=window)
-        plots.plot_measured_trajectory(ax, xs, ys, color=cmap(k % 10), lw=1.8)
+        ax.scatter([xs[-1]], [ys[-1]], marker="o", s=48, color="tab:red",
+                   edgecolor="k", linewidth=0.5, zorder=6)
     ax.set_xlim(-.03, 1.03); ax.set_ylim(-.03, 1.03)
     ax.set_title(title, fontsize=8)
     ax.set_xlabel("model P(C)", fontsize=7); ax.set_ylabel(f"{partner} P(C)", fontsize=7)
@@ -95,7 +97,7 @@ def theory_reciprocity(tag, w=0.75, q=0.75, memory=1):
             ax.set_visible(False); continue
         XX, YY, dX, dY = dc.fixed_opponent_flow(mae, memo, X_opp, sx, sy, NrRandom=6)
         mdx, mdy = dX.mean(-1), dY.mean(-1); L = np.sqrt(mdx**2 + mdy**2) + 1e-12
-        ax.quiver(XX, YY, mdx*np.sqrt(L)/L, mdy*np.sqrt(L)/L, color="0.6", angles="xy")
+        ax.quiver(XX, YY, mdx*np.sqrt(L)/L, mdy*np.sqrt(L)/L, L.ravel(), cmap="viridis", angles="xy")
         if probe:
             px, py = pp.uniform_state_p(probe, "c", "c"), pp.uniform_state_p(probe, "c", "d")
             if px is not None:
@@ -120,7 +122,7 @@ def donors_grid(tag, strat, mem_tag):
             memo = dc.donors_memo_env(B, C, memory=cm, q=q)
             mae = dc.build_mae(memo, w=w, q=q)
             _panel(axs[i][j], mae, dc.allc_state(memo), sets, f"w={w:g}  q={q:g}", strat)
-    fig.suptitle(f"{tag} vs {strat} — LLM memory {mem_tag} — paths over the CRLD flow (memory {cm})", fontsize=11)
+    fig.suptitle(f"{tag} vs {strat} — LLM memory {mem_tag} — end points (red) over the CRLD flow (memory {cm})", fontsize=11)
     fig.tight_layout(rect=[0, 0, 1, 0.97]); out = OUT / f"donors_{strat}_{mem_tag}.png"
     fig.savefig(out, dpi=140); plt.close(fig); print("saved", out)
 
@@ -136,7 +138,7 @@ def matrix_grid(tag, game, memory, gamma=0.9):
         files = sorted(glob.glob(str(d / f"*_{game}_m{memory}_{strat}_s*.jsonl")))
         sets = {f"seed {k}": _rows(f) for k, f in enumerate(files)}
         _panel(ax, mae, si, sets, strat, strat)
-    fig.suptitle(f"{pay['label']} — {tag} — memory {memory} — LLM paths over the CRLD flow (γ={gamma})", fontsize=11)
+    fig.suptitle(f"{pay['label']} — {tag} — memory {memory} — LLM end points (red) over the CRLD flow (γ={gamma})", fontsize=11)
     fig.tight_layout(rect=[0, 0, 1, 0.97]); out = OUT / f"matrix_{game}_m{memory}.png"
     fig.savefig(out, dpi=140); plt.close(fig); print("saved", out)
 
