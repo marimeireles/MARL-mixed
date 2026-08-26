@@ -1,0 +1,52 @@
+{
+ "kind": "matrix",
+ "game": "ipd",
+ "memory": 1,
+ "probe_round": 10,
+ "num_rounds": 25,
+ "temperature": 0.0,
+ "samples": 1,
+ "model": "qwen3-8b-base",
+ "states": {
+  "cc": {
+   "p_cooperate": 1.0,
+   "n_samples": 1,
+   "state": [
+    [
+     "COOPERATE",
+     "COOPERATE"
+    ]
+   ]
+  },
+  "cd": {
+   "p_cooperate": 3.97896253575075e-12,
+   "n_samples": 1,
+   "state": [
+    [
+     "COOPERATE",
+     "DEFECT"
+    ]
+   ]
+  },
+  "dc": {
+   "p_cooperate": 2.0206839089323555e-11,
+   "n_samples": 1,
+   "state": [
+    [
+     "DEFECT",
+     "COOPERATE"
+    ]
+   ]
+  },
+  "dd": {
+   "p_cooperate": 7.433680672205033e-12,
+   "n_samples": 1,
+   "state": [
+    [
+     "DEFECT",
+     "DEFECT"
+    ]
+   ]
+  }
+ }
+}

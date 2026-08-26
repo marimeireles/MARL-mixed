@@ -1,0 +1,17 @@
+b,c,w,q,seed,num_rounds,opponent_strategy,swap_mode,memory,model,n_swaps,cooperation_rate,opp_cooperation_rate,parse_failures,total_payoff_raw,c_over_b,direct_reciprocity_favored,indirect_reciprocity_favored
+4.0,5.0,0.5,0.0,0,20,wsls,same,,qwen3-8b-base,12,0.0,0.75,0,160.0,1.25,False,False
+4.0,5.0,0.5,0.0,1,20,wsls,same,,qwen3-8b-base,9,0.0,0.65,0,152.0,1.25,False,False
+4.0,5.0,0.5,0.0,2,20,wsls,same,,qwen3-8b-base,12,0.25,0.8,0,139.0,1.25,False,False
+4.0,5.0,0.5,0.0,3,20,wsls,same,,qwen3-8b-base,10,0.0,0.65,0,152.0,1.25,False,False
+4.0,5.0,1.0,0.0,0,20,wsls,same,,qwen3-8b-base,0,0.0,0.5,0,140.0,1.25,False,False
+4.0,5.0,1.0,0.0,1,20,wsls,same,,qwen3-8b-base,0,0.0,0.5,0,140.0,1.25,False,False
+4.0,5.0,1.0,0.0,2,20,wsls,same,,qwen3-8b-base,0,0.0,0.5,0,140.0,1.25,False,False
+4.0,5.0,1.0,0.0,3,20,wsls,same,,qwen3-8b-base,0,0.0,0.5,0,140.0,1.25,False,False
+4.0,5.0,0.5,1.0,0,20,wsls,same,,qwen3-8b-base,11,0.0,0.7,0,156.0,1.25,False,False
+4.0,5.0,0.5,1.0,1,20,wsls,same,,qwen3-8b-base,9,0.45,0.8,0,119.0,1.25,False,False
+4.0,5.0,0.5,1.0,2,20,wsls,same,,qwen3-8b-base,11,0.0,0.75,0,160.0,1.25,False,False
+4.0,5.0,0.5,1.0,3,20,wsls,same,,qwen3-8b-base,12,0.0,0.7,0,156.0,1.25,False,False
+4.0,5.0,1.0,1.0,0,20,wsls,same,,qwen3-8b-base,0,0.0,0.5,0,140.0,1.25,False,False
+4.0,5.0,1.0,1.0,1,20,wsls,same,,qwen3-8b-base,0,0.0,0.5,0,140.0,1.25,False,False
+4.0,5.0,1.0,1.0,2,20,wsls,same,,qwen3-8b-base,0,0.0,0.5,0,140.0,1.25,False,False
+4.0,5.0,1.0,1.0,3,20,wsls,same,,qwen3-8b-base,0,0.0,0.5,0,140.0,1.25,False,False

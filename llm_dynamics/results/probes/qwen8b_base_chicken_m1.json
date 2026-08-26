@@ -1,0 +1,52 @@
+{
+ "kind": "matrix",
+ "game": "chicken",
+ "memory": 1,
+ "probe_round": 10,
+ "num_rounds": 25,
+ "temperature": 0.0,
+ "samples": 1,
+ "model": "qwen3-8b-base",
+ "states": {
+  "cc": {
+   "p_cooperate": 1.0,
+   "n_samples": 1,
+   "state": [
+    [
+     "COOPERATE",
+     "COOPERATE"
+    ]
+   ]
+  },
+  "cd": {
+   "p_cooperate": 3.3315445420262974e-11,
+   "n_samples": 1,
+   "state": [
+    [
+     "COOPERATE",
+     "DEFECT"
+    ]
+   ]
+  },
+  "dc": {
+   "p_cooperate": 7.582560422051505e-10,
+   "n_samples": 1,
+   "state": [
+    [
+     "DEFECT",
+     "COOPERATE"
+    ]
+   ]
+  },
+  "dd": {
+   "p_cooperate": 1.317651426795411e-10,
+   "n_samples": 1,
+   "state": [
+    [
+     "DEFECT",
+     "DEFECT"
+    ]
+   ]
+  }
+ }
+}

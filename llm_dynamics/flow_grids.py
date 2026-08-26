@@ -31,7 +31,8 @@ from .matrix_games import GAMES
 from .strategies import STRATEGIES
 
 RESULTS = Path(__file__).resolve().parent / "results"
-OUT = RESULTS / "flow_grids"
+OUT = RESULTS / "flow_grids"          # overridden per tag in main()
+VERSION = "v2"                        # sweep dir suffix: {tag}_donors_{VERSION}
 WS = QS = [0.0, 0.5, 1.0]
 B, C = 4.0, 2.0
 STRATS = [s for s in STRATEGIES if s != "random"] + ["random"]
@@ -112,7 +113,7 @@ def theory_reciprocity(tag, w=0.75, q=0.75, memory=1):
 
 
 def donors_grid(tag, strat, mem_tag):
-    d = RESULTS / f"{tag}_donors_v2" / strat / "rounds"
+    d = RESULTS / f"{tag}_donors_{VERSION}" / strat / "rounds"
     fig, axs = plt.subplots(3, 3, figsize=(11, 10.5))
     cm = 1 if mem_tag == "full" else min(int(mem_tag[1:]), 2)
     for i, w in enumerate(WS):
@@ -134,7 +135,7 @@ def matrix_grid(tag, game, memory, gamma=0.9):
     si = dc.allc_state(memo)
     fig, axs = plt.subplots(3, 3, figsize=(11, 10.5))
     for ax, strat in zip(axs.flat, STRATS):
-        d = RESULTS / f"{tag}_matrix_v2" / strat / "rounds"
+        d = RESULTS / f"{tag}_matrix_{VERSION}" / strat / "rounds"
         files = sorted(glob.glob(str(d / f"*_{game}_m{memory}_{strat}_s*.jsonl")))
         sets = {f"seed {k}": _rows(f) for k, f in enumerate(files)}
         _panel(ax, mae, si, sets, strat, strat)
@@ -147,7 +148,12 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--tag", default="qwen32b_base")
     ap.add_argument("--only", default=None, help="theory|donors|matrix")
+    ap.add_argument("--version", default="v2", help="sweep dir suffix (v2, v3)")
     a = ap.parse_args()
+    global OUT, VERSION
+    VERSION = a.version
+    if a.tag != "qwen32b_base":
+        OUT = RESULTS / f"flow_grids_{a.tag}"
     OUT.mkdir(parents=True, exist_ok=True)
     if a.only in (None, "theory"):
         for m in (1, 2):

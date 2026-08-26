@@ -1,0 +1,17 @@
+b,c,w,q,seed,num_rounds,opponent_strategy,swap_mode,memory,model,n_swaps,cooperation_rate,opp_cooperation_rate,parse_failures,total_payoff_raw,c_over_b,direct_reciprocity_favored,indirect_reciprocity_favored
+4.0,3.0,0.5,0.0,0,20,suspicious_tit_for_tat,same,,qwen3-8b-base,12,0.1,0.0,0,54.0,0.75,False,False
+4.0,3.0,0.5,0.0,1,20,suspicious_tit_for_tat,same,,qwen3-8b-base,9,0.4,0.2,0,52.0,0.75,False,False
+4.0,3.0,0.5,0.0,2,20,suspicious_tit_for_tat,same,,qwen3-8b-base,12,1.0,0.35,0,28.0,0.75,False,False
+4.0,3.0,0.5,0.0,3,20,suspicious_tit_for_tat,same,,qwen3-8b-base,10,0.6,0.3,0,48.0,0.75,False,False
+4.0,3.0,1.0,0.0,0,20,suspicious_tit_for_tat,same,,qwen3-8b-base,0,0.05,0.05,0,61.0,0.75,True,False
+4.0,3.0,1.0,0.0,1,20,suspicious_tit_for_tat,same,,qwen3-8b-base,0,0.05,0.05,0,61.0,0.75,True,False
+4.0,3.0,1.0,0.0,2,20,suspicious_tit_for_tat,same,,qwen3-8b-base,0,0.05,0.05,0,61.0,0.75,True,False
+4.0,3.0,1.0,0.0,3,20,suspicious_tit_for_tat,same,,qwen3-8b-base,0,1.0,0.95,0,76.0,0.75,True,False
+4.0,3.0,0.5,1.0,0,20,suspicious_tit_for_tat,same,,qwen3-8b-base,11,0.45,0.1,0,41.0,0.75,False,True
+4.0,3.0,0.5,1.0,1,20,suspicious_tit_for_tat,same,,qwen3-8b-base,9,0.25,0.15,0,57.0,0.75,False,True
+4.0,3.0,0.5,1.0,2,20,suspicious_tit_for_tat,same,,qwen3-8b-base,11,0.1,0.05,0,58.0,0.75,False,True
+4.0,3.0,0.5,1.0,3,20,suspicious_tit_for_tat,same,,qwen3-8b-base,12,0.35,0.15,0,51.0,0.75,False,True
+4.0,3.0,1.0,1.0,0,20,suspicious_tit_for_tat,same,,qwen3-8b-base,0,1.0,0.95,0,76.0,0.75,True,True
+4.0,3.0,1.0,1.0,1,20,suspicious_tit_for_tat,same,,qwen3-8b-base,0,0.35,0.35,0,67.0,0.75,True,True
+4.0,3.0,1.0,1.0,2,20,suspicious_tit_for_tat,same,,qwen3-8b-base,0,0.05,0.05,0,61.0,0.75,True,True
+4.0,3.0,1.0,1.0,3,20,suspicious_tit_for_tat,same,,qwen3-8b-base,0,0.1,0.1,0,62.0,0.75,True,True

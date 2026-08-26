@@ -1,0 +1,5 @@
+b,c,w,q,seed,num_rounds,opponent_strategy,swap_mode,memory,model,n_swaps,cooperation_rate,opp_cooperation_rate,parse_failures,total_payoff_raw,c_over_b,direct_reciprocity_favored,indirect_reciprocity_favored
+4.0,2.0,1.0,0.5,0,5,suspicious_tit_for_tat,same,,qwen3-8b-base,0,1.0,0.8,0,16.0,0.5,True,False
+4.0,2.0,1.0,0.5,1,5,suspicious_tit_for_tat,same,,qwen3-8b-base,0,0.4,0.4,0,14.0,0.5,True,False
+4.0,2.0,1.0,0.5,2,5,suspicious_tit_for_tat,same,,qwen3-8b-base,0,0.2,0.2,0,12.0,0.5,True,False
+4.0,2.0,1.0,0.5,3,5,suspicious_tit_for_tat,same,,qwen3-8b-base,0,0.2,0.2,0,12.0,0.5,True,False

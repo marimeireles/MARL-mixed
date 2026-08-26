@@ -1,0 +1,17 @@
+b,c,w,q,seed,num_rounds,opponent_strategy,swap_mode,memory,model,n_swaps,cooperation_rate,opp_cooperation_rate,parse_failures,total_payoff_raw,c_over_b,direct_reciprocity_favored,indirect_reciprocity_favored
+4.0,4.0,0.5,0.0,0,20,grim_trigger,same,,qwen3-8b-base,12,1.0,1.0,0,80.0,1.0,False,False
+4.0,4.0,0.5,0.0,1,20,grim_trigger,same,,qwen3-8b-base,9,1.0,1.0,0,80.0,1.0,False,False
+4.0,4.0,0.5,0.0,2,20,grim_trigger,same,,qwen3-8b-base,12,1.0,1.0,0,80.0,1.0,False,False
+4.0,4.0,0.5,0.0,3,20,grim_trigger,same,,qwen3-8b-base,10,1.0,1.0,0,80.0,1.0,False,False
+4.0,4.0,1.0,0.0,0,20,grim_trigger,same,,qwen3-8b-base,0,1.0,1.0,0,80.0,1.0,False,False
+4.0,4.0,1.0,0.0,1,20,grim_trigger,same,,qwen3-8b-base,0,1.0,1.0,0,80.0,1.0,False,False
+4.0,4.0,1.0,0.0,2,20,grim_trigger,same,,qwen3-8b-base,0,1.0,1.0,0,80.0,1.0,False,False
+4.0,4.0,1.0,0.0,3,20,grim_trigger,same,,qwen3-8b-base,0,1.0,1.0,0,80.0,1.0,False,False
+4.0,4.0,0.5,1.0,0,20,grim_trigger,same,,qwen3-8b-base,11,0.85,0.9,0,84.0,1.0,False,False
+4.0,4.0,0.5,1.0,1,20,grim_trigger,same,,qwen3-8b-base,9,0.6,0.75,0,92.0,1.0,False,False
+4.0,4.0,0.5,1.0,2,20,grim_trigger,same,,qwen3-8b-base,11,1.0,1.0,0,80.0,1.0,False,False
+4.0,4.0,0.5,1.0,3,20,grim_trigger,same,,qwen3-8b-base,12,0.75,0.9,0,92.0,1.0,False,False
+4.0,4.0,1.0,1.0,0,20,grim_trigger,same,,qwen3-8b-base,0,1.0,1.0,0,80.0,1.0,False,False
+4.0,4.0,1.0,1.0,1,20,grim_trigger,same,,qwen3-8b-base,0,1.0,1.0,0,80.0,1.0,False,False
+4.0,4.0,1.0,1.0,2,20,grim_trigger,same,,qwen3-8b-base,0,1.0,1.0,0,80.0,1.0,False,False
+4.0,4.0,1.0,1.0,3,20,grim_trigger,same,,qwen3-8b-base,0,1.0,1.0,0,80.0,1.0,False,False
