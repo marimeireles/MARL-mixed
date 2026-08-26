@@ -13,6 +13,10 @@
 set -uo pipefail
 ROOT=/nas/ucb/marimeireles/MARL-mixed; cd $ROOT/external_benchmarks/EigenBench
 export HF_HOME=/nas/ucb/marimeireles/cache OPENAI_API_KEY=dummy TOKENIZERS_PARALLELISM=false
+# home is quota-limited: keep every compile/kernel cache on the NAS
+export XDG_CACHE_HOME=/nas/ucb/marimeireles/cache/xdg VLLM_CACHE_ROOT=/nas/ucb/marimeireles/cache/vllm \
+       TORCHINDUCTOR_CACHE_DIR=/nas/ucb/marimeireles/cache/inductor TRITON_CACHE_DIR=/nas/ucb/marimeireles/cache/triton TMPDIR=/nas/ucb/marimeireles/pip_tmp
+mkdir -p $XDG_CACHE_HOME $VLLM_CACHE_ROOT $TORCHINDUCTOR_CACHE_DIR $TRITON_CACHE_DIR
 export SPEC="${SPEC:-runs/qwen8b/spec.py}" OUT="${OUT:-runs/qwen8b/responses/responses.jsonl}"
 export SCENARIOS="${SCENARIOS:-10398}" SAMPLES="${SAMPLES:-1}" MAX_TOKENS="${MAX_TOKENS:-4096}" TEMPERATURE="${TEMPERATURE:-0.7}"
 echo "spec $SPEC -> $OUT scenarios $SCENARIOS samples $SAMPLES ($(date -Iseconds))"
