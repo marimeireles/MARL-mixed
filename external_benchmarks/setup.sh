@@ -18,5 +18,5 @@ cp patched/dig-bench/orchestrate.py patched/dig-bench/aggregate_digbench.py dig-
 # EigenBench: scenarios + 8B run dir (responses only)
 mkdir -p EigenBench/data/scenarios EigenBench/runs/qwen8b
 cp donorsim_pipeline/eigenbench/airiskdilemmas.json EigenBench/data/scenarios/
-cp patched/EigenBench/spec.py patched/EigenBench/gen_responses.py EigenBench/runs/qwen8b/
+cp patched/EigenBench/*.py EigenBench/runs/qwen8b/
 echo "external benchmarks ready"
