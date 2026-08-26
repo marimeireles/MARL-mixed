@@ -1,8 +1,8 @@
 """Phase portraits: CRLD flow backgrounds + measured LLM trajectories.
 
 Follows the MARL-mixed deep-RL convention (jaxmarl_env/algo_phase.py):
-grey arrows are the deterministic CRLD prediction, coloured lines are the
-sampled reality of a learner (here: an LLM) moving through the same
+arrows (coloured by flow magnitude) are the deterministic CRLD prediction,
+lines/markers are the sampled reality of a learner (here: an LLM) moving through the same
 plane; 'x' marks the start, 'o' the end. The deviation between the two
 is the finding.
 
@@ -128,7 +128,7 @@ def cooperation_portrait(mae, si: int, traj_sets: dict[str, list[dict]],
 
     traj_sets: {legend label: rows} — e.g. one entry per model/seed."""
     fig, ax = plt.subplots(figsize=(5.2, 5.0))
-    crld_flow_background(ax, mae, si, NrRandom=NrRandom)
+    crld_flow_background(ax, mae, si, NrRandom=NrRandom, col="LEN")
     cmap = plt.get_cmap("tab10")
     for k, (label, rows) in enumerate(traj_sets.items()):
         col = (colors or {}).get(label, cmap(k % 10))
@@ -163,8 +163,8 @@ def reciprocity_portrait(flow_data, probe_points: dict[str, tuple[float, float]]
         mdx, mdy = dX.mean(-1), dY.mean(-1)
         length = np.sqrt(mdx ** 2 + mdy ** 2)
         scale = np.power(length + 1e-12, 0.5) / (length + 1e-12)
-        ax.quiver(XX, YY, mdx * scale, mdy * scale, color="0.75",
-                  angles="xy", zorder=1)
+        ax.quiver(XX, YY, mdx * scale, mdy * scale, length.ravel(),
+                  cmap="viridis", angles="xy", zorder=1)
     cmap = plt.get_cmap("tab10")
     for k, (label, (xs, ys)) in enumerate(traj_sets.items()):
         col = (colors or {}).get(label, cmap(k % 10))

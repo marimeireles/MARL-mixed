@@ -66,7 +66,7 @@ def theory_donors(memory):
     fig.suptitle(f"CRLD flow of the donors game (b={B:g}, c/b={C/B:g}), memory {memory}: "
                  f"rows w (=γ), cols q (=observability)", fontsize=11)
     fig.tight_layout(rect=[0, 0, 1, 0.97]); out = OUT / f"theory_donors_m{memory}.png"
-    fig.savefig(out, dpi=150); plt.close(fig); print("saved", out)
+    fig.savefig(out, dpi=100); plt.close(fig); print("saved", out)
 
 
 def theory_matrix(memory, gamma=0.9):
@@ -77,7 +77,7 @@ def theory_matrix(memory, gamma=0.9):
         _panel(ax, mae, dc.allc_state(memo), {}, f"{pay['label']} (R,T,S,P)=({pay['R']:g},{pay['T']:g},{pay['S']:g},{pay['P']:g})", "partner")
     fig.suptitle(f"CRLD flow of the four games, memory {memory}, γ={gamma}", fontsize=11)
     fig.tight_layout(rect=[0, 0, 1, 0.94]); out = OUT / f"theory_matrix_m{memory}.png"
-    fig.savefig(out, dpi=150); plt.close(fig); print("saved", out)
+    fig.savefig(out, dpi=100); plt.close(fig); print("saved", out)
 
 
 def theory_reciprocity(tag, w=0.75, q=0.75, memory=1):
@@ -108,7 +108,7 @@ def theory_reciprocity(tag, w=0.75, q=0.75, memory=1):
     fig.suptitle(f"Fixed-opponent CRLD flow in the reciprocity plane (donors b={B:g} c/b={C/B:g} w={w} q={q}, memory {memory}); "
                  f"★ = probed {tag} policy", fontsize=10)
     fig.tight_layout(rect=[0, 0, 1, 0.95]); out = OUT / "theory_reciprocity_donors.png"
-    fig.savefig(out, dpi=150); plt.close(fig); print("saved", out)
+    fig.savefig(out, dpi=100); plt.close(fig); print("saved", out)
 
 
 def donors_grid(tag, strat, mem_tag):
@@ -124,7 +124,7 @@ def donors_grid(tag, strat, mem_tag):
             _panel(axs[i][j], mae, dc.allc_state(memo), sets, f"w={w:g}  q={q:g}", strat)
     fig.suptitle(f"{tag} vs {strat} — LLM memory {mem_tag} — end points (red) over the CRLD flow (memory {cm})", fontsize=11)
     fig.tight_layout(rect=[0, 0, 1, 0.97]); out = OUT / f"donors_{strat}_{mem_tag}.png"
-    fig.savefig(out, dpi=140); plt.close(fig); print("saved", out)
+    fig.savefig(out, dpi=100); plt.close(fig); print("saved", out)
 
 
 def matrix_grid(tag, game, memory, gamma=0.9):
@@ -140,7 +140,7 @@ def matrix_grid(tag, game, memory, gamma=0.9):
         _panel(ax, mae, si, sets, strat, strat)
     fig.suptitle(f"{pay['label']} — {tag} — memory {memory} — LLM end points (red) over the CRLD flow (γ={gamma})", fontsize=11)
     fig.tight_layout(rect=[0, 0, 1, 0.97]); out = OUT / f"matrix_{game}_m{memory}.png"
-    fig.savefig(out, dpi=140); plt.close(fig); print("saved", out)
+    fig.savefig(out, dpi=100); plt.close(fig); print("saved", out)
 
 
 def main():

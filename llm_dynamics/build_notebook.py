@@ -235,11 +235,8 @@ for d in ['llm_dynamics/results/qwen32b_base_donors_sweep', 'llm_dynamics/result
 code(r"""from IPython.display import Image, display as _d
 for f in ['llm_dynamics/results/qwen32b_base_reciprocity_tft.png',
           'llm_dynamics/results/qwen32b_base_donors_sweep/heatmap_qwen3-32b-base_tit_for_tat.png',
-          'llm_dynamics/results/qwen32b_base_donors_sweep/heatmap_qwen3-32b-base_always_defect.png',
-          'llm_dynamics/results/qwen32b_base_donors_sweep/portrait_qwen3-32b-base_always_defect_q0.5_w0.5.png',
-          'llm_dynamics/results/qwen32b_base_matrix_sweep/portrait_qwen3-32b-base_ipd_m1_tit_for_tat.png',
-          'llm_dynamics/results/qwen32b_base_matrix_sweep/portrait_qwen3-32b-base_ipd_m2_tit_for_tat.png']:
-    if os.path.exists(f): print(f); _d(Image(f, width=520))""")
+          'llm_dynamics/results/qwen32b_base_donors_sweep/heatmap_qwen3-32b-base_always_defect.png']:
+    if os.path.exists(f): print(f); _d(Image(f, width=480))""")
 
 md(r"""### 5.4 v2 — strategies (incl. suspicious TFT) × (w,q) × memory, and × games × memory
 
@@ -368,19 +365,19 @@ game over $(w,q)$ at memory 1 and 2, the four games at memory 1–3, and the
 fixed-opponent fields in the reciprocity plane per strategy (★ = probed base
 policy).""")
 code(r"""for f in sorted(glob.glob('llm_dynamics/results/flow_grids/theory_*.png')):
-    print(f); _d(Image(f, width=900))""")
+    print(f); _d(Image(f, width=800))""")
 md(r"""**Donors game, LLM end points over the flow** — one figure per strategy (3×3 =
 $w$ rows × $q$ columns), for the full-memory (training) setting.""")
 code(r"""for f in sorted(glob.glob('llm_dynamics/results/flow_grids/donors_*_full.png')):
-    print(f); _d(Image(f, width=760))""")
-md(r"""Same, with the LLM restricted to memory 1 and memory 2 (the CRLD background then
-has the *same* memory as the LLM).""")
-code(r"""for f in sorted(glob.glob('llm_dynamics/results/flow_grids/donors_*_m[12].png')):
-    print(f); _d(Image(f, width=620))""")
+    print(f); _d(Image(f, width=700))""")
+md(r"""The same grids with the LLM restricted to memory 1 and memory 2 (CRLD background
+with the *same* memory as the LLM) are not embedded, to keep this notebook
+renderable on GitHub — see `results/flow_grids/donors_<strategy>_m1.png` and
+`_m2.png`.""")
 md(r"""**Matrix games, LLM end points over the flow** — one figure per game × memory
 (3×3 = the nine strategies).""")
 code(r"""for f in sorted(glob.glob('llm_dynamics/results/flow_grids/matrix_*.png')):
-    print(f); _d(Image(f, width=760))""")
+    print(f); _d(Image(f, width=700))""")
 
 
 nb2["cells"] = C
