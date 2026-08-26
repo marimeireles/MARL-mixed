@@ -97,7 +97,7 @@ def cmd_donors_sweep(args) -> None:
     c = args.b * args.c_over_b
     qs, ws = _floats(args.q_values), _floats(args.w_values)
     strategies = args.strategies.split(",")
-    memories = [None if m == "full" else int(m)
+    memories = [None if m == "full" else (m if m.startswith("note") else int(m))
                 for m in getattr(args, "memories", "full").split(",")]
     out_dir = RESULTS / args.out
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -106,7 +106,7 @@ def cmd_donors_sweep(args) -> None:
     summaries = []
     all_rows: dict[tuple, dict[int, list[dict]]] = {}
     for mem in memories:
-      mtag = "full" if mem is None else f"m{mem}"
+      mtag = "full" if mem is None else (mem if isinstance(mem, str) else f"m{mem}")
       for strat in strategies:
         for q in qs:
             for w in ws:
@@ -138,7 +138,7 @@ def cmd_donors_sweep(args) -> None:
 
     # Heatmaps: cooperation rate over q x w, Nowak threshold marked.
     for mem in memories:
-      mtag = "full" if mem is None else f"m{mem}"
+      mtag = "full" if mem is None else (mem if isinstance(mem, str) else f"m{mem}")
       for strat in strategies:
         vals = np.full((len(ws), len(qs)), np.nan)
         for iq, q in enumerate(qs):
@@ -164,8 +164,8 @@ def cmd_donors_sweep(args) -> None:
     # (<= MAX_CRLD_MEMORY states), else args.memory.
     if not args.skip_portraits:
         for (strat, q, w, mem), cell in all_rows.items():
-            cm = mem if (mem is not None and mem <= MAX_CRLD_MEMORY) else args.memory
-            mtag = "full" if mem is None else f"m{mem}"
+            cm = mem if (isinstance(mem, int) and mem <= MAX_CRLD_MEMORY) else args.memory
+            mtag = "full" if mem is None else (mem if isinstance(mem, str) else f"m{mem}")
             memo = dc.donors_memo_env(b, c, memory=cm, q=q)
             mae = dc.build_mae(memo, w=w, algo=args.algo, q=q)
             si = dc.allc_state(memo)
@@ -321,6 +321,81 @@ def cmd_reciprocity_figure(args) -> None:
         xlabel="P(C | sustained mutual cooperation)",
         ylabel="P(C | own C, partner D)")
     print(f"[reciprocity-figure] saved {out}")
+
+
+# ── perturbation / self-play / group-stage ────────────────────────────────
+
+def cmd_donors_perturb(args) -> None:
+    """Force a defection at --perturb-round and log the repair."""
+    b, c = args.b, args.b * args.c_over_b
+    out_dir = RESULTS / args.out; tag = _model_tag(args)
+    for strat in args.strategies.split(","):
+        for q in _floats(args.q_values):
+            for w in _floats(args.w_values):
+                for seed in range(args.seeds):
+                    res = dg.run_donors_game(
+                        _client(args, seed=seed), b=b, c=c, w=w, q=q,
+                        num_rounds=args.rounds, opponent_strategy=strat, seed=seed,
+                        temperature=args.temperature, max_tokens=args.max_tokens,
+                        no_think=args.no_think, perturb_round=args.perturb_round)
+                    dg.write_jsonl(out_dir / "rounds" /
+                                   f"{tag}_{strat}_q{q:g}_w{w:g}_full_s{seed}.jsonl", res["rows"])
+                print(f"[perturb] {tag} vs {strat} q={q:g} w={w:g} done", flush=True)
+    print(f"[perturb] results in {out_dir}")
+
+
+def cmd_donors_selfplay(args) -> None:
+    """LLM vs LLM. --api-base-b/--model-b select the second model (default: same)."""
+    b, c = args.b, args.b * args.c_over_b
+    out_dir = RESULTS / args.out; tag = _model_tag(args)
+    tag_b = (args.model_b or args.model or args.mock_b or "same").replace("/", "_")
+    summaries = []
+    for q in _floats(args.q_values):
+        for w in _floats(args.w_values):
+            for seed in range(args.seeds):
+                ca = _client(args, seed=seed)
+                cb = make_client(args.api_base_b or args.api_base, args.model_b or args.model,
+                                 args.mock_b or args.mock, api_key=args.api_key,
+                                 enable_thinking=args.thinking, seed=seed + 1000)
+                res = dg.run_donors_selfplay(ca, cb, b=b, c=c, w=w, q=q,
+                                             num_rounds=args.rounds, seed=seed,
+                                             temperature=args.temperature,
+                                             max_tokens=args.max_tokens, no_think=args.no_think)
+                summaries.append(res["summary"])
+                dg.write_jsonl(out_dir / "rounds" / f"{tag}_vs_{tag_b}_q{q:g}_w{w:g}_s{seed}.jsonl",
+                               res["rows"])
+            sm = summaries[-args.seeds:]
+            print(f"[selfplay] {tag} vs {tag_b} q={q:g} w={w:g}: A coop="
+                  f"{np.mean([x['a_cooperation_rate'] for x in sm]):.2f} B coop="
+                  f"{np.mean([x['b_cooperation_rate'] for x in sm]):.2f} mutual="
+                  f"{np.mean([x['mutual_c_rate'] for x in sm]):.2f}", flush=True)
+    with open(out_dir / f"summary_{tag}_vs_{tag_b}.csv", "w", newline="") as f:
+        wr = csv.DictWriter(f, fieldnames=list(summaries[0].keys())); wr.writeheader(); wr.writerows(summaries)
+
+
+def cmd_group_eval(args) -> None:
+    """Group-selection stage (the trained environment): PREDICT + DECISION,
+    CFE / Brier / rho / bonus per the paper's reward."""
+    from . import group_game as gg
+    import random as _r
+    out_dir = RESULTS / args.out; tag = _model_tag(args)
+    summaries = []
+    for i in range(args.scenarios):
+        sc = gg.sample_group_scenario(_r.Random(args.seed_base * 100003 + i))
+        for seed in range(args.seeds):
+            res = gg.run_group_game(_client(args, seed=seed), sc, seed=seed,
+                                    temperature=args.temperature, max_tokens=args.max_tokens)
+            summaries.append({"scenario": i, **res["summary"]})
+            dg.write_jsonl(out_dir / "rounds" / f"{tag}_scn{i}_s{seed}.jsonl", res["rows"])
+        sm = summaries[-args.seeds:]
+        print(f"[group] {tag} scn{i} K={sc['group_size']} q={sc['q']:g} c/b={sc['c']/sc['b']:.2f} "
+              f"vs {sc['groupmates'][0]}: coop={np.mean([x['cooperation_rate'] for x in sm]):.2f} "
+              f"rho={np.mean([x['mean_rho'] for x in sm]):+.2f} brier={np.mean([x['mean_brier'] for x in sm]):.3f} "
+              f"R={np.mean([x['trajectory_scalar'] for x in sm]):.3f}", flush=True)
+    with open(out_dir / f"summary_{tag}.csv", "w", newline="") as f:
+        wr = csv.DictWriter(f, fieldnames=list(summaries[0].keys())); wr.writeheader(); wr.writerows(summaries)
+    keys = ["cooperation_rate", "mean_r1", "mean_rho", "mean_r2", "mean_cfe", "mean_brier", "bonus", "trajectory_scalar"]
+    print("[group] means: " + ", ".join(f"{k}={np.mean([x[k] for x in summaries]):.3f}" for k in keys))
 
 
 # ── portrait from logs ────────────────────────────────────────────────────
@@ -495,6 +570,31 @@ def main() -> None:
     p.add_argument("--flow-samples", type=int, default=8)
     p.add_argument("--out", default=None)
     p.set_defaults(func=cmd_reciprocity_figure)
+
+    p = sub.add_parser("donors-perturb", help="forced-defection repair test")
+    _add_client_args(p); game_params(p)
+    p.add_argument("--q-values", default="1.0"); p.add_argument("--w-values", default="1.0")
+    p.add_argument("--strategies", default="tit_for_tat,grim_trigger,wsls,tit_for_two_tats,generous_tit_for_tat")
+    p.add_argument("--seeds", type=int, default=4); p.add_argument("--rounds", type=int, default=20)
+    p.add_argument("--perturb-round", type=int, default=8)
+    p.add_argument("--out", default="donors_perturb")
+    p.set_defaults(func=cmd_donors_perturb)
+
+    p = sub.add_parser("donors-selfplay", help="LLM vs LLM donors game")
+    _add_client_args(p); game_params(p)
+    p.add_argument("--api-base-b", default=None); p.add_argument("--model-b", default=None)
+    p.add_argument("--mock-b", default=None)
+    p.add_argument("--q-values", default="0,1.0"); p.add_argument("--w-values", default="0,1.0")
+    p.add_argument("--seeds", type=int, default=4); p.add_argument("--rounds", type=int, default=20)
+    p.add_argument("--out", default="donors_selfplay")
+    p.set_defaults(func=cmd_donors_selfplay)
+
+    p = sub.add_parser("group-eval", help="group-selection stage evaluation")
+    _add_client_args(p)
+    p.add_argument("--scenarios", type=int, default=50); p.add_argument("--seeds", type=int, default=2)
+    p.add_argument("--seed-base", type=int, default=42)
+    p.add_argument("--out", default="group_eval")
+    p.set_defaults(func=cmd_group_eval)
 
     p = sub.add_parser("portrait", help="redraw portraits from logged games")
     p.add_argument("logs", nargs="+", help="rounds/*.jsonl files (same cell; one line each)")

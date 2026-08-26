@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import glob
 import json
+import re
 import statistics as S
 import sys
 from collections import defaultdict
@@ -175,7 +176,7 @@ def analyze_game(rows: list[dict]) -> dict:
 
 def _mem_tag(r0: dict) -> str:
     m = r0.get("memory")
-    return "full" if m is None else f"m{m}"
+    return "full" if m is None else (m if isinstance(m, str) else f"m{m}")
 
 
 def _coop_rate(rows: list[dict]) -> float:
@@ -254,6 +255,8 @@ def comparison_markdown(results_dirs: list[str]) -> str:
 
 
 def main():
+    if sys.argv[1:2] == ["signal"]:
+        print(signal_markdown(sys.argv[2:])); print(recovery_markdown(sys.argv[2:])); return
     if sys.argv[1:2] == ["table"]:
         print(comparison_markdown(sys.argv[2:]))
         print(pool_markdown(sys.argv[2:]))
@@ -396,6 +399,138 @@ def pool_markdown(results_dirs: list[str], weights: dict | None = None,
             cells.append("--" if v is None else
                          f"{v['model']:.0f} / {v['blind_optimum']:.0f} ({v['blind_policy']}) / {v['informed_optimum']:.0f}")
         out.append(f"| {m} | " + " | ".join(cells) + " |")
+    return "\n".join(out)
+
+
+
+# ── Training-signal view: reward decomposition, GRPO variance, latency ────
+#
+# Offline, from the logged dyadic games. For each cell:
+#   mean_rho  — Term-2 reciprocation signal rho_k = +1 if a_k == a_{k-1}^{-i}
+#               (0 on the first round with a partner)          [saturated -> no gradient]
+#   mean_r1   — normalized Term-1 payoff per round
+#   R_std     — std across seeds of the trajectory scalar R = mean_k (r1+r2)
+#               (the within-prompt spread GRPO's advantage divides by; 0 -> no signal)
+#   latency   — first round after which the model's action equals the reference
+#               action for the rest of the segment (opponent-inference speed)
+#   recovery  — perturbed games only: rounds after the forced D until mutual C
+#               resumes (None if never)
+#   rationale — keyword audit of the logged reasoning: share of rounds whose
+#               text mentions reputation / re-encounter / cost-benefit / last move
+
+_AUDIT = {
+    "reputation": re.compile(r"reputation|report|history with other|past behavior", re.I),
+    "re_encounter": re.compile(r"re-?encounter|again next round|same partner|never see|paired with", re.I),
+    "cost_benefit": re.compile(r"cost|benefit|points|payoff|\b[0-9]+\.[0-9] points", re.I),
+    "last_move": re.compile(r"last round|previous round|they (cooperated|defected)|played (COOPERATE|DEFECT)", re.I),
+}
+
+
+def signal_metrics(rows: list[dict], lambda_tom: float = 0.1) -> dict:
+    rows = sorted(rows, key=lambda r: r["round"])
+    b, c, q = rows[0]["b"], rows[0]["c"], rows[0]["q"]
+    strategy = rows[0]["opponent_strategy"]
+    ref = REFERENCE_ACTION.get(strategy, C)
+    rhos, r1s, r2s = [], [], []
+    prev_opp = None
+    for r in rows:
+        if r.get("rounds_with_partner", r["round"]) == 1:
+            prev_opp = None
+        rho = 0 if prev_opp is None else (1 if r["model_action"] == prev_opp else -1)
+        rhos.append(rho)
+        r1s.append(st.round_payoff(r["model_action"], r["opp_action"], b, c, normalized=True))
+        r2s.append(lambda_tom * (4 * q + c / b) * rho)
+        prev_opp = r["opp_action"]
+    R = (sum(r1s) + sum(r2s)) / len(rows)
+    # latency: last round at which the action differed from the reference, +1
+    lat = 0
+    for r in rows:
+        if r["model_action"] != ref:
+            lat = r["round"]
+    recovery = None
+    pr = rows[0].get("perturb_round")
+    if pr:
+        after = [r for r in rows if r["round"] > pr]
+        for k, r in enumerate(after, 1):
+            if r["model_action"] == C and r["opp_action"] == C:
+                recovery = k
+                break
+    audit = {k: 0.0 for k in _AUDIT}
+    texts = [r.get("content") or "" for r in rows]
+    if any(texts):
+        for k, rx in _AUDIT.items():
+            audit[k] = sum(bool(rx.search(t)) for t in texts) / len(texts)
+    return dict(mean_rho=S.mean(rhos[1:]) if len(rhos) > 1 else 0.0,
+                mean_r1=S.mean(r1s), mean_r2=S.mean(r2s), R=R,
+                latency=lat + 1, recovery=recovery, perturbed=bool(pr), audit=audit)
+
+
+def signal_table(results_dirs: list[str]) -> dict:
+    files = [f for d in results_dirs for f in glob.glob(str(Path(d) / "rounds" / "*.jsonl"))]
+    per = defaultdict(list)
+    for f in files:
+        rows = [json.loads(l) for l in open(f) if l.strip()]
+        if not rows or "q" not in rows[0]:
+            continue
+        r0 = rows[0]
+        key = (r0["opponent_strategy"], f"q={r0['q']:g}", f"w={r0['w']:g}", _mem_tag(r0))
+        per[key].append(signal_metrics(rows))
+    out = {}
+    for key, lst in sorted(per.items()):
+        rec = [x["recovery"] for x in lst if x["recovery"] is not None]
+        out[key] = dict(
+            mean_rho=S.mean(x["mean_rho"] for x in lst),
+            mean_r1=S.mean(x["mean_r1"] for x in lst),
+            R_mean=S.mean(x["R"] for x in lst),
+            R_std=(S.pstdev([x["R"] for x in lst]) if len(lst) > 1 else 0.0),
+            latency=S.mean(x["latency"] for x in lst),
+            recovery=(S.mean(rec) if rec else None),
+            recovered_frac=(len(rec) / len(lst)) if any(x["perturbed"] for x in lst) else None,
+            audit={k: S.mean(x["audit"][k] for x in lst) for k in _AUDIT},
+            n=len(lst))
+    return out
+
+
+def signal_markdown(results_dirs: list[str]) -> str:
+    t = signal_table(results_dirs)
+    if not t:
+        return ""
+    out = ["\n### Training-signal view (cell = mean rho · mean r1 · std of trajectory scalar across seeds · inference latency)\n"]
+    mems = sorted({k[3] for k in t}, key=lambda m: (m != "full", m))
+    cols = sorted({(k[2], k[1]) for k in t})
+    strats = sorted({k[0] for k in t})
+    for mem in mems:
+        out.append(f"\n**LLM memory {mem}**\n")
+        out.append("| vs | " + " | ".join(f"{w} {q}" for w, q in cols) + " |")
+        out.append("|---|" + "---|" * len(cols))
+        for s_ in strats:
+            cells = []
+            for w, q in cols:
+                v = t.get((s_, q, w, mem))
+                cells.append("--" if v is None else
+                             f"{v['mean_rho']:+.2f} · {v['mean_r1']:.2f} · {v['R_std']:.3f} · {v['latency']:.1f}")
+            out.append(f"| {s_} | " + " | ".join(cells) + " |")
+    aud = defaultdict(list)
+    for v in t.values():
+        for k, x in v["audit"].items():
+            aud[k].append(x)
+    if any(aud.values()):
+        out.append("\n**Rationale audit** (share of rounds whose reasoning mentions): " +
+                   ", ".join(f"{k}={S.mean(v):.2f}" for k, v in aud.items()))
+    return "\n".join(out)
+
+
+def recovery_markdown(results_dirs: list[str]) -> str:
+    t = signal_table(results_dirs)
+    rec = {k: v for k, v in t.items() if v["recovery"] is not None or v["recovered_frac"] is not None}
+    if not rec:
+        return ""
+    out = ["\n### Repair after a forced defection (rounds until mutual C resumes; fraction of games that recover)\n",
+           "| vs | w q | mean recovery rounds | recovered |", "|---|---|---|---|"]
+    for (s_, q, w, mem), v in rec.items():
+        rec_s = "--" if v["recovery"] is None else f"{v['recovery']:.1f}"
+        frac_s = "--" if v["recovered_frac"] is None else f"{v['recovered_frac']:.2f}"
+        out.append(f"| {s_} | {w} {q} | {rec_s} | {frac_s} |")
     return "\n".join(out)
 
 

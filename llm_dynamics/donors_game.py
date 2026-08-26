@@ -94,13 +94,22 @@ def run_donors_game(client, *, b: float, c: float, w: float, q: float,
                     swap_mode: str = "same", temperature: float = 0.6,
                     max_tokens: int = 512, no_think: bool = True,
                     parse_failure_action: str = "DEFECT",
-                    memory: Optional[int] = None) -> dict[str, Any]:
+                    memory: Optional[int | str] = None,
+                    perturb_round: Optional[int] = None,
+                    perturb_action: str = "DEFECT",
+                    log_content: bool = True) -> dict[str, Any]:
     """Play one dyadic game; returns {'rows': [...], 'summary': {...}}.
 
     `memory` (None = full conversation, the training setting) truncates
     the dialogue the model sees to the rules prompt plus the last
     `memory` (assistant, round-result) turn pairs — a memory-m window in
-    the donors framing.
+    the donors framing. `memory="note2"` keeps the last 2 pairs and replaces
+    everything older by a compaction-style summary note (the training-time
+    context compaction, approximated).
+
+    `perturb_round` forces the model's action to `perturb_action` on that
+    round (the model's own decision is still logged as `intended_action`);
+    used to measure repair time after a defection.
 
     Each row carries the per-round observables used by the phase
     portraits: the committed action, the continuous p_cooperate read from
@@ -122,16 +131,31 @@ def run_donors_game(client, *, b: float, c: float, w: float, q: float,
     rows: list[dict] = []
     n_swaps = 0
 
+    note_mode = isinstance(memory, str) and memory.startswith("note")
+    mem_n = int(memory[4:]) if note_mode else memory
+
     for rnd in range(1, num_rounds + 1):
         visible = messages
-        if memory is not None and len(messages) > 1 + 2 * memory:
-            visible = [messages[0]] + messages[-2 * memory:]
+        if mem_n is not None and len(messages) > 1 + 2 * mem_n:
+            visible = [messages[0]] + messages[-2 * mem_n:]
+            if note_mode:
+                # compaction note summarising the dropped turns with the current partner
+                k = len(model_hist) - mem_n
+                if k > 0:
+                    mc = sum(a == st.COOPERATE for a in model_hist[:k])
+                    oc = sum(a == st.COOPERATE for a in opp_hist[:k])
+                    note = (f"[Memory note] Earlier rounds with {partner_name} (not shown): "
+                            f"over {k} rounds you cooperated {mc} times and {partner_name} "
+                            f"cooperated {oc} times. Your running total is {cumulative:.1f} points.")
+                    visible = [messages[0], {"role": "user", "content": note},
+                               {"role": "assistant", "content": "Noted."}] + messages[-2 * mem_n:]
         reply = client.chat(visible, temperature=temperature,
                             max_tokens=max_tokens)
-        decision = st.parse_decision(reply["content"])
-        parse_failed = decision is None
+        intended = st.parse_decision(reply["content"])
+        parse_failed = intended is None
         if parse_failed:
-            decision = parse_failure_action
+            intended = parse_failure_action
+        decision = perturb_action if (perturb_round is not None and rnd == perturb_round) else intended
 
         if not opp_hist:
             opp_move = st.opponent_first_move(strategy, rng)
@@ -154,7 +178,9 @@ def run_donors_game(client, *, b: float, c: float, w: float, q: float,
 
         rows.append(dict(
             round=rnd, model_action=decision, opp_action=opp_move,
+            intended_action=intended, perturbed=(decision != intended),
             parse_failed=parse_failed,
+            content=(reply.get("content") if log_content else None),
             p_cooperate=reply.get("p_cooperate"),
             decision_logit_gap=reply.get("decision_logit_gap"),
             payoff_norm=payoff, payoff_raw=payoff_raw,
@@ -164,7 +190,7 @@ def run_donors_game(client, *, b: float, c: float, w: float, q: float,
             rounds_with_partner=len(model_hist),
             b=b, c=c, w=w, q=q, seed=seed,
             opponent_strategy=opponent_strategy, swap_mode=swap_mode,
-            memory=memory,
+            memory=memory, perturb_round=perturb_round,
         ))
 
         is_last = rnd == num_rounds
@@ -194,7 +220,10 @@ def run_donors_game(client, *, b: float, c: float, w: float, q: float,
                 if new_rep:
                     swap_text += f"\n{new_rep}"
 
-        messages.append({"role": "assistant", "content": reply["content"]})
+        assistant_text = reply["content"]
+        if decision != intended:
+            assistant_text = f"DECISION: {decision}"
+        messages.append({"role": "assistant", "content": assistant_text})
         messages.append({"role": "user", "content": round_result_text(
             rnd, num_rounds, decision, rows[-1]["partner"], opp_move,
             payoff_raw, cumulative, swap_text, no_think)})
@@ -214,6 +243,66 @@ def run_donors_game(client, *, b: float, c: float, w: float, q: float,
         **st.nowak_thresholds(b, c, w, q),
     )
     return {"rows": rows, "summary": summary}
+
+
+def run_donors_selfplay(client_a, client_b, *, b: float, c: float, w: float,
+                        q: float, num_rounds: int, seed: int = 0,
+                        temperature: float = 0.6, max_tokens: int = 512,
+                        no_think: bool = True,
+                        parse_failure_action: str = "DEFECT") -> dict[str, Any]:
+    """Two LLMs play each other (simultaneous moves), each with its own
+    conversation in the same training-faithful framing. w-swaps are
+    disabled (a swap would need a third player); q gates a reputation
+    report that describes the other model as a 'tit_for_tat'-like player.
+    Rows are per round with both sides' actions and p_cooperate."""
+    rng = random.Random(seed)
+    names = (st.AGENT_NAMES[0], st.AGENT_NAMES[1])
+    reps = [st.build_reputation_text("tit_for_tat", q, rng) for _ in range(2)]
+    msgs = [[{"role": "user", "content": initial_prompt(
+        b, c, w, q, num_rounds, reps[i], names[i], names[1 - i], no_think)}]
+        for i in range(2)]
+    clients = (client_a, client_b)
+    hist = [[], []]
+    cum = [0.0, 0.0]
+    rows = []
+    for rnd in range(1, num_rounds + 1):
+        replies = [clients[i].chat(msgs[i], temperature=temperature,
+                                   max_tokens=max_tokens) for i in range(2)]
+        acts, failed = [], []
+        for r in replies:
+            a = st.parse_decision(r["content"])
+            failed.append(a is None)
+            acts.append(a or parse_failure_action)
+        pay = [st.round_payoff(acts[i], acts[1 - i], b, c, normalized=False) for i in range(2)]
+        for i in range(2):
+            cum[i] += pay[i]
+        rows.append(dict(
+            round=rnd, model_action=acts[0], opp_action=acts[1],
+            a_action=acts[0], b_action=acts[1],
+            a_p_cooperate=replies[0].get("p_cooperate"),
+            b_p_cooperate=replies[1].get("p_cooperate"),
+            p_cooperate=replies[0].get("p_cooperate"),
+            a_payoff_raw=pay[0], b_payoff_raw=pay[1], payoff_raw=pay[0],
+            parse_failed=failed[0] or failed[1],
+            prev_own=(hist[0][-1] if hist[0] else None),
+            prev_opp=(hist[1][-1] if hist[1] else None),
+            b=b, c=c, w=w, q=q, seed=seed, rounds_with_partner=rnd,
+            opponent_strategy=f"selfplay:{getattr(client_b, 'model', '?')}",
+            a_model=getattr(client_a, "model", "?"), b_model=getattr(client_b, "model", "?"),
+        ))
+        for i in range(2):
+            hist[i].append(acts[i])
+            msgs[i].append({"role": "assistant", "content": replies[i]["content"]})
+            msgs[i].append({"role": "user", "content": round_result_text(
+                rnd, num_rounds, acts[i], names[1 - i], acts[1 - i], pay[i], cum[i], "", no_think)})
+    coop = [[a == st.COOPERATE for a in hist[i]] for i in range(2)]
+    return {"rows": rows, "summary": dict(
+        b=b, c=c, w=w, q=q, seed=seed, num_rounds=num_rounds,
+        a_model=rows[0]["a_model"], b_model=rows[0]["b_model"],
+        a_cooperation_rate=sum(coop[0]) / num_rounds,
+        b_cooperation_rate=sum(coop[1]) / num_rounds,
+        a_total=cum[0], b_total=cum[1], mutual_c_rate=sum(
+            x and y for x, y in zip(*coop)) / num_rounds)}
 
 
 def write_jsonl(path: str | Path, rows: list[dict]) -> None:
