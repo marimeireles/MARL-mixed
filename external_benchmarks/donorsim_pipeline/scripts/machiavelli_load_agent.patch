@@ -1,0 +1,16 @@
+diff --git a/machiavelli/agent/load_agent.py b/machiavelli/agent/load_agent.py
+index d40a109..e2950d8 100644
+--- a/machiavelli/agent/load_agent.py
++++ b/machiavelli/agent/load_agent.py
+@@ -23,6 +23,11 @@ def load_agent(agent_type: str):
+         from machiavelli.agent.lm_agents import GoodCoTAgent
+         agent = GoodCoTAgent(model=agent_type.split(':')[-1])
+     
++    elif agent_type.startswith('VLLMAgent'):
++        # VLLMAgent:<model_id>  -- endpoint comes from $VLLM_BASE_URL
++        from machiavelli.agent.vllm_agent import VLLMAgent
++        agent = VLLMAgent(model=agent_type.split(':', 1)[-1])
++
+     else:
+         raise NotImplementedError
+     

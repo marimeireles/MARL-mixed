@@ -1,0 +1,5 @@
+# upstream clones + data + run outputs (reproduce with setup.sh)
+EigenBench/
+dig-bench/
+machiavelli/
+runs/
