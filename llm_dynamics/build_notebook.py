@@ -16,8 +16,11 @@ VERSION = os.environ.get("VERSION", "v2")
 SUFFIX = "" if TAG == "qwen32b_base" else f"_{TAG}"
 GRIDS = "llm_dynamics/results/flow_grids" + ("" if TAG == "qwen32b_base" else f"_{TAG}")
 nb = nbf.v4.new_notebook(); C = []
-def md(s): C.append(nbf.v4.new_markdown_cell(s))
-def code(s): C.append(nbf.v4.new_code_cell(s))
+_ACTIVE = True   # gate: sections append only when active (tag-specific branches)
+def md(s):
+    if _ACTIVE: C.append(nbf.v4.new_markdown_cell(s))
+def code(s):
+    if _ACTIVE: C.append(nbf.v4.new_code_cell(s))
 
 md(r"""# Cooperation dynamics of LLM agents — source of truth
 
@@ -194,215 +197,217 @@ finite-state machine for the dynamic programs.
 sentinel. `llm_dynamics/README.md` has the commands.
 """)
 
-if TAG == "qwen32b_base":
-    md(r"""## 4. Experiment registry (base model = `Qwen/Qwen3-32B`, the pre-RL checkpoint)
+_ACTIVE = (TAG == "qwen32b_base")
+md(r"""## 4. Experiment registry (base model = `Qwen/Qwen3-32B`, the pre-RL checkpoint)
 
-    | id | SLURM jobs | design | outputs |
-    |---|---|---|---|
-    | **v1** | server 1183776 / client 1183777 (2026-08-25, 1h13m) | donors: {TFT, AllD, AllC} × q,w ∈ {0,.5,1}, b=4, c/b=.5, 2 seeds × 20 rounds, full memory; probes m1 at 4 (w,q) corners + m2; matrix: 4 games × m ∈ {1,2} × {TFT, AllD} × 1 seed × 20 rounds; matrix probes m1,m2 | `results/qwen32b_base_donors_sweep/`, `results/qwen32b_base_matrix_sweep/`, `results/probes/qwen32b_base_*`, `results/qwen32b_base_reciprocity_tft.png` |
-    | **v2** | server 1183852 / clients 1183853 + supplementary (2026-08-25) | donors: **all 9 strategies** {TFT, suspicious TFT, AllC, AllD, TF2T, Grim, Random, WSLS, generous TFT} × q,w ∈ {0,.5,1} × LLM memory {full,1,2,4} × 2 seeds × 20 rounds; matrix: same 9 strategies × 4 games × m ∈ {1,2,3,4,6} × 2 seeds; probes to m=3 both framings | `results/qwen32b_base_donors_v2/<strategy>/`, `results/qwen32b_base_matrix_v2/<strategy>/`, `results/qwen32b_base_v2_tables.md` |
-    | offline | — | `demo`: mock base-selfish vs mock trained-reciprocal through the identical code path | `results/demo_*` |
+| id | SLURM jobs | design | outputs |
+|---|---|---|---|
+| **v1** | server 1183776 / client 1183777 (2026-08-25, 1h13m) | donors: {TFT, AllD, AllC} × q,w ∈ {0,.5,1}, b=4, c/b=.5, 2 seeds × 20 rounds, full memory; probes m1 at 4 (w,q) corners + m2; matrix: 4 games × m ∈ {1,2} × {TFT, AllD} × 1 seed × 20 rounds; matrix probes m1,m2 | `results/qwen32b_base_donors_sweep/`, `results/qwen32b_base_matrix_sweep/`, `results/probes/qwen32b_base_*`, `results/qwen32b_base_reciprocity_tft.png` |
+| **v2** | server 1183852 / clients 1183853 + supplementary (2026-08-25) | donors: **all 9 strategies** {TFT, suspicious TFT, AllC, AllD, TF2T, Grim, Random, WSLS, generous TFT} × q,w ∈ {0,.5,1} × LLM memory {full,1,2,4} × 2 seeds × 20 rounds; matrix: same 9 strategies × 4 games × m ∈ {1,2,3,4,6} × 2 seeds; probes to m=3 both framings | `results/qwen32b_base_donors_v2/<strategy>/`, `results/qwen32b_base_matrix_v2/<strategy>/`, `results/qwen32b_base_v2_tables.md` |
+| offline | — | `demo`: mock base-selfish vs mock trained-reciprocal through the identical code path | `results/demo_*` |
 
-    Memory ceiling: CRLD backgrounds stop at $m=3$ ($4^m$ states; `MAX_CRLD_MEMORY`);
-    the LLM prompt window is cheap and is swept to $m=6$ (probes to $m=3$: 64 calls
-    per framing; $m=4$ would be 256).
-    """)
+Memory ceiling: CRLD backgrounds stop at $m=3$ ($4^m$ states; `MAX_CRLD_MEMORY`);
+the LLM prompt window is cheap and is swept to $m=6$ (probes to $m=3$: 64 calls
+per framing; $m=4$ would be 256).
+""")
 
-    md(r"""## 5. Results — base Qwen3-32B
+md(r"""## 5. Results — base Qwen3-32B
 
-    ### 5.1 Probed conditional policy (donors framing)""")
-    code(r"""def show_probes(pattern):
-        rows = []
-        for f in sorted(glob.glob(pattern)):
-            p = json.load(open(f)); name = os.path.basename(f).replace('.json','')
-            row = {'probe': name}
-            row.update({k: v['p_cooperate'] for k, v in sorted(p['states'].items())})
-            rows.append(row)
-        return pd.DataFrame(rows).set_index('probe').round(2) if rows else 'pending'
-    display(show_probes('llm_dynamics/results/probes/qwen32b_base_donors_m1_*.json'))
-    display(show_probes('llm_dynamics/results/probes/qwen32b_base_donors_m2_*.json').T)""")
-    md(r"""State labels are `own/partner` initials, oldest → newest. Reading: `cc`=after
-    mutual cooperation, `cd`=after being suckered, `dc`=after exploiting, `dd`=after
-    mutual defection.""")
+### 5.1 Probed conditional policy (donors framing)""")
+code(r"""def show_probes(pattern):
+    rows = []
+    for f in sorted(glob.glob(pattern)):
+        p = json.load(open(f)); name = os.path.basename(f).replace('.json','')
+        row = {'probe': name}
+        row.update({k: v['p_cooperate'] for k, v in sorted(p['states'].items())})
+        rows.append(row)
+    return pd.DataFrame(rows).set_index('probe').round(2) if rows else 'pending'
+display(show_probes('llm_dynamics/results/probes/qwen32b_base_donors_m1_*.json'))
+display(show_probes('llm_dynamics/results/probes/qwen32b_base_donors_m2_*.json').T)""")
+md(r"""State labels are `own/partner` initials, oldest → newest. Reading: `cc`=after
+mutual cooperation, `cd`=after being suckered, `dc`=after exploiting, `dd`=after
+mutual defection.""")
 
-    md(r"""### 5.2 Matrix-game probes (memory 1–3)""")
-    code(r"""for g in ['ipd','chicken','staghunt','harmony']:
-        print(g); display(show_probes(f'llm_dynamics/results/probes/qwen32b_base_{g}_m1.json'))
-    display(show_probes('llm_dynamics/results/probes/qwen32b_base_*_m2.json').T)""")
+md(r"""### 5.2 Matrix-game probes (memory 1–3)""")
+code(r"""for g in ['ipd','chicken','staghunt','harmony']:
+    print(g); display(show_probes(f'llm_dynamics/results/probes/qwen32b_base_{g}_m1.json'))
+display(show_probes('llm_dynamics/results/probes/qwen32b_base_*_m2.json').T)""")
 
-    md(r"""### 5.3 v1 sweep — cooperation rate and best-response regret""")
-    code(r"""from llm_dynamics import analysis
-    for d in ['llm_dynamics/results/qwen32b_base_donors_sweep', 'llm_dynamics/results/qwen32b_base_matrix_sweep']:
-        if os.path.isdir(d):
-            t = analysis.regret_table(d)
-            df = pd.DataFrame([{**{'cell': ' '.join(k)}, **{kk: vv for kk, vv in v.items() if kk!='n'}} for k, v in t.items()]).set_index('cell')
-            display(df.round(2))""")
-    code(r"""from IPython.display import Image, display as _d
-    for f in ['llm_dynamics/results/qwen32b_base_reciprocity_tft.png',
-              'llm_dynamics/results/qwen32b_base_donors_sweep/heatmap_qwen3-32b-base_tit_for_tat.png',
-              'llm_dynamics/results/qwen32b_base_donors_sweep/heatmap_qwen3-32b-base_always_defect.png']:
-        if os.path.exists(f): print(f); _d(Image(f, width=480))""")
+md(r"""### 5.3 v1 sweep — cooperation rate and best-response regret""")
+code(r"""from llm_dynamics import analysis
+for d in ['llm_dynamics/results/qwen32b_base_donors_sweep', 'llm_dynamics/results/qwen32b_base_matrix_sweep']:
+    if os.path.isdir(d):
+        t = analysis.regret_table(d)
+        df = pd.DataFrame([{**{'cell': ' '.join(k)}, **{kk: vv for kk, vv in v.items() if kk!='n'}} for k, v in t.items()]).set_index('cell')
+        display(df.round(2))""")
+code(r"""from IPython.display import Image, display as _d
+for f in ['llm_dynamics/results/qwen32b_base_reciprocity_tft.png',
+          'llm_dynamics/results/qwen32b_base_donors_sweep/heatmap_qwen3-32b-base_tit_for_tat.png',
+          'llm_dynamics/results/qwen32b_base_donors_sweep/heatmap_qwen3-32b-base_always_defect.png']:
+    if os.path.exists(f): print(f); _d(Image(f, width=480))""")
 
-    md(r"""### 5.4 v2 — strategies (incl. suspicious TFT) × (w,q) × memory, and × games × memory
+md(r"""### 5.4 v2 — strategies (incl. suspicious TFT) × (w,q) × memory, and × games × memory
 
-    Each cell is **agreement with the reference policy · model payoff / reference
-    payoff · best-response captured · welfare captured**. The *reference policy*
-    is the normative "match the partner" behaviour: all-C against AllC and against
-    every conditional cooperator (TFT, suspicious TFT, TF2T, Grim — vs Grim one
-    defection triggers permanent defection, so all-C dominates all-D), all-D
-    against AllD in the donors game / PD / Stag Hunt, and all-C against AllD in
-    Chicken / Harmony (there $S>P$: swerving beats crashing). The two DP optima (best response = max own payoff; welfare = max
-    joint payoff) are kept as bounds: the reference equals the welfare optimum vs
-    cooperators and the best response vs AllD.
+Each cell is **agreement with the reference policy · model payoff / reference
+payoff · best-response captured · welfare captured**. The *reference policy*
+is the normative "match the partner" behaviour: all-C against AllC and against
+every conditional cooperator (TFT, suspicious TFT, TF2T, Grim — vs Grim one
+defection triggers permanent defection, so all-C dominates all-D), all-D
+against AllD in the donors game / PD / Stag Hunt, and all-C against AllD in
+Chicken / Harmony (there $S>P$: swerving beats crashing). The two DP optima (best response = max own payoff; welfare = max
+joint payoff) are kept as bounds: the reference equals the welfare optimum vs
+cooperators and the best response vs AllD.
 
-    **Unknown-partner view.** Those per-strategy yardsticks assume the partner is
-    known, so an opening/probing cooperation against AllD counts as a loss. The
-    last tables instead average the model's payoff over the strategy pool and
-    compare it with (a) the best *blind* meta-policy — one fixed rule (all-C,
-    all-D, TFT, TFT-with-last-round-D, probe-once, Grim, Pavlov) played without
-    knowing the partner, under an equal prior and under donorSim's training-pool
-    prior — and (b) the informed optimum (sum of best responses). Probing is
-    worth it exactly when (a) is a cooperative opener, and the model's gap to (a)
-    is the uncertainty-aware regret.
-    (Reads `results/qwen32b_base_v2_tables.md`; shows *pending* until job 1183853 finishes.)""")
-    code(r"""from IPython.display import Markdown
-    f = 'llm_dynamics/results/qwen32b_base_v2_tables.md'
-    display(Markdown(open(f).read()) if os.path.exists(f) else Markdown('**v2 tables pending** (SLURM job 1183853)'))""")
-    code(r"""# v2 heatmaps per strategy x memory, when present
-    for f in sorted(glob.glob('llm_dynamics/results/qwen32b_base_donors_v2/*/heatmap_*.png')):
-        print(f); _d(Image(f, width=420))""")
+**Unknown-partner view.** Those per-strategy yardsticks assume the partner is
+known, so an opening/probing cooperation against AllD counts as a loss. The
+last tables instead average the model's payoff over the strategy pool and
+compare it with (a) the best *blind* meta-policy — one fixed rule (all-C,
+all-D, TFT, TFT-with-last-round-D, probe-once, Grim, Pavlov) played without
+knowing the partner, under an equal prior and under donorSim's training-pool
+prior — and (b) the informed optimum (sum of best responses). Probing is
+worth it exactly when (a) is a cooperative opener, and the model's gap to (a)
+is the uncertainty-aware regret.
+(Reads `results/qwen32b_base_v2_tables.md`; shows *pending* until job 1183853 finishes.)""")
+code(r"""from IPython.display import Markdown
+f = 'llm_dynamics/results/qwen32b_base_v2_tables.md'
+display(Markdown(open(f).read()) if os.path.exists(f) else Markdown('**v2 tables pending** (SLURM job 1183853)'))""")
+code(r"""# v2 heatmaps per strategy x memory, when present
+for f in sorted(glob.glob('llm_dynamics/results/qwen32b_base_donors_v2/*/heatmap_*.png')):
+    print(f); _d(Image(f, width=420))""")
 
-    md(r"""### 5.5 The arrow fields
+md(r"""### 5.5 The arrow fields
 
-    The flow-field figures for every game and setting (CRLD theory fields, and
-    the measured LLM paths over them) live in a companion notebook so this one
-    stays light: **`llm_dynamics_flow_fields_donors.ipynb`** and
-    **`llm_dynamics_flow_fields_matrix.ipynb`** (built by the same script;
-    figures from `python -m llm_dynamics.flow_grids`). One
-    representative field here — the four games at memory 2:""")
-    code(f"""f = '{GRIDS}/theory_matrix_m2.png'
-    if os.path.exists(f): _d(Image(f, width=900))""")
+The flow-field figures for every game and setting (CRLD theory fields, and
+the measured LLM paths over them) live in a companion notebook so this one
+stays light: **`llm_dynamics_flow_fields_donors.ipynb`** and
+**`llm_dynamics_flow_fields_matrix.ipynb`** (built by the same script;
+figures from `python -m llm_dynamics.flow_grids`). One
+representative field here — the four games at memory 2:""")
+code(f"""f = '{GRIDS}/theory_matrix_m2.png'
+if os.path.exists(f): _d(Image(f, width=900))""")
 
-    md(r"""## 6. Findings so far (base model) and what to compare against
+md(r"""## 6. Findings so far (base model) and what to compare against
 
-    * **Base Qwen3-32B is a near-deterministic hard tit-for-tat** in the donors
-      framing: $P(C\mid cc)=1$, $P(C\mid dc)=1$, $P(C\mid cd)=0$ at every $(w,q)$
-      corner (memory 1). In the reciprocity plane it sits at the (1, 0) corner, where
-      the fixed-opponent CRLD flow vs TFT points *away* (toward forgiveness).
-    * **$q$ acts through the reputation report, $w$ barely acts.** Opening $P(C)$
-      vs AllD is 0.00 whenever a report is guaranteed ($q=1$) and 1.00 at $q=0,w\ge.5$;
-      with one-shot strangers ($w=0$) and no information it hedges (0.50 vs AllC).
-      After round 1 the last move dominates and $(w,q)$ stop mattering.
-    * **Optimality view:** best-response captured ≈1.0 vs AllD and vs TFT with a
-      stable partner ($w=1$, 0.98); leaves a third on the table vs AllC (never
-      exploits, 0.67) and vs one-shot strangers (cooperates where the oracle
-      defects). Welfare captured is 1.00 vs TFT and AllC at $w=1$ (it reaches the
-      Pareto-efficient mutual-cooperation point) and 0.67 vs AllD (it refuses to be
-      exploited) — i.e. the base model is on the reciprocal, not the altruistic,
-      side of that trade-off.
-    * **Memory matters exactly as in the paper:** PD vs TFT at memory 1 falls into
-      the TFT echo cycle (coop 0.35, captured 0.69); memory 2 escapes (0.95 / 1.00).
-    * **Payoff-structure blindness:** the memory-1 probed policy is identical across
-      PD, Chicken and Stag Hunt (`cc=1, cd=0, dc=1, dd=1`), and against AllD in
-      Chicken/Harmony — where the best response is to *cooperate* — it retaliates
-      and captures only 25–45%.
+* **Base Qwen3-32B is a near-deterministic hard tit-for-tat** in the donors
+  framing: $P(C\mid cc)=1$, $P(C\mid dc)=1$, $P(C\mid cd)=0$ at every $(w,q)$
+  corner (memory 1). In the reciprocity plane it sits at the (1, 0) corner, where
+  the fixed-opponent CRLD flow vs TFT points *away* (toward forgiveness).
+* **$q$ acts through the reputation report, $w$ barely acts.** Opening $P(C)$
+  vs AllD is 0.00 whenever a report is guaranteed ($q=1$) and 1.00 at $q=0,w\ge.5$;
+  with one-shot strangers ($w=0$) and no information it hedges (0.50 vs AllC).
+  After round 1 the last move dominates and $(w,q)$ stop mattering.
+* **Optimality view:** best-response captured ≈1.0 vs AllD and vs TFT with a
+  stable partner ($w=1$, 0.98); leaves a third on the table vs AllC (never
+  exploits, 0.67) and vs one-shot strangers (cooperates where the oracle
+  defects). Welfare captured is 1.00 vs TFT and AllC at $w=1$ (it reaches the
+  Pareto-efficient mutual-cooperation point) and 0.67 vs AllD (it refuses to be
+  exploited) — i.e. the base model is on the reciprocal, not the altruistic,
+  side of that trade-off.
+* **Memory matters exactly as in the paper:** PD vs TFT at memory 1 falls into
+  the TFT echo cycle (coop 0.35, captured 0.69); memory 2 escapes (0.95 / 1.00).
+* **Payoff-structure blindness:** the memory-1 probed policy is identical across
+  PD, Chicken and Stag Hunt (`cc=1, cd=0, dc=1, dd=1`), and against AllD in
+  Chicken/Harmony — where the best response is to *cooperate* — it retaliates
+  and captures only 25–45%.
 
-    **For the RL-trained checkpoint** the cells to watch are: $P(C\mid cd)$
-    (forgiveness — does training move the star off the (1,0) corner?), the AllC
-    column (exploitation), the $w=0$ column (one-shot strangers), and the
-    Chicken/Harmony-vs-AllD cells (does it learn the game or stay a reflex
-    reciprocator?). Protocol: serve the merged checkpoint with
-    `serve_qwen32b.sbatch` (change model path / `--served-model-name`), then
-    `TAG=qwen32b_trained MODEL=<name> sbatch llm_dynamics/slurm/run_suite_v2.sbatch`,
-    then `reciprocity-figure --probes <base> <trained>`.
+**For the RL-trained checkpoint** the cells to watch are: $P(C\mid cd)$
+(forgiveness — does training move the star off the (1,0) corner?), the AllC
+column (exploitation), the $w=0$ column (one-shot strangers), and the
+Chicken/Harmony-vs-AllD cells (does it learn the game or stay a reflex
+reciprocator?). Protocol: serve the merged checkpoint with
+`serve_qwen32b.sbatch` (change model path / `--served-model-name`), then
+`TAG=qwen32b_trained MODEL=<name> sbatch llm_dynamics/slurm/run_suite_v2.sbatch`,
+then `reciprocity-figure --probes <base> <trained>`.
 
-    ## 7. Caveats
-    * Two seeds per cell, 20 rounds: coarse; a $q=0$ column has identical prompts
-      across partner rows, so differences there are sampling noise.
-    * $c/b=0.5$ fixed, so Nowak's thresholds sit on the middle grid value; a $c/b$
-      sweep is needed to test threshold-tracking vs report-text-following.
-    * Probes are greedy at a fixed mid-game round; play is sampled across the whole
-      game (end-game effects included).
-    * The played path in the reciprocity plane needs the `cd` state to occur; vs TFT
-      it never does, so that coordinate stays at its 0.5 default (use the probe star).
-    * `grim_trigger` is pinned as its memory-$m$ truncation; suspicious TFT has the
-      same state-space policy as TFT (the opening move is not a state).
-    """)
+## 7. Caveats
+* Two seeds per cell, 20 rounds: coarse; a $q=0$ column has identical prompts
+  across partner rows, so differences there are sampling noise.
+* $c/b=0.5$ fixed, so Nowak's thresholds sit on the middle grid value; a $c/b$
+  sweep is needed to test threshold-tracking vs report-text-following.
+* Probes are greedy at a fixed mid-game round; play is sampled across the whole
+  game (end-game effects included).
+* The played path in the reciprocity plane needs the `cd` state to occur; vs TFT
+  it never does, so that coordinate stays at its 0.5 default (use the probe star).
+* `grim_trigger` is pinned as its memory-$m$ truncation; suspicious TFT has the
+  same state-space policy as TFT (the opening move is not a state).
+""")
+_ACTIVE = (TAG != "qwen32b_base")
 
-else:
+md(f"""## 4. Experiment registry — `{TAG}` ({VERSION})
 
-    md(f"""## 4. Experiment registry — `{TAG}` ({VERSION})
+Design (identical for base and trained checkpoints, so tables are directly comparable):
 
-    Design (identical for base and trained checkpoints, so tables are directly comparable):
+* donors game (training-faithful prompts): 9 strategies × (w,q) ∈ {{0, .5, 1}}² × LLM memory
+  {{full, 1, 2, note2}} × 4 seeds × 20 rounds at c/b = 0.5; c/b ∈ {{0.25, 0.75, 1.0, 1.25}} at
+  w ∈ {{0.5, 1}}, q ∈ {{0, 1}}; horizons N ∈ {{5, 10}}; thinking-on subset at w = 1
+* perturbation/repair: forced defection at round 8 vs TFT, Grim, WSLS, TF2T, generous TFT
+* self-play (model vs itself) at (w,q) ∈ {{0, 1}}²
+* group-selection stage (the trained environment, thinking on): 50 scenarios × 2 seeds,
+  PREDICT + DECISION, CFE / Brier / ρ / bonus / trajectory scalar
+* matrix games: PD, Chicken, Stag Hunt, Harmony × memory {{1, 2, 3}} × 9 strategies × 4 seeds
+* probes to memory 3, both framings
 
-    * donors game (training-faithful prompts): 9 strategies × (w,q) ∈ {{0, .5, 1}}² × LLM memory
-      {{full, 1, 2, note2}} × 4 seeds × 20 rounds at c/b = 0.5; c/b ∈ {{0.25, 0.75, 1.0, 1.25}} at
-      w ∈ {{0.5, 1}}, q ∈ {{0, 1}}; horizons N ∈ {{5, 10}}; thinking-on subset at w = 1
-    * perturbation/repair: forced defection at round 8 vs TFT, Grim, WSLS, TF2T, generous TFT
-    * self-play (model vs itself) at (w,q) ∈ {{0, 1}}²
-    * group-selection stage (the trained environment, thinking on): 50 scenarios × 2 seeds,
-      PREDICT + DECISION, CFE / Brier / ρ / bonus / trajectory scalar
-    * matrix games: PD, Chicken, Stag Hunt, Harmony × memory {{1, 2, 3}} × 9 strategies × 4 seeds
-    * probes to memory 3, both framings
+Outputs: `results/{TAG}_*_{VERSION}*/`, `results/probes/{TAG}_*`, `results/{TAG}_{VERSION}_tables.md`.
+""")
 
-    Outputs: `results/{TAG}_*_{VERSION}*/`, `results/probes/{TAG}_*`, `results/{TAG}_{VERSION}_tables.md`.
-    """)
+md(r"""## 5. Results""")
+md(r"""### 5.1 Probed conditional policy (donors framing, memory 1 and 2)""")
+code(f"""from IPython.display import Image, display as _d
+def show_probes(pattern):
+    rows = []
+    for f in sorted(glob.glob(pattern)):
+        p = json.load(open(f)); name = os.path.basename(f).replace('.json','')
+        row = {{'probe': name}}
+        row.update({{k: v['p_cooperate'] for k, v in sorted(p['states'].items())}})
+        rows.append(row)
+    return pd.DataFrame(rows).set_index('probe').round(2) if rows else 'pending'
+display(show_probes('llm_dynamics/results/probes/{TAG}_donors_m1_*.json'))
+display(show_probes('llm_dynamics/results/probes/{TAG}_donors_m2_*.json').T)
+for g in ['ipd','chicken','staghunt','harmony']:
+    print(g); display(show_probes(f'llm_dynamics/results/probes/{TAG}_{{g}}_m1.json'))""")
 
-    md(r"""## 5. Results""")
-    md(r"""### 5.1 Probed conditional policy (donors framing, memory 1 and 2)""")
-    code(f"""def show_probes(pattern):
-        rows = []
-        for f in sorted(glob.glob(pattern)):
-            p = json.load(open(f)); name = os.path.basename(f).replace('.json','')
-            row = {{'probe': name}}
-            row.update({{k: v['p_cooperate'] for k, v in sorted(p['states'].items())}})
-            rows.append(row)
-        return pd.DataFrame(rows).set_index('probe').round(2) if rows else 'pending'
-    display(show_probes('llm_dynamics/results/probes/{TAG}_donors_m1_*.json'))
-    display(show_probes('llm_dynamics/results/probes/{TAG}_donors_m2_*.json').T)
-    for g in ['ipd','chicken','staghunt','harmony']:
-        print(g); display(show_probes(f'llm_dynamics/results/probes/{TAG}_{{g}}_m1.json'))""")
+md(r"""### 5.2 All tables
 
-    md(r"""### 5.2 All tables
+Per-strategy tables (cell = agreement with the reference policy · model/reference payoff ·
+best-response captured · welfare captured), unknown-partner tables (blind-policy optimum
+under equal and training-pool priors), c/b sweep, thinking-on subset, horizons, and the
+training-signal view (mean ρ · mean r₁ · std of the trajectory scalar across seeds ·
+inference latency) with the repair table. Reference = all-C vs AllC and conditional
+cooperators, all-D vs AllD (all-C in Chicken/Harmony).""")
+code(f"""from IPython.display import Markdown
+f = 'llm_dynamics/results/{TAG}_{VERSION}_tables.md'
+display(Markdown(open(f).read()) if os.path.exists(f) else Markdown('**tables pending**'))""")
 
-    Per-strategy tables (cell = agreement with the reference policy · model/reference payoff ·
-    best-response captured · welfare captured), unknown-partner tables (blind-policy optimum
-    under equal and training-pool priors), c/b sweep, thinking-on subset, horizons, and the
-    training-signal view (mean ρ · mean r₁ · std of the trajectory scalar across seeds ·
-    inference latency) with the repair table. Reference = all-C vs AllC and conditional
-    cooperators, all-D vs AllD (all-C in Chicken/Harmony).""")
-    code(f"""from IPython.display import Markdown
-    f = 'llm_dynamics/results/{TAG}_{VERSION}_tables.md'
-    display(Markdown(open(f).read()) if os.path.exists(f) else Markdown('**tables pending**'))""")
+md(r"""### 5.3 Group-selection stage (the trained environment) and self-play""")
+code(f"""for f, label in [('llm_dynamics/results/{TAG}_group_{VERSION}/summary_*.csv', 'group stage'),
+                 ('llm_dynamics/results/{TAG}_selfplay_{VERSION}/summary_*.csv', 'self-play')]:
+    fs = glob.glob(f)
+    if fs:
+        df = pd.read_csv(fs[0]); print(label, f'({{len(df)}} games)')
+        num = df.select_dtypes('number')
+        display(num.mean().round(3).to_frame('mean').T)
+        if label == 'self-play':
+            display(df.groupby(['w','q'])[['a_cooperation_rate','b_cooperation_rate','mutual_c_rate','a_total','b_total']].mean().round(2))
+        else:
+            display(df.groupby('partner')[['cooperation_rate','mean_r1','mean_rho','mean_cfe','mean_brier','trajectory_scalar']].mean().round(3))""")
 
-    md(r"""### 5.3 Group-selection stage (the trained environment) and self-play""")
-    code(f"""for f, label in [('llm_dynamics/results/{TAG}_group_{VERSION}/summary_*.csv', 'group stage'),
-                     ('llm_dynamics/results/{TAG}_selfplay_{VERSION}/summary_*.csv', 'self-play')]:
-        fs = glob.glob(f)
-        if fs:
-            df = pd.read_csv(fs[0]); print(label, f'({{len(df)}} games)')
-            num = df.select_dtypes('number')
-            display(num.mean().round(3).to_frame('mean').T)
-            if label == 'self-play':
-                display(df.groupby(['w','q'])[['a_cooperation_rate','b_cooperation_rate','mutual_c_rate','a_total','b_total']].mean().round(2))
-            else:
-                display(df.groupby('partner')[['cooperation_rate','mean_r1','mean_rho','mean_cfe','mean_brier','trajectory_scalar']].mean().round(3))""")
+md(f"""### 5.4 Arrow fields
 
-    md(f"""### 5.4 Arrow fields
+Companion notebooks `llm_dynamics_flow_fields_donors{SUFFIX}.ipynb` /
+`llm_dynamics_flow_fields_matrix{SUFFIX}.ipynb`; PNGs in `{GRIDS}/`.
+One representative field — the four games at memory 2:""")
+code(f"""f = '{GRIDS}/theory_matrix_m2.png'
+if os.path.exists(f): _d(Image(f, width=900))""")
 
-    Companion notebooks `llm_dynamics_flow_fields_donors{SUFFIX}.ipynb` /
-    `llm_dynamics_flow_fields_matrix{SUFFIX}.ipynb`; PNGs in `{GRIDS}/`.
-    One representative field — the four games at memory 2:""")
-    code(f"""f = '{GRIDS}/theory_matrix_m2.png'
-    if os.path.exists(f): _d(Image(f, width=900))""")
+md(r"""## 6. How to compare against a trained checkpoint
 
-    md(r"""## 6. How to compare against a trained checkpoint
+Serve it with `llm_dynamics/slurm/serve_model.sbatch` (`MODEL_PATH=<merged dir>` or
+`LORA=<adapter dir>`), run `TAG=<tag> MODEL=<served name> ENDPOINT_FILE=... sbatch
+llm_dynamics/slurm/run_suite_v3.sbatch`, then `TAG=<tag> VERSION=v3 python
+llm_dynamics/build_notebook.py --execute` and `reciprocity-figure --probes <base> <trained>`.
+""")
+_ACTIVE = True
 
-    Serve it with `llm_dynamics/slurm/serve_model.sbatch` (`MODEL_PATH=<merged dir>` or
-    `LORA=<adapter dir>`), run `TAG=<tag> MODEL=<served name> ENDPOINT_FILE=... sbatch
-    llm_dynamics/slurm/run_suite_v3.sbatch`, then `TAG=<tag> VERSION=v3 python
-    llm_dynamics/build_notebook.py --execute` and `reciprocity-figure --probes <base> <trained>`.
-    """)
 
 nb["cells"] = C
 out = os.path.join(HERE, f"llm_dynamics_notebook{SUFFIX}.ipynb")
