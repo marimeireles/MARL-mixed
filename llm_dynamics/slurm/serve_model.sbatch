@@ -16,7 +16,7 @@
 #   MODEL_PATH=Qwen/Qwen3-8B SERVED_NAME=qwen3-8b-base sbatch llm_dynamics/slurm/serve_model.sbatch
 set -euo pipefail
 cd /nas/ucb/marimeireles/MARL-mixed
-export HF_HOME=/nas/ucb/marimeireles/cache
+export HF_HOME=/nas/ucb/marimeireles/cache VLLM_NO_USAGE_STATS=1 DO_NOT_TRACK=1 XDG_CACHE_HOME=/nas/ucb/marimeireles/cache/xdg
 PORT="${PORT:-8010}"; MODEL_PATH="${MODEL_PATH:?}"; SERVED_NAME="${SERVED_NAME:?}"
 ENDPOINT_FILE="${ENDPOINT_FILE:-/nas/ucb/marimeireles/MARL-mixed/llm_dynamics/logs/vllm_endpoint_${SERVED_NAME}.txt}"
 MAX_LEN="${MAX_LEN:-16384}"
