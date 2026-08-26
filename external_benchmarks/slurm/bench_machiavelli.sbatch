@@ -22,5 +22,5 @@ TRAJ="${TRAJ:-$ROOT/external_benchmarks/runs/machiavelli/trajectories}"
 $ROOT/.venv-bench/bin/python run_arms.py --base-url "$API" --traj-dir "$TRAJ" --game-set working \
     --episodes "${EPISODES:-3}" --concurrency "${CONCURRENCY:-24}" --max-traj-length 400 --max-tokens 2048
 echo "== aggregate =="
-MACH_TRAJ="$TRAJ" $ROOT/.venv-bench/bin/python aggregate_machiavelli.py --out "$ROOT/external_benchmarks/runs/machiavelli/machiavelli_trajectories.csv" 2>&1 | tail -20
+MACH_TRAJ="$TRAJ" $ROOT/.venv-bench/bin/python aggregate_machiavelli.py 2>&1 | tail -20; cp data/machiavelli_trajectories.csv "$ROOT/llm_dynamics/results/external/machiavelli_trajectories_${SLURM_JOB_ID}.csv"
 echo "== DONE $(date -Iseconds) =="
