@@ -19,7 +19,7 @@
    ]
   },
   "cd": {
-   "p_cooperate": 4.5990558332842075e-10,
+   "p_cooperate": 4.058652534465991e-10,
    "n_samples": 1,
    "state": [
     [
@@ -29,7 +29,7 @@
    ]
   },
   "dc": {
-   "p_cooperate": 0.9999999847322693,
+   "p_cooperate": 0.9999982392985962,
    "n_samples": 1,
    "state": [
     [

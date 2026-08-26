@@ -1,0 +1,1164 @@
+{
+ "kind": "matrix",
+ "game": "harmony",
+ "memory": 3,
+ "probe_round": 10,
+ "num_rounds": 25,
+ "temperature": 0.0,
+ "samples": 1,
+ "model": "qwen3-32b-base",
+ "states": {
+  "cc|cc|cc": {
+   "p_cooperate": 0.9999999994036803,
+   "n_samples": 1,
+   "state": [
+    [
+     "COOPERATE",
+     "COOPERATE"
+    ],
+    [
+     "COOPERATE",
+     "COOPERATE"
+    ],
+    [
+     "COOPERATE",
+     "COOPERATE"
+    ]
+   ]
+  },
+  "cc|cc|cd": {
+   "p_cooperate": 0.0,
+   "n_samples": 1,
+   "state": [
+    [
+     "COOPERATE",
+     "COOPERATE"
+    ],
+    [
+     "COOPERATE",
+     "COOPERATE"
+    ],
+    [
+     "COOPERATE",
+     "DEFECT"
+    ]
+   ]
+  },
+  "cc|cc|dc": {
+   "p_cooperate": 0.9999980040195512,
+   "n_samples": 1,
+   "state": [
+    [
+     "COOPERATE",
+     "COOPERATE"
+    ],
+    [
+     "COOPERATE",
+     "COOPERATE"
+    ],
+    [
+     "DEFECT",
+     "COOPERATE"
+    ]
+   ]
+  },
+  "cc|cc|dd": {
+   "p_cooperate": 0.9999999996418252,
+   "n_samples": 1,
+   "state": [
+    [
+     "COOPERATE",
+     "COOPERATE"
+    ],
+    [
+     "COOPERATE",
+     "COOPERATE"
+    ],
+    [
+     "DEFECT",
+     "DEFECT"
+    ]
+   ]
+  },
+  "cc|cd|cc": {
+   "p_cooperate": 0.9999999961457466,
+   "n_samples": 1,
+   "state": [
+    [
+     "COOPERATE",
+     "COOPERATE"
+    ],
+    [
+     "COOPERATE",
+     "DEFECT"
+    ],
+    [
+     "COOPERATE",
+     "COOPERATE"
+    ]
+   ]
+  },
+  "cc|cd|cd": {
+   "p_cooperate": 0.0,
+   "n_samples": 1,
+   "state": [
+    [
+     "COOPERATE",
+     "COOPERATE"
+    ],
+    [
+     "COOPERATE",
+     "DEFECT"
+    ],
+    [
+     "COOPERATE",
+     "DEFECT"
+    ]
+   ]
+  },
+  "cc|cd|dc": {
+   "p_cooperate": 0.9999999981726149,
+   "n_samples": 1,
+   "state": [
+    [
+     "COOPERATE",
+     "COOPERATE"
+    ],
+    [
+     "COOPERATE",
+     "DEFECT"
+    ],
+    [
+     "DEFECT",
+     "COOPERATE"
+    ]
+   ]
+  },
+  "cc|cd|dd": {
+   "p_cooperate": 0.0,
+   "n_samples": 1,
+   "state": [
+    [
+     "COOPERATE",
+     "COOPERATE"
+    ],
+    [
+     "COOPERATE",
+     "DEFECT"
+    ],
+    [
+     "DEFECT",
+     "DEFECT"
+    ]
+   ]
+  },
+  "cc|dc|cc": {
+   "p_cooperate": 0.9999999881159827,
+   "n_samples": 1,
+   "state": [
+    [
+     "COOPERATE",
+     "COOPERATE"
+    ],
+    [
+     "DEFECT",
+     "COOPERATE"
+    ],
+    [
+     "COOPERATE",
+     "COOPERATE"
+    ]
+   ]
+  },
+  "cc|dc|cd": {
+   "p_cooperate": 8.152022476935711e-09,
+   "n_samples": 1,
+   "state": [
+    [
+     "COOPERATE",
+     "COOPERATE"
+    ],
+    [
+     "DEFECT",
+     "COOPERATE"
+    ],
+    [
+     "COOPERATE",
+     "DEFECT"
+    ]
+   ]
+  },
+  "cc|dc|dc": {
+   "p_cooperate": 0.9999998360705422,
+   "n_samples": 1,
+   "state": [
+    [
+     "COOPERATE",
+     "COOPERATE"
+    ],
+    [
+     "DEFECT",
+     "COOPERATE"
+    ],
+    [
+     "DEFECT",
+     "COOPERATE"
+    ]
+   ]
+  },
+  "cc|dc|dd": {
+   "p_cooperate": 0.0,
+   "n_samples": 1,
+   "state": [
+    [
+     "COOPERATE",
+     "COOPERATE"
+    ],
+    [
+     "DEFECT",
+     "COOPERATE"
+    ],
+    [
+     "DEFECT",
+     "DEFECT"
+    ]
+   ]
+  },
+  "cc|dd|cc": {
+   "p_cooperate": 0.9999999999294713,
+   "n_samples": 1,
+   "state": [
+    [
+     "COOPERATE",
+     "COOPERATE"
+    ],
+    [
+     "DEFECT",
+     "DEFECT"
+    ],
+    [
+     "COOPERATE",
+     "COOPERATE"
+    ]
+   ]
+  },
+  "cc|dd|cd": {
+   "p_cooperate": 0.0,
+   "n_samples": 1,
+   "state": [
+    [
+     "COOPERATE",
+     "COOPERATE"
+    ],
+    [
+     "DEFECT",
+     "DEFECT"
+    ],
+    [
+     "COOPERATE",
+     "DEFECT"
+    ]
+   ]
+  },
+  "cc|dd|dc": {
+   "p_cooperate": 0.9999999916986689,
+   "n_samples": 1,
+   "state": [
+    [
+     "COOPERATE",
+     "COOPERATE"
+    ],
+    [
+     "DEFECT",
+     "DEFECT"
+    ],
+    [
+     "DEFECT",
+     "COOPERATE"
+    ]
+   ]
+  },
+  "cc|dd|dd": {
+   "p_cooperate": 8.592167530593758e-10,
+   "n_samples": 1,
+   "state": [
+    [
+     "COOPERATE",
+     "COOPERATE"
+    ],
+    [
+     "DEFECT",
+     "DEFECT"
+    ],
+    [
+     "DEFECT",
+     "DEFECT"
+    ]
+   ]
+  },
+  "cd|cc|cc": {
+   "p_cooperate": 0.9999999990124919,
+   "n_samples": 1,
+   "state": [
+    [
+     "COOPERATE",
+     "DEFECT"
+    ],
+    [
+     "COOPERATE",
+     "COOPERATE"
+    ],
+    [
+     "COOPERATE",
+     "COOPERATE"
+    ]
+   ]
+  },
+  "cd|cc|cd": {
+   "p_cooperate": 0.0,
+   "n_samples": 1,
+   "state": [
+    [
+     "COOPERATE",
+     "DEFECT"
+    ],
+    [
+     "COOPERATE",
+     "COOPERATE"
+    ],
+    [
+     "COOPERATE",
+     "DEFECT"
+    ]
+   ]
+  },
+  "cd|cc|dc": {
+   "p_cooperate": 8.93970005552519e-06,
+   "n_samples": 1,
+   "state": [
+    [
+     "COOPERATE",
+     "DEFECT"
+    ],
+    [
+     "COOPERATE",
+     "COOPERATE"
+    ],
+    [
+     "DEFECT",
+     "COOPERATE"
+    ]
+   ]
+  },
+  "cd|cc|dd": {
+   "p_cooperate": 2.6995767494941233e-07,
+   "n_samples": 1,
+   "state": [
+    [
+     "COOPERATE",
+     "DEFECT"
+    ],
+    [
+     "COOPERATE",
+     "COOPERATE"
+    ],
+    [
+     "DEFECT",
+     "DEFECT"
+    ]
+   ]
+  },
+  "cd|cd|cc": {
+   "p_cooperate": 0.9999999979322862,
+   "n_samples": 1,
+   "state": [
+    [
+     "COOPERATE",
+     "DEFECT"
+    ],
+    [
+     "COOPERATE",
+     "DEFECT"
+    ],
+    [
+     "COOPERATE",
+     "COOPERATE"
+    ]
+   ]
+  },
+  "cd|cd|cd": {
+   "p_cooperate": 0.0,
+   "n_samples": 1,
+   "state": [
+    [
+     "COOPERATE",
+     "DEFECT"
+    ],
+    [
+     "COOPERATE",
+     "DEFECT"
+    ],
+    [
+     "COOPERATE",
+     "DEFECT"
+    ]
+   ]
+  },
+  "cd|cd|dc": {
+   "p_cooperate": 0.9999999927856603,
+   "n_samples": 1,
+   "state": [
+    [
+     "COOPERATE",
+     "DEFECT"
+    ],
+    [
+     "COOPERATE",
+     "DEFECT"
+    ],
+    [
+     "DEFECT",
+     "COOPERATE"
+    ]
+   ]
+  },
+  "cd|cd|dd": {
+   "p_cooperate": 0.0,
+   "n_samples": 1,
+   "state": [
+    [
+     "COOPERATE",
+     "DEFECT"
+    ],
+    [
+     "COOPERATE",
+     "DEFECT"
+    ],
+    [
+     "DEFECT",
+     "DEFECT"
+    ]
+   ]
+  },
+  "cd|dc|cc": {
+   "p_cooperate": 0.9999999994788586,
+   "n_samples": 1,
+   "state": [
+    [
+     "COOPERATE",
+     "DEFECT"
+    ],
+    [
+     "DEFECT",
+     "COOPERATE"
+    ],
+    [
+     "COOPERATE",
+     "COOPERATE"
+    ]
+   ]
+  },
+  "cd|dc|cd": {
+   "p_cooperate": 0.0,
+   "n_samples": 1,
+   "state": [
+    [
+     "COOPERATE",
+     "DEFECT"
+    ],
+    [
+     "DEFECT",
+     "COOPERATE"
+    ],
+    [
+     "COOPERATE",
+     "DEFECT"
+    ]
+   ]
+  },
+  "cd|dc|dc": {
+   "p_cooperate": 0.9999999677321839,
+   "n_samples": 1,
+   "state": [
+    [
+     "COOPERATE",
+     "DEFECT"
+    ],
+    [
+     "DEFECT",
+     "COOPERATE"
+    ],
+    [
+     "DEFECT",
+     "COOPERATE"
+    ]
+   ]
+  },
+  "cd|dc|dd": {
+   "p_cooperate": 1.4166092648578516e-09,
+   "n_samples": 1,
+   "state": [
+    [
+     "COOPERATE",
+     "DEFECT"
+    ],
+    [
+     "DEFECT",
+     "COOPERATE"
+    ],
+    [
+     "DEFECT",
+     "DEFECT"
+    ]
+   ]
+  },
+  "cd|dd|cc": {
+   "p_cooperate": 0.9999999999666846,
+   "n_samples": 1,
+   "state": [
+    [
+     "COOPERATE",
+     "DEFECT"
+    ],
+    [
+     "DEFECT",
+     "DEFECT"
+    ],
+    [
+     "COOPERATE",
+     "COOPERATE"
+    ]
+   ]
+  },
+  "cd|dd|cd": {
+   "p_cooperate": 2.5109996587754018e-08,
+   "n_samples": 1,
+   "state": [
+    [
+     "COOPERATE",
+     "DEFECT"
+    ],
+    [
+     "DEFECT",
+     "DEFECT"
+    ],
+    [
+     "COOPERATE",
+     "DEFECT"
+    ]
+   ]
+  },
+  "cd|dd|dc": {
+   "p_cooperate": 1.4166091000895554e-09,
+   "n_samples": 1,
+   "state": [
+    [
+     "COOPERATE",
+     "DEFECT"
+    ],
+    [
+     "DEFECT",
+     "DEFECT"
+    ],
+    [
+     "DEFECT",
+     "COOPERATE"
+    ]
+   ]
+  },
+  "cd|dd|dd": {
+   "p_cooperate": 0.9999999225852408,
+   "n_samples": 1,
+   "state": [
+    [
+     "COOPERATE",
+     "DEFECT"
+    ],
+    [
+     "DEFECT",
+     "DEFECT"
+    ],
+    [
+     "DEFECT",
+     "DEFECT"
+    ]
+   ]
+  },
+  "dc|cc|cc": {
+   "p_cooperate": 0.9999999990218713,
+   "n_samples": 1,
+   "state": [
+    [
+     "DEFECT",
+     "COOPERATE"
+    ],
+    [
+     "COOPERATE",
+     "COOPERATE"
+    ],
+    [
+     "COOPERATE",
+     "COOPERATE"
+    ]
+   ]
+  },
+  "dc|cc|cd": {
+   "p_cooperate": 0.0,
+   "n_samples": 1,
+   "state": [
+    [
+     "DEFECT",
+     "COOPERATE"
+    ],
+    [
+     "COOPERATE",
+     "COOPERATE"
+    ],
+    [
+     "COOPERATE",
+     "DEFECT"
+    ]
+   ]
+  },
+  "dc|cc|dc": {
+   "p_cooperate": 0.9999999715038687,
+   "n_samples": 1,
+   "state": [
+    [
+     "DEFECT",
+     "COOPERATE"
+    ],
+    [
+     "COOPERATE",
+     "COOPERATE"
+    ],
+    [
+     "DEFECT",
+     "COOPERATE"
+    ]
+   ]
+  },
+  "dc|cc|dd": {
+   "p_cooperate": 0.999999999683912,
+   "n_samples": 1,
+   "state": [
+    [
+     "DEFECT",
+     "COOPERATE"
+    ],
+    [
+     "COOPERATE",
+     "COOPERATE"
+    ],
+    [
+     "DEFECT",
+     "DEFECT"
+    ]
+   ]
+  },
+  "dc|cd|cc": {
+   "p_cooperate": 0.9999999985738461,
+   "n_samples": 1,
+   "state": [
+    [
+     "DEFECT",
+     "COOPERATE"
+    ],
+    [
+     "COOPERATE",
+     "DEFECT"
+    ],
+    [
+     "COOPERATE",
+     "COOPERATE"
+    ]
+   ]
+  },
+  "dc|cd|cd": {
+   "p_cooperate": 0.9999999225394891,
+   "n_samples": 1,
+   "state": [
+    [
+     "DEFECT",
+     "COOPERATE"
+    ],
+    [
+     "COOPERATE",
+     "DEFECT"
+    ],
+    [
+     "COOPERATE",
+     "DEFECT"
+    ]
+   ]
+  },
+  "dc|cd|dc": {
+   "p_cooperate": 2.335593532187115e-09,
+   "n_samples": 1,
+   "state": [
+    [
+     "DEFECT",
+     "COOPERATE"
+    ],
+    [
+     "COOPERATE",
+     "DEFECT"
+    ],
+    [
+     "DEFECT",
+     "COOPERATE"
+    ]
+   ]
+  },
+  "dc|cd|dd": {
+   "p_cooperate": 0.9999999983769394,
+   "n_samples": 1,
+   "state": [
+    [
+     "DEFECT",
+     "COOPERATE"
+    ],
+    [
+     "COOPERATE",
+     "DEFECT"
+    ],
+    [
+     "DEFECT",
+     "DEFECT"
+    ]
+   ]
+  },
+  "dc|dc|cc": {
+   "p_cooperate": 0.9999999827282829,
+   "n_samples": 1,
+   "state": [
+    [
+     "DEFECT",
+     "COOPERATE"
+    ],
+    [
+     "DEFECT",
+     "COOPERATE"
+    ],
+    [
+     "COOPERATE",
+     "COOPERATE"
+    ]
+   ]
+  },
+  "dc|dc|cd": {
+   "p_cooperate": 0.999999984744071,
+   "n_samples": 1,
+   "state": [
+    [
+     "DEFECT",
+     "COOPERATE"
+    ],
+    [
+     "DEFECT",
+     "COOPERATE"
+    ],
+    [
+     "COOPERATE",
+     "DEFECT"
+    ]
+   ]
+  },
+  "dc|dc|dc": {
+   "p_cooperate": 0.9999962728395183,
+   "n_samples": 1,
+   "state": [
+    [
+     "DEFECT",
+     "COOPERATE"
+    ],
+    [
+     "DEFECT",
+     "COOPERATE"
+    ],
+    [
+     "DEFECT",
+     "COOPERATE"
+    ]
+   ]
+  },
+  "dc|dc|dd": {
+   "p_cooperate": 0.9999999969936055,
+   "n_samples": 1,
+   "state": [
+    [
+     "DEFECT",
+     "COOPERATE"
+    ],
+    [
+     "DEFECT",
+     "COOPERATE"
+    ],
+    [
+     "DEFECT",
+     "DEFECT"
+    ]
+   ]
+  },
+  "dc|dd|cc": {
+   "p_cooperate": 0.9999999999842628,
+   "n_samples": 1,
+   "state": [
+    [
+     "DEFECT",
+     "COOPERATE"
+    ],
+    [
+     "DEFECT",
+     "DEFECT"
+    ],
+    [
+     "COOPERATE",
+     "COOPERATE"
+    ]
+   ]
+  },
+  "dc|dd|cd": {
+   "p_cooperate": 3.224187208771631e-08,
+   "n_samples": 1,
+   "state": [
+    [
+     "DEFECT",
+     "COOPERATE"
+    ],
+    [
+     "DEFECT",
+     "DEFECT"
+    ],
+    [
+     "COOPERATE",
+     "DEFECT"
+    ]
+   ]
+  },
+  "dc|dd|dc": {
+   "p_cooperate": 0.9999999530178235,
+   "n_samples": 1,
+   "state": [
+    [
+     "DEFECT",
+     "COOPERATE"
+    ],
+    [
+     "DEFECT",
+     "DEFECT"
+    ],
+    [
+     "DEFECT",
+     "COOPERATE"
+    ]
+   ]
+  },
+  "dc|dd|dd": {
+   "p_cooperate": 0.9999999990263798,
+   "n_samples": 1,
+   "state": [
+    [
+     "DEFECT",
+     "COOPERATE"
+    ],
+    [
+     "DEFECT",
+     "DEFECT"
+    ],
+    [
+     "DEFECT",
+     "DEFECT"
+    ]
+   ]
+  },
+  "dd|cc|cc": {
+   "p_cooperate": 0.9999999895203423,
+   "n_samples": 1,
+   "state": [
+    [
+     "DEFECT",
+     "DEFECT"
+    ],
+    [
+     "COOPERATE",
+     "COOPERATE"
+    ],
+    [
+     "COOPERATE",
+     "COOPERATE"
+    ]
+   ]
+  },
+  "dd|cc|cd": {
+   "p_cooperate": 0.0,
+   "n_samples": 1,
+   "state": [
+    [
+     "DEFECT",
+     "DEFECT"
+    ],
+    [
+     "COOPERATE",
+     "COOPERATE"
+    ],
+    [
+     "COOPERATE",
+     "DEFECT"
+    ]
+   ]
+  },
+  "dd|cc|dc": {
+   "p_cooperate": 0.9999999714667269,
+   "n_samples": 1,
+   "state": [
+    [
+     "DEFECT",
+     "DEFECT"
+    ],
+    [
+     "COOPERATE",
+     "COOPERATE"
+    ],
+    [
+     "DEFECT",
+     "COOPERATE"
+    ]
+   ]
+  },
+  "dd|cc|dd": {
+   "p_cooperate": 0.0,
+   "n_samples": 1,
+   "state": [
+    [
+     "DEFECT",
+     "DEFECT"
+    ],
+    [
+     "COOPERATE",
+     "COOPERATE"
+    ],
+    [
+     "DEFECT",
+     "DEFECT"
+    ]
+   ]
+  },
+  "dd|cd|cc": {
+   "p_cooperate": 0.9999999905708313,
+   "n_samples": 1,
+   "state": [
+    [
+     "DEFECT",
+     "DEFECT"
+    ],
+    [
+     "COOPERATE",
+     "DEFECT"
+    ],
+    [
+     "COOPERATE",
+     "COOPERATE"
+    ]
+   ]
+  },
+  "dd|cd|cd": {
+   "p_cooperate": 0.0,
+   "n_samples": 1,
+   "state": [
+    [
+     "DEFECT",
+     "DEFECT"
+    ],
+    [
+     "COOPERATE",
+     "DEFECT"
+    ],
+    [
+     "COOPERATE",
+     "DEFECT"
+    ]
+   ]
+  },
+  "dd|cd|dc": {
+   "p_cooperate": 0.0,
+   "n_samples": 1,
+   "state": [
+    [
+     "DEFECT",
+     "DEFECT"
+    ],
+    [
+     "COOPERATE",
+     "DEFECT"
+    ],
+    [
+     "DEFECT",
+     "COOPERATE"
+    ]
+   ]
+  },
+  "dd|cd|dd": {
+   "p_cooperate": 0.0,
+   "n_samples": 1,
+   "state": [
+    [
+     "DEFECT",
+     "DEFECT"
+    ],
+    [
+     "COOPERATE",
+     "DEFECT"
+    ],
+    [
+     "DEFECT",
+     "DEFECT"
+    ]
+   ]
+  },
+  "dd|dc|cc": {
+   "p_cooperate": 0.9999999991250463,
+   "n_samples": 1,
+   "state": [
+    [
+     "DEFECT",
+     "DEFECT"
+    ],
+    [
+     "DEFECT",
+     "COOPERATE"
+    ],
+    [
+     "COOPERATE",
+     "COOPERATE"
+    ]
+   ]
+  },
+  "dd|dc|cd": {
+   "p_cooperate": 1.3440412596089845e-08,
+   "n_samples": 1,
+   "state": [
+    [
+     "DEFECT",
+     "DEFECT"
+    ],
+    [
+     "DEFECT",
+     "COOPERATE"
+    ],
+    [
+     "COOPERATE",
+     "DEFECT"
+    ]
+   ]
+  },
+  "dd|dc|dc": {
+   "p_cooperate": 0.9999998723316065,
+   "n_samples": 1,
+   "state": [
+    [
+     "DEFECT",
+     "DEFECT"
+    ],
+    [
+     "DEFECT",
+     "COOPERATE"
+    ],
+    [
+     "DEFECT",
+     "COOPERATE"
+    ]
+   ]
+  },
+  "dd|dc|dd": {
+   "p_cooperate": 0.999999352159169,
+   "n_samples": 1,
+   "state": [
+    [
+     "DEFECT",
+     "DEFECT"
+    ],
+    [
+     "DEFECT",
+     "COOPERATE"
+    ],
+    [
+     "DEFECT",
+     "DEFECT"
+    ]
+   ]
+  },
+  "dd|dd|cc": {
+   "p_cooperate": 0.9999999998973812,
+   "n_samples": 1,
+   "state": [
+    [
+     "DEFECT",
+     "DEFECT"
+    ],
+    [
+     "DEFECT",
+     "DEFECT"
+    ],
+    [
+     "COOPERATE",
+     "COOPERATE"
+    ]
+   ]
+  },
+  "dd|dd|cd": {
+   "p_cooperate": 1.0923715187681752e-10,
+   "n_samples": 1,
+   "state": [
+    [
+     "DEFECT",
+     "DEFECT"
+    ],
+    [
+     "DEFECT",
+     "DEFECT"
+    ],
+    [
+     "COOPERATE",
+     "DEFECT"
+    ]
+   ]
+  },
+  "dd|dd|dc": {
+   "p_cooperate": 8.315283743967424e-07,
+   "n_samples": 1,
+   "state": [
+    [
+     "DEFECT",
+     "DEFECT"
+    ],
+    [
+     "DEFECT",
+     "DEFECT"
+    ],
+    [
+     "DEFECT",
+     "COOPERATE"
+    ]
+   ]
+  },
+  "dd|dd|dd": {
+   "p_cooperate": 8.15202237078653e-09,
+   "n_samples": 1,
+   "state": [
+    [
+     "DEFECT",
+     "DEFECT"
+    ],
+    [
+     "DEFECT",
+     "DEFECT"
+    ],
+    [
+     "DEFECT",
+     "DEFECT"
+    ]
+   ]
+  }
+ }
+}

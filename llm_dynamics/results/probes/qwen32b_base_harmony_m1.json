@@ -1,0 +1,52 @@
+{
+ "kind": "matrix",
+ "game": "harmony",
+ "memory": 1,
+ "probe_round": 10,
+ "num_rounds": 25,
+ "temperature": 0.0,
+ "samples": 1,
+ "model": "qwen3-32b-base",
+ "states": {
+  "cc": {
+   "p_cooperate": 0.9999999999981204,
+   "n_samples": 1,
+   "state": [
+    [
+     "COOPERATE",
+     "COOPERATE"
+    ]
+   ]
+  },
+  "cd": {
+   "p_cooperate": 4.5990558315721256e-10,
+   "n_samples": 1,
+   "state": [
+    [
+     "COOPERATE",
+     "DEFECT"
+    ]
+   ]
+  },
+  "dc": {
+   "p_cooperate": 0.9999999996418252,
+   "n_samples": 1,
+   "state": [
+    [
+     "DEFECT",
+     "COOPERATE"
+    ]
+   ]
+  },
+  "dd": {
+   "p_cooperate": 0.999999999683912,
+   "n_samples": 1,
+   "state": [
+    [
+     "DEFECT",
+     "DEFECT"
+    ]
+   ]
+  }
+ }
+}

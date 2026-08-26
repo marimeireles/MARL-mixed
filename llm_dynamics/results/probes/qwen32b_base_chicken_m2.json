@@ -9,7 +9,7 @@
  "model": "qwen3-32b-base",
  "states": {
   "cc|cc": {
-   "p_cooperate": 0.9999999998973812,
+   "p_cooperate": 0.9999999999094393,
    "n_samples": 1,
    "state": [
     [
@@ -37,7 +37,7 @@
    ]
   },
   "cc|dc": {
-   "p_cooperate": 0.9999999935889585,
+   "p_cooperate": 0.9999999467515837,
    "n_samples": 1,
    "state": [
     [
@@ -51,7 +51,7 @@
    ]
   },
   "cc|dd": {
-   "p_cooperate": 0.9999999993268625,
+   "p_cooperate": 0.9999999999281795,
    "n_samples": 1,
    "state": [
     [
@@ -65,7 +65,7 @@
    ]
   },
   "cd|cc": {
-   "p_cooperate": 1.3007125649864227e-05,
+   "p_cooperate": 1.0129988973334657e-05,
    "n_samples": 1,
    "state": [
     [
@@ -93,7 +93,7 @@
    ]
   },
   "cd|dc": {
-   "p_cooperate": 0.9999999122548862,
+   "p_cooperate": 0.999999967715352,
    "n_samples": 1,
    "state": [
     [
@@ -107,7 +107,7 @@
    ]
   },
   "cd|dd": {
-   "p_cooperate": 9.931196178857538e-08,
+   "p_cooperate": 0.0,
    "n_samples": 1,
    "state": [
     [
@@ -121,7 +121,7 @@
    ]
   },
   "dc|cc": {
-   "p_cooperate": 0.9999999999377585,
+   "p_cooperate": 0.9999999998908211,
    "n_samples": 1,
    "state": [
     [
@@ -135,7 +135,7 @@
    ]
   },
   "dc|cd": {
-   "p_cooperate": 4.785094938992121e-06,
+   "p_cooperate": 0.9999999633852555,
    "n_samples": 1,
    "state": [
     [
@@ -149,7 +149,7 @@
    ]
   },
   "dc|dc": {
-   "p_cooperate": 0.9999999943914143,
+   "p_cooperate": 0.9975272498164973,
    "n_samples": 1,
    "state": [
     [
@@ -163,7 +163,7 @@
    ]
   },
   "dc|dd": {
-   "p_cooperate": 0.9999999880683512,
+   "p_cooperate": 0.999999900585422,
    "n_samples": 1,
    "state": [
     [
@@ -177,7 +177,7 @@
    ]
   },
   "dd|cc": {
-   "p_cooperate": 0.9999999999687197,
+   "p_cooperate": 0.9999999999689406,
    "n_samples": 1,
    "state": [
     [
@@ -205,7 +205,7 @@
    ]
   },
   "dd|dc": {
-   "p_cooperate": 0.9999995543939221,
+   "p_cooperate": 6.605213433689882e-05,
    "n_samples": 1,
    "state": [
     [
@@ -219,7 +219,7 @@
    ]
   },
   "dd|dd": {
-   "p_cooperate": 0.9999990563385885,
+   "p_cooperate": 0.9999999226557756,
    "n_samples": 1,
    "state": [
     [

@@ -12,7 +12,7 @@
  "model": "qwen3-32b-base",
  "states": {
   "cc|cc": {
-   "p_cooperate": 0.9999999826872423,
+   "p_cooperate": 0.9999999748277617,
    "n_samples": 1,
    "state": [
     [
@@ -40,7 +40,7 @@
    ]
   },
   "cc|dc": {
-   "p_cooperate": 0.9770194383518672,
+   "p_cooperate": 0.9770194581516798,
    "n_samples": 1,
    "state": [
     [
@@ -54,7 +54,7 @@
    ]
   },
   "cc|dd": {
-   "p_cooperate": 0.9579074274453455,
+   "p_cooperate": 0.9706838320739688,
    "n_samples": 1,
    "state": [
     [
@@ -68,7 +68,7 @@
    ]
   },
   "cd|cc": {
-   "p_cooperate": 0.9995687059279998,
+   "p_cooperate": 0.9995686083001929,
    "n_samples": 1,
    "state": [
     [
@@ -82,7 +82,7 @@
    ]
   },
   "cd|cd": {
-   "p_cooperate": 0.8807656824821429,
+   "p_cooperate": 0.8807657139577457,
    "n_samples": 1,
    "state": [
     [
@@ -96,7 +96,7 @@
    ]
   },
   "cd|dc": {
-   "p_cooperate": 0.9465927182397055,
+   "p_cooperate": 0.9399085724573409,
    "n_samples": 1,
    "state": [
     [
@@ -110,7 +110,7 @@
    ]
   },
   "cd|dd": {
-   "p_cooperate": 0.7549149291137558,
+   "p_cooperate": 0.7310585149450147,
    "n_samples": 1,
    "state": [
     [
@@ -124,7 +124,7 @@
    ]
   },
   "dc|cc": {
-   "p_cooperate": 0.9971978759271914,
+   "p_cooperate": 0.9975261778120595,
    "n_samples": 1,
    "state": [
     [
@@ -138,7 +138,7 @@
    ]
   },
   "dc|cd": {
-   "p_cooperate": 0.0028009465404260888,
+   "p_cooperate": 0.002472640654035023,
    "n_samples": 1,
    "state": [
     [
@@ -152,7 +152,7 @@
    ]
   },
   "dc|dc": {
-   "p_cooperate": 0.000709741726116951,
+   "p_cooperate": 0.0009111340857245331,
    "n_samples": 1,
    "state": [
     [
@@ -166,7 +166,7 @@
    ]
   },
   "dc|dd": {
-   "p_cooperate": 0.11921787479610826,
+   "p_cooperate": 0.10670606724935408,
    "n_samples": 1,
    "state": [
     [
@@ -180,7 +180,7 @@
    ]
   },
   "dd|cc": {
-   "p_cooperate": 0.9990886448778239,
+   "p_cooperate": 0.9991956457177595,
    "n_samples": 1,
    "state": [
     [
@@ -194,7 +194,7 @@
    ]
   },
   "dd|cd": {
-   "p_cooperate": 0.0017007469985878614,
+   "p_cooperate": 0.001926762421936486,
    "n_samples": 1,
    "state": [
     [
@@ -208,7 +208,7 @@
    ]
   },
   "dd|dc": {
-   "p_cooperate": 0.1645165606490279,
+   "p_cooperate": 0.16451674500046765,
    "n_samples": 1,
    "state": [
     [
@@ -222,7 +222,7 @@
    ]
   },
   "dd|dd": {
-   "p_cooperate": 0.0052212179143149495,
+   "p_cooperate": 0.005912303132728077,
    "n_samples": 1,
    "state": [
     [

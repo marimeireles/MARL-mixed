@@ -9,7 +9,7 @@
  "model": "qwen3-32b-base",
  "states": {
   "cc": {
-   "p_cooperate": 0.9999999999981204,
+   "p_cooperate": 0.9999999999983413,
    "n_samples": 1,
    "state": [
     [
@@ -19,7 +19,7 @@
    ]
   },
   "cd": {
-   "p_cooperate": 5.211413607494134e-10,
+   "p_cooperate": 4.0586525304975676e-10,
    "n_samples": 1,
    "state": [
     [
@@ -29,7 +29,7 @@
    ]
   },
   "dc": {
-   "p_cooperate": 0.9999999994094697,
+   "p_cooperate": 0.9999999987498471,
    "n_samples": 1,
    "state": [
     [
@@ -39,7 +39,7 @@
    ]
   },
   "dd": {
-   "p_cooperate": 0.9999999943833157,
+   "p_cooperate": 0.9999999995400946,
    "n_samples": 1,
    "state": [
     [
