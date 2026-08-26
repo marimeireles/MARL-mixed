@@ -19,7 +19,8 @@ if [ -z "${DIGBENCH_API_TOKEN:-}" ] && [ -r "$TOKEN_FILE" ]; then export DIGBENC
 ENDPOINT_FILE="${ENDPOINT_FILE:-$ROOT/llm_dynamics/logs/vllm_endpoint_qwen3-8b-bench.txt}"
 for _ in $(seq 1 360); do [ -f "${ENDPOINT_FILE}.ready" ] && break; sleep 20; done
 API="$(cat $ENDPOINT_FILE)/v1"; echo "endpoint $API ($(date -Iseconds))"
-export DIG_ARMS="${DIG_ARMS:-{\"base\":\"qwen3-8b-bench\"}}" DIG_RUNS="${DIG_RUNS:-$ROOT/external_benchmarks/runs/digbench/runs}"
+DEFAULT_ARMS='{"base":"qwen3-8b-bench"}'
+export DIG_ARMS="${DIG_ARMS:-$DEFAULT_ARMS}" DIG_RUNS="${DIG_RUNS:-$ROOT/external_benchmarks/runs/digbench/runs}"
 $ROOT/.venv-bench/bin/python orchestrate.py --base-url "$API" --reps "${REPS:-10}" --concurrency "${CONCURRENCY:-21}" --max-steps 200 --move-channel guided-json --max-tokens 8192
 echo "== aggregate =="; $ROOT/.venv-bench/bin/python aggregate_digbench.py --out "$ROOT/external_benchmarks/runs/digbench" 2>&1 | tail -20
 echo "== DONE $(date -Iseconds) =="
