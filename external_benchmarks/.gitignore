@@ -1,5 +1,5 @@
-# upstream clones + data + run outputs (reproduce with setup.sh)
-EigenBench/
-dig-bench/
-machiavelli/
-runs/
+# upstream clones + data + run outputs (reproduce with setup.sh); anchored so patched/ copies are tracked
+/EigenBench/
+/dig-bench/
+/machiavelli/
+/runs/
