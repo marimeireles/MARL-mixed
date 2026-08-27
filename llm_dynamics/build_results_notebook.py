@@ -268,6 +268,49 @@ moral_figure(False, 'Moral regret, pooled over the nine opponent strategies (don
 composition_figure(False, 'Action | previous move, pooled over the nine opponent strategies')
 moral_figure(True, "Moral regret vs the Random opponent (the paper's test setting)")
 composition_figure(True, 'Action | previous move vs the Random opponent')""")
+md(r"""**Thinking-on subset (w=1) and per-opponent breakdown.** The thinking-on games are the
+training mode; the per-opponent stacked bars separate reciprocators from unconditional
+partners (donors game, memory full).""")
+code(r"""def think_rows(tag):
+    out = {}
+    for f in glob.glob(f'{R}/{tag}_donors_{VER}_think/*/rounds/*.jsonl'):
+        rr = [json.loads(l) for l in open(f) if l.strip()]
+        if rr: out[('donors-think', rr[0]['opponent_strategy'], f)] = rr
+    return out
+TDATA = {tag: think_rows(tag) for tag in (TB, TR)}
+if all(TDATA.values()):
+    fig, axs = plt.subplots(1, 3, figsize=(14, 3.6))
+    strats = sorted({s for d in TDATA.values() for (_, s, _) in d})
+    for ax, metric in zip(axs, ['deontological', 'utilitarian', 'self_interest']):
+        for k, (tag, arm) in enumerate([(TB, 'base'), (TR, 'RL')]):
+            means, los, his = [], [], []
+            for s_ in strats:
+                vals = [regrets(rr)[metric] for (g, s, f), rr in TDATA[tag].items() if s == s_]
+                vals = [v for v in vals if not (isinstance(v, float) and math.isnan(v))]
+                m, lo, hi = boot_ci(vals) if vals else (np.nan, np.nan, np.nan)
+                means.append(m); los.append(0 if not vals else m - lo); his.append(0 if not vals else hi - m)
+            ax.bar(np.arange(len(strats)) + (k - 0.5) * 0.36, means, 0.34, yerr=[los, his], capsize=2, label=arm, color=['#7a7a7a', '#c0392b'][k])
+        ax.set_xticks(range(len(strats))); ax.set_xticklabels([s_.replace('_', ' ') for s_ in strats], rotation=60, fontsize=7); ax.set_title(f'{metric.replace("_", " ")} regret — thinking ON, w=1', fontsize=9); ax.set_ylim(0, 1)
+    axs[0].legend(fontsize=8); plt.tight_layout(); plt.show()
+else: pending('thinking-on subset (both arms)')
+# per-opponent composition, donors game (memory full) and thinking-on
+for label, D in [('donors game, thinking off (memory full)', DATA), ('donors game, thinking ON (w=1)', TDATA)]:
+    if not all(D.values()): continue
+    cats = ['C|C', 'C|D', 'D|C', 'D|D', 'i|C', 'i|D']; cols = ['#1b7f3b', '#8fd18f', '#f4a3b5', '#8e0d2a', '#bbbbbb', '#888888']
+    strats = sorted({s for d in D.values() for (g, s, _) in d if g.startswith('donors')})
+    fig, ax = plt.subplots(figsize=(14, 3.8)); xs, labels = [], []; pos = 0.0
+    for s_ in strats:
+        for tag, arm in [(TB, 'base'), (TR, 'RL')]:
+            tot = collections.Counter()
+            for (g, s, f), rr in D[tag].items():
+                if g.startswith('donors') and s == s_: tot.update(composition(rr))
+            n = sum(tot.values()) or 1; bottom = 0.0
+            for cat, col in zip(cats, cols):
+                v = 100 * tot.get(cat, 0) / n; ax.bar(pos, v, 0.8, bottom=bottom, color=col, label=cat if pos == 0 else None); bottom += v
+            xs.append(pos); labels.append(f"{s_.replace('_', ' ')}\n{arm}"); pos += 1
+        pos += 0.6
+    ax.set_xticks(xs); ax.set_xticklabels(labels, fontsize=6); ax.set_ylabel("action | partner's previous move (%)"); ax.set_title(f'Action | previous move per opponent — {label}', fontsize=10)
+    ax.legend(fontsize=7, ncol=6, loc='upper center', bbox_to_anchor=(0.5, -0.3)); plt.tight_layout(); plt.show()""")
 
 md(r"""## 2. MACHIAVELLI
 
