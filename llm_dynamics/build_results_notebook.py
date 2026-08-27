@@ -24,7 +24,8 @@ import nbformat as nbf
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 TB = os.environ.get("TAG_BASE", "qwen8b_base")
-TR = os.environ.get("TAG_RL", "qwen8b_rl_s6")
+TR = os.environ.get("TAG_RL", "qwen8b_rl_s6").split(",")[0]
+TAGS_RL = [t for t in os.environ.get("TAG_RL", "qwen8b_rl_s6").split(",") if t]
 VER = os.environ.get("VERSION", "v3")
 OUT_NAME = os.environ.get("OUT_NAME", f"results_{TB}_vs_{TR}.ipynb")
 
@@ -56,6 +57,7 @@ sys.path.insert(0, ROOT); os.chdir(ROOT)
 from IPython.display import Markdown, Image, display
 pd.set_option('display.width', 200); pd.set_option('display.max_columns', 60); pd.set_option('display.max_rows', 200)
 TB, TR, VER = %r, %r, %r
+TAGS_RL = %r
 R = 'llm_dynamics/results'; EB = 'external_benchmarks'
 rng = np.random.default_rng(0)
 
@@ -87,7 +89,7 @@ def paired_tests(a, b):
     return out
 
 def pending(what): display(Markdown(f'**{what}: pending** (artifact not found)'))
-print('ready')""" % (TB, TR, VER))
+print('ready')""" % (TB, TR, VER, TAGS_RL))
 
 # ── 1. dynamics ───────────────────────────────────────────────────────────
 md(r"""## 1. Cooperation dynamics (llm_dynamics)
@@ -196,8 +198,8 @@ for f in sorted(glob.glob(f'{R}/reciprocity_*{TR}*.png')) + sorted(glob.glob(f'{
 # ── 2. MACHIAVELLI ────────────────────────────────────────────────────────
 md(r"""### 1.4 Regret with respect to each reward term (figure format after Tennant et al., ICLR 2025)
 
-Per game (donors game + PD / Chicken / Stag Hunt / Harmony), base vs RL, mean ± 95% CI over
-(strategy × seed) games. Each panel is the shortfall of the played game with respect to one
+Donors game, base vs RL, mean ± 95% CI over (strategy × seed) games; the matrix games are
+covered game-by-game in 1.5. Each panel is the shortfall of the played game with respect to one
 term of the training reward (Eq. reward):
 
 * **Term 1 — individual-payoff regret** = 1 − best-response captured: the share of the maximum
@@ -244,7 +246,7 @@ def composition(rr):
         if p is None: continue
         c[('i' if r.get('parse_failed') else r['model_action'][0]) + '|' + p[0]] += 1
     return c
-GAMES = ['donors', 'ipd', 'chicken', 'staghunt', 'harmony']
+GAMES = ['donors']  # matrix games: see 1.5
 TITLES = {'term1_payoff': 'Term 1: individual-payoff regret (1 − BR captured)', 'term2_reciprocation': 'Term 2: reciprocation regret (P[ρ = −1])', 'term3_collective': 'Term 3/bonus: collective-payoff regret (1 − welfare captured)'}
 DATA = {tag: game_rows(tag) for tag in (TB, TR)}
 def moral_figure(only_random=False, title=''):
@@ -345,6 +347,92 @@ if len(gs) == 2:
         rows.append(dict(metric=c, base=gs['base'][c].mean(), rl=gs['RL'][c].mean(), diff=(t or {}).get('diff'), diff_ci=fmt(t['diff'], *t['diff_ci']) if t and 'diff_ci' in t else '', p_ttest=(t or {}).get('p_ttest')))
     display(pd.DataFrame(rows).round(4))
 else: pending('group-stage evaluation (both arms)')""")
+
+md(r"""### 1.5 Games × models, against the most discriminating opponent
+
+Opponent selection (transparent, data-driven): among {Random, Grim trigger, TF2T,
+suspicious TFT} we pick the opponent against which the RL models differ **most** from
+the base model on the reference game — the **IPD** (memory 1) for the matrix games,
+the **donors game** (memory full, c/b = 0.5, pooled over w × q) for the donors
+setting. Interest = mean over RL arms of |Δ cooperation| + |Δ payoff| / max payoff.
+The chosen opponent is then held fixed and the models are compared across games:
+x = game, bars = mean **points per round** (95% CI over seeds), dots = **cooperation
+rate** (right axis). Same for the donors game across the (w, q) grid.""")
+code(r"""ARMS = [(TB, 'base')] + [(t, t.replace('qwen8b_', '')) for t in TAGS_RL]
+CANDS = ['random', 'grim_trigger', 'tit_for_two_tats', 'suspicious_tit_for_tat']
+ARM_COL = ['#7a7a7a', '#c0392b', '#2c6e9e', '#2f6f3e', '#a14a3b']
+PAYKEY = {'donors': 'payoff_raw'}
+def load_games(tag, kind, memory_filter=None):
+    '''kind='matrix' -> (game, strategy) -> [rows per seed]; kind='donors' -> (w, q, strategy) -> [rows per seed]'''
+    out = collections.defaultdict(list)
+    if kind == 'matrix':
+        for f in glob.glob(f'{R}/{tag}_matrix_{VER}/*/rounds/*_m1_*.jsonl'):
+            rr = [json.loads(l) for l in open(f) if l.strip()]
+            if rr: out[(rr[0]['game'], rr[0]['opponent_strategy'])].append(rr)
+    else:
+        for f in glob.glob(f'{R}/{tag}_donors_{VER}/*/rounds/*.jsonl'):
+            rr = [json.loads(l) for l in open(f) if l.strip()]
+            if rr and rr[0].get('memory') is None: out[(rr[0]['w'], rr[0]['q'], rr[0]['opponent_strategy'])].append(rr)
+    return out
+def ppr(rr, key): return float(np.mean([r[key] for r in rr]))            # points per round
+def coop(rr): return float(np.mean([r['model_action'] == 'COOPERATE' for r in rr]))
+MAXPAY = {'ipd': 5, 'chicken': 5, 'staghunt': 5, 'harmony': 5}
+M = {tag: load_games(tag, 'matrix') for tag, _ in ARMS}
+D = {tag: load_games(tag, 'donors') for tag, _ in ARMS}
+def interest_table(kind):
+    rows = []
+    for s_ in CANDS:
+        rec = dict(opponent=s_)
+        for tag, arm in ARMS:
+            if kind == 'matrix':
+                games = M[tag].get(('ipd', s_), []); key, mx = 'payoff', MAXPAY['ipd']
+            else:
+                games = [rr for (w, q, s), lst in D[tag].items() if s == s_ for rr in lst]; key, mx = 'payoff_raw', 6.0
+            rec[f'coop_{arm}'] = np.mean([coop(rr) for rr in games]) if games else np.nan
+            rec[f'ppr_{arm}'] = np.mean([ppr(rr, key) for rr in games]) if games else np.nan
+        rec['interest'] = np.nanmean([abs(rec[f'coop_{a}'] - rec['coop_base']) + abs(rec[f'ppr_{a}'] - rec['ppr_base']) / (MAXPAY['ipd'] if kind == 'matrix' else 6.0) for _, a in ARMS[1:]]) if len(ARMS) > 1 else np.nan
+        rows.append(rec)
+    return pd.DataFrame(rows).set_index('opponent')
+def pick(tab):
+    if tab['interest'].notna().any(): return tab['interest'].idxmax()
+    return 'suspicious_tit_for_tat'
+it_m = interest_table('matrix'); opp_m = pick(it_m)
+display(Markdown(f'#### Matrix games — candidate opponents on the IPD (chosen: **{opp_m}**)')); display(it_m.round(3))
+it_d = interest_table('donors'); opp_d = pick(it_d)
+display(Markdown(f'#### Donors game — candidate opponents (chosen: **{opp_d}**)')); display(it_d.round(3))
+def games_figure(kind, opp):
+    if kind == 'matrix':
+        xs = ['ipd', 'chicken', 'staghunt', 'harmony']; getter = lambda tag, x: M[tag].get((x, opp), []); key = 'payoff'; xlabels = ["Prisoner's Dilemma", 'Chicken', 'Stag Hunt', 'Harmony']; ttl = f'Matrix games vs {opp} (memory 1): points per round (bars) and cooperation rate (dots)'
+    else:
+        xs = sorted({(w, q) for tag, _ in ARMS for (w, q, s) in D[tag] if s == opp}); getter = lambda tag, x: D[tag].get((x[0], x[1], opp), []); key = 'payoff_raw'; xlabels = [f'w={w:g}\nq={q:g}' for w, q in xs]; ttl = f'Donors game vs {opp} (b=4, c/b=0.5, memory full): points per round (bars) and cooperation rate (dots)'
+    fig, ax = plt.subplots(figsize=(1.6 * len(xs) + 4, 4.2)); ax2 = ax.twinx(); n = len(ARMS); wdt = 0.8 / n
+    for k, (tag, arm) in enumerate(ARMS):
+        means, los, his, cs = [], [], [], []
+        for x in xs:
+            games = getter(tag, x)
+            if games: vals = [ppr(rr, key) for rr in games]; m, lo, hi = boot_ci(vals); c = np.mean([coop(rr) for rr in games])
+            else: m, lo, hi, c = np.nan, np.nan, np.nan, np.nan
+            means.append(m); los.append(0 if np.isnan(m) else m - lo); his.append(0 if np.isnan(m) else hi - m); cs.append(c)
+        pos = np.arange(len(xs)) + (k - (n - 1) / 2) * wdt
+        ax.bar(pos, means, wdt * 0.95, yerr=[los, his], capsize=3, color=ARM_COL[k % len(ARM_COL)], label=arm)
+        ax2.scatter(pos, cs, color=ARM_COL[k % len(ARM_COL)], edgecolor='k', zorder=5, s=45)
+    ax.set_xticks(range(len(xs))); ax.set_xticklabels(xlabels); ax.set_ylabel('points per round'); ax2.set_ylabel('cooperation rate (dots)'); ax2.set_ylim(0, 1.05)
+    ax.set_title(ttl, fontsize=10); ax.legend(loc='upper left', fontsize=8); plt.tight_layout(); plt.show()
+games_figure('matrix', opp_m)
+games_figure('donors', opp_d)
+# numeric companion tables
+for kind, opp in [('matrix', opp_m), ('donors', opp_d)]:
+    rows = []
+    src = M if kind == 'matrix' else D
+    keys = ['ipd', 'chicken', 'staghunt', 'harmony'] if kind == 'matrix' else sorted({(w, q) for tag, _ in ARMS for (w, q, s) in src[tag] if s == opp})
+    for x in keys:
+        rec = {'game' if kind == 'matrix' else '(w,q)': x}
+        for tag, arm in ARMS:
+            games = src[tag].get((x, opp), []) if kind == 'matrix' else src[tag].get((x[0], x[1], opp), [])
+            rec[f'ppr_{arm}'] = np.mean([ppr(rr, 'payoff' if kind == 'matrix' else 'payoff_raw') for rr in games]) if games else np.nan
+            rec[f'coop_{arm}'] = np.mean([coop(rr) for rr in games]) if games else np.nan
+        rows.append(rec)
+    display(Markdown(f'#### {kind}: vs {opp}')); display(pd.DataFrame(rows).round(3))""")
 
 md(r"""## 2. MACHIAVELLI
 
