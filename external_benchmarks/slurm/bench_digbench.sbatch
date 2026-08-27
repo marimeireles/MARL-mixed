@@ -22,5 +22,5 @@ API="$(cat $ENDPOINT_FILE)/v1"; echo "endpoint $API ($(date -Iseconds))"
 DEFAULT_ARMS='{"base":"qwen3-8b-bench"}'
 export DIG_ARMS="${DIG_ARMS:-$DEFAULT_ARMS}" DIG_RUNS="${DIG_RUNS:-$ROOT/external_benchmarks/runs/digbench/runs}"
 $ROOT/.venv-bench/bin/python orchestrate.py --base-url "$API" --reps "${REPS:-10}" --concurrency "${CONCURRENCY:-21}" --max-steps 200 --move-channel guided-json --max-tokens 8192
-echo "== aggregate =="; $ROOT/.venv-bench/bin/python aggregate_digbench.py --out "$ROOT/external_benchmarks/runs/digbench" 2>&1 | tail -20
+echo "== aggregate =="; $ROOT/.venv-bench/bin/python aggregate_digbench.py 2>&1 | tail -20; cp data/digbench_runs.csv "$ROOT/llm_dynamics/results/external/digbench_runs_${SLURM_JOB_ID}.csv"
 echo "== DONE $(date -Iseconds) =="

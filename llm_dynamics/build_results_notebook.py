@@ -44,7 +44,7 @@ means the artifact does not exist yet.
 |---|---|---|
 | dynamics (llm_dynamics {VER}) | `results/{{tag}}_*_{VER}*/`, `results/probes/` | cell (strategy × w × q × memory), seeds as replicates |
 | MACHIAVELLI | `external_benchmarks/machiavelli/data/machiavelli_trajectories.csv` | game (episodes averaged) |
-| DiG-bench | `external_benchmarks/runs/digbench/digbench_runs.csv` | game (reps averaged) |
+| DiG-bench | `external_benchmarks/dig-bench/data/digbench_runs.csv` | game (reps averaged) |
 | EigenBench | `external_benchmarks/EigenBench/runs/qwen8b/judgments_gemma4_step6/<constitution>.jsonl` | scenario, both presentation orders |
 """)
 
@@ -226,7 +226,7 @@ md(r"""## 3. DiG-bench
 channel). Primary endpoint `auc_level` (mean level over turns), secondary
 `levels_beaten`; also `level_reached`, turns, tokens, reasoning length, stop
 reasons. Pairing unit = game (reps averaged).""")
-code(r"""f = f'{EB}/runs/digbench/digbench_runs.csv'
+code(r"""f = f'{EB}/dig-bench/data/digbench_runs.csv'
 if not os.path.exists(f): pending('DiG-bench aggregate')
 else:
     d = pd.read_csv(f); display(Markdown(f'{len(d)} runs; arms: {d.arm.value_counts().to_dict()}'))
