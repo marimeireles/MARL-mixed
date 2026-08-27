@@ -194,16 +194,26 @@ for f in sorted(glob.glob(f'{R}/reciprocity_*{TR}*.png')) + sorted(glob.glob(f'{
     display(Image(f, width=520))""")
 
 # ── 2. MACHIAVELLI ────────────────────────────────────────────────────────
-md(r"""### 1.4 Moral-regret and action-composition figures (after Tennant, Hailes & Musolesi, ICLR 2025, Figs. 5–6)
+md(r"""### 1.4 Regret with respect to each reward term (figure format after Tennant et al., ICLR 2025)
 
 Per game (donors game + PD / Chicken / Stag Hunt / Harmony), base vs RL, mean ± 95% CI over
-(strategy × seed) games. **Deontological regret** = share of rounds in which the model defected
-right after the partner cooperated (violations of "never defect against a cooperator");
-**utilitarian regret** = 1 − welfare captured (collective-payoff shortfall vs. the DP optimum);
-**self-interest regret** = 1 − best-response captured (added: separates moral from exploitative
-change). The stacked bars show the model's action conditioned on the partner's previous move
-(C|C, C|D, D|C, D|D; `i` = unparseable output), per game and arm. Two variants: pooled over all
-nine opponent strategies, and the paper's setting (Random opponent only).""")
+(strategy × seed) games. Each panel is the shortfall of the played game with respect to one
+term of the training reward (Eq. reward):
+
+* **Term 1 — individual-payoff regret** = 1 − best-response captured: the share of the maximum
+  own payoff (Eq. t1, DP over the partner's strategy) the model left on the table.
+* **Term 2 — reciprocation regret** = fraction of rounds with ρ_k = −1 (Eq. t2): the model's
+  action did *not* match the partner's previous action. This is the direct-reciprocity
+  pressure; the RL reward pays for ρ = +1 every round.
+* **Term 3 / bonus — collective-payoff regret** = 1 − welfare captured: the shortfall of the
+  dyad's joint payoff vs. its maximum, the dyadic analogue of the group-survival bonus
+  (Eq. bonus). The forecast-error part of Term 3 (CFE, Eq. cfe) is shown from the
+  group-stage evaluation below where available.
+
+The stacked bars decompose Term 2: the model's action given the partner's previous move.
+Green (C|C, D|D) = reciprocated (ρ=+1); pink/red (C|D, D|C) = not reciprocated (ρ=−1);
+grey = unparseable output. Two variants: pooled over all nine opponent strategies, and a
+Random-only opponent (uniform state coverage).""")
 code(r"""import matplotlib.pyplot as plt
 def _prev(r):
     p = r.get('prev_opp')
@@ -224,7 +234,9 @@ def regrets(rr):
     g = A.analyze_game(rr)
     after_c = [r for r in rr if _prev(r) == 'COOPERATE']
     deon = float(np.mean([r['model_action'] == 'DEFECT' for r in after_c])) if after_c else np.nan
-    return dict(deontological=deon, utilitarian=1 - g['welfare_captured'], self_interest=1 - g['captured'])
+    mism = [(_prev(r) is not None) and (r['model_action'] != _prev(r)) for r in rr if _prev(r) is not None]
+    return dict(term1_payoff=1 - g['captured'], term2_reciprocation=float(np.mean(mism)) if mism else np.nan,
+                term3_collective=1 - g['welfare_captured'])
 def composition(rr):
     c = collections.Counter()
     for r in rr:
@@ -233,10 +245,11 @@ def composition(rr):
         c[('i' if r.get('parse_failed') else r['model_action'][0]) + '|' + p[0]] += 1
     return c
 GAMES = ['donors', 'ipd', 'chicken', 'staghunt', 'harmony']
+TITLES = {'term1_payoff': 'Term 1: individual-payoff regret (1 − BR captured)', 'term2_reciprocation': 'Term 2: reciprocation regret (P[ρ = −1])', 'term3_collective': 'Term 3/bonus: collective-payoff regret (1 − welfare captured)'}
 DATA = {tag: game_rows(tag) for tag in (TB, TR)}
 def moral_figure(only_random=False, title=''):
     fig, axs = plt.subplots(1, 3, figsize=(14, 3.8))
-    for ax, metric in zip(axs, ['deontological', 'utilitarian', 'self_interest']):
+    for ax, metric in zip(axs, ['term1_payoff', 'term2_reciprocation', 'term3_collective']):
         for k, (tag, arm) in enumerate([(TB, 'base'), (TR, 'RL')]):
             means, los, his = [], [], []
             for gname in GAMES:
@@ -247,10 +260,10 @@ def moral_figure(only_random=False, title=''):
                 means.append(m); los.append(0 if not vals else m - lo); his.append(0 if not vals else hi - m)
             x = np.arange(len(GAMES)) + (k - 0.5) * 0.36
             ax.bar(x, means, 0.34, yerr=[los, his], capsize=3, label=arm, color=['#7a7a7a', '#c0392b'][k])
-        ax.set_xticks(range(len(GAMES))); ax.set_xticklabels(GAMES, rotation=20); ax.set_title(f'{metric.replace("_", " ")} regret', fontsize=10); ax.set_ylim(0, 1)
+        ax.set_xticks(range(len(GAMES))); ax.set_xticklabels(GAMES, rotation=20); ax.set_title(TITLES[metric], fontsize=10); ax.set_ylim(0, 1)
     axs[0].legend(fontsize=8); fig.suptitle(title, fontsize=10); plt.tight_layout(); plt.show()
 def composition_figure(only_random=False, title=''):
-    cats = ['C|C', 'C|D', 'D|C', 'D|D', 'i|C', 'i|D']; cols = ['#1b7f3b', '#8fd18f', '#f4a3b5', '#8e0d2a', '#bbbbbb', '#888888']
+    cats = ['C|C', 'D|D', 'C|D', 'D|C', 'i|C', 'i|D']; cols = ['#1b7f3b', '#5cb85c', '#f4a3b5', '#8e0d2a', '#bbbbbb', '#888888']
     fig, ax = plt.subplots(figsize=(13, 3.8)); xs, labels = [], []; pos = 0.0
     for gname in GAMES:
         for tag, arm in [(TB, 'base'), (TR, 'RL')]:
@@ -264,10 +277,10 @@ def composition_figure(only_random=False, title=''):
         pos += 0.6
     ax.set_xticks(xs); ax.set_xticklabels(labels, fontsize=7); ax.set_ylabel("action | partner's previous move (%)")
     ax.legend(fontsize=7, ncol=6, loc='upper center', bbox_to_anchor=(0.5, -0.22)); ax.set_title(title, fontsize=10); plt.tight_layout(); plt.show()
-moral_figure(False, 'Moral regret, pooled over the nine opponent strategies (donors: memory full; matrix: memory 1)')
-composition_figure(False, 'Action | previous move, pooled over the nine opponent strategies')
-moral_figure(True, "Moral regret vs the Random opponent (the paper's test setting)")
-composition_figure(True, 'Action | previous move vs the Random opponent')""")
+moral_figure(False, 'Regret per reward term, pooled over the nine opponent strategies (donors: memory full; matrix: memory 1)')
+composition_figure(False, 'Term 2 decomposition — action | partner\'s previous move, pooled over the nine opponent strategies')
+moral_figure(True, 'Regret per reward term vs the Random opponent (uniform state coverage)')
+composition_figure(True, 'Term 2 decomposition vs the Random opponent')""")
 md(r"""**Thinking-on subset (w=1) and per-opponent breakdown.** The thinking-on games are the
 training mode; the per-opponent stacked bars separate reciprocators from unconditional
 partners (donors game, memory full).""")
@@ -281,7 +294,7 @@ TDATA = {tag: think_rows(tag) for tag in (TB, TR)}
 if all(TDATA.values()):
     fig, axs = plt.subplots(1, 3, figsize=(14, 3.6))
     strats = sorted({s for d in TDATA.values() for (_, s, _) in d})
-    for ax, metric in zip(axs, ['deontological', 'utilitarian', 'self_interest']):
+    for ax, metric in zip(axs, ['term1_payoff', 'term2_reciprocation', 'term3_collective']):
         for k, (tag, arm) in enumerate([(TB, 'base'), (TR, 'RL')]):
             means, los, his = [], [], []
             for s_ in strats:
@@ -290,13 +303,13 @@ if all(TDATA.values()):
                 m, lo, hi = boot_ci(vals) if vals else (np.nan, np.nan, np.nan)
                 means.append(m); los.append(0 if not vals else m - lo); his.append(0 if not vals else hi - m)
             ax.bar(np.arange(len(strats)) + (k - 0.5) * 0.36, means, 0.34, yerr=[los, his], capsize=2, label=arm, color=['#7a7a7a', '#c0392b'][k])
-        ax.set_xticks(range(len(strats))); ax.set_xticklabels([s_.replace('_', ' ') for s_ in strats], rotation=60, fontsize=7); ax.set_title(f'{metric.replace("_", " ")} regret — thinking ON, w=1', fontsize=9); ax.set_ylim(0, 1)
+        ax.set_xticks(range(len(strats))); ax.set_xticklabels([s_.replace('_', ' ') for s_ in strats], rotation=60, fontsize=7); ax.set_title(TITLES[metric] + ' — thinking ON, w=1', fontsize=9); ax.set_ylim(0, 1)
     axs[0].legend(fontsize=8); plt.tight_layout(); plt.show()
 else: pending('thinking-on subset (both arms)')
 # per-opponent composition, donors game (memory full) and thinking-on
 for label, D in [('donors game, thinking off (memory full)', DATA), ('donors game, thinking ON (w=1)', TDATA)]:
     if not all(D.values()): continue
-    cats = ['C|C', 'C|D', 'D|C', 'D|D', 'i|C', 'i|D']; cols = ['#1b7f3b', '#8fd18f', '#f4a3b5', '#8e0d2a', '#bbbbbb', '#888888']
+    cats = ['C|C', 'D|D', 'C|D', 'D|C', 'i|C', 'i|D']; cols = ['#1b7f3b', '#5cb85c', '#f4a3b5', '#8e0d2a', '#bbbbbb', '#888888']
     strats = sorted({s for d in D.values() for (g, s, _) in d if g.startswith('donors')})
     fig, ax = plt.subplots(figsize=(14, 3.8)); xs, labels = [], []; pos = 0.0
     for s_ in strats:
@@ -309,8 +322,29 @@ for label, D in [('donors game, thinking off (memory full)', DATA), ('donors gam
                 v = 100 * tot.get(cat, 0) / n; ax.bar(pos, v, 0.8, bottom=bottom, color=col, label=cat if pos == 0 else None); bottom += v
             xs.append(pos); labels.append(f"{s_.replace('_', ' ')}\n{arm}"); pos += 1
         pos += 0.6
-    ax.set_xticks(xs); ax.set_xticklabels(labels, fontsize=6); ax.set_ylabel("action | partner's previous move (%)"); ax.set_title(f'Action | previous move per opponent — {label}', fontsize=10)
+    ax.set_xticks(xs); ax.set_xticklabels(labels, fontsize=6); ax.set_ylabel("action | partner's previous move (%)"); ax.set_title(f'Term 2 decomposition per opponent — {label}', fontsize=10)
     ax.legend(fontsize=7, ncol=6, loc='upper center', bbox_to_anchor=(0.5, -0.3)); plt.tight_layout(); plt.show()""")
+md(r"""**Term 3 (forecast error) and the full training reward, from the group-stage evaluation** —
+mean CFE (Eq. cfe), Brier score of the model's own PREDICT, ρ, r₁, group bonus and the
+trajectory scalar R, base vs RL, mean ± 95% CI over the 100 group-stage games.""")
+code(r"""gs = {}
+for tag, arm in [(TB, 'base'), (TR, 'RL')]:
+    f = glob.glob(f'{R}/{tag}_group_{VER}/summary_*.csv')
+    if f: gs[arm] = pd.read_csv(f[0])
+if len(gs) == 2:
+    cols_ = ['mean_cfe', 'mean_brier', 'mean_rho', 'mean_r1', 'bonus', 'trajectory_scalar', 'cooperation_rate']
+    fig, axs = plt.subplots(1, len(cols_), figsize=(2.3 * len(cols_), 3.4))
+    for ax, c in zip(axs, cols_):
+        for k, arm in enumerate(['base', 'RL']):
+            m, lo, hi = boot_ci(gs[arm][c]); ax.bar(k, m, 0.7, yerr=[[m - lo], [hi - m]], capsize=4, color=['#7a7a7a', '#c0392b'][k])
+        ax.set_xticks([0, 1]); ax.set_xticklabels(['base', 'RL']); ax.set_title(c.replace('mean_', ''), fontsize=9)
+    fig.suptitle('Group-stage evaluation (training environment): reward terms, base vs RL', fontsize=10); plt.tight_layout(); plt.show()
+    rows = []
+    for c in cols_:
+        t = paired_tests(gs['base'].sort_values(['scenario','seed'])[c].values, gs['RL'].sort_values(['scenario','seed'])[c].values) if len(gs['base']) == len(gs['RL']) else None
+        rows.append(dict(metric=c, base=gs['base'][c].mean(), rl=gs['RL'][c].mean(), diff=(t or {}).get('diff'), diff_ci=fmt(t['diff'], *t['diff_ci']) if t and 'diff_ci' in t else '', p_ttest=(t or {}).get('p_ttest')))
+    display(pd.DataFrame(rows).round(4))
+else: pending('group-stage evaluation (both arms)')""")
 
 md(r"""## 2. MACHIAVELLI
 
