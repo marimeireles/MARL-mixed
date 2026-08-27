@@ -373,6 +373,21 @@ def cmd_donors_selfplay(args) -> None:
         wr = csv.DictWriter(f, fieldnames=list(summaries[0].keys())); wr.writeheader(); wr.writerows(summaries)
 
 
+def _group_summary_from_rows(rows, seed):
+    """Rebuild the group-game summary from a logged game (for resume)."""
+    N = len(rows); r0 = rows[0]
+    return dict(seed=seed, b=r0["b"], c=r0["c"], q=r0["q"], K=r0["K"], G=r0["G"], rounds=N,
+                partner=r0["opponent_strategy"], model="resumed",
+                cooperation_rate=sum(r["model_action"] == "COOPERATE" for r in rows) / N,
+                mean_r1=sum(r["r1"] for r in rows) / N,
+                mean_rho=sum(r["rho"] for r in rows[1:]) / max(1, N - 1),
+                mean_r2=sum(r["r2"] for r in rows) / N,
+                mean_cfe=sum(r["cfe"] for r in rows) / N,
+                mean_brier=sum(r["brier"] for r in rows) / N,
+                bonus=float("nan"), trajectory_scalar=sum(r["r1"] + r["r2"] + r["r3"] for r in rows) / N,
+                parse_failures=sum(r["parse_failed"] for r in rows))
+
+
 def cmd_group_eval(args) -> None:
     """Group-selection stage (the trained environment): PREDICT + DECISION,
     CFE / Brier / rho / bonus per the paper's reward."""
@@ -383,10 +398,16 @@ def cmd_group_eval(args) -> None:
     for i in range(args.scenarios):
         sc = gg.sample_group_scenario(_r.Random(args.seed_base * 100003 + i))
         for seed in range(args.seeds):
+            f = out_dir / "rounds" / f"{tag}_scn{i}_s{seed}.jsonl"
+            if f.exists():  # resumable: reuse a finished game
+                rows = dg.read_jsonl(f)
+                if rows:
+                    summaries.append({"scenario": i, **_group_summary_from_rows(rows, seed)})
+                    continue
             res = gg.run_group_game(_client(args, seed=seed), sc, seed=seed,
                                     temperature=args.temperature, max_tokens=args.max_tokens)
             summaries.append({"scenario": i, **res["summary"]})
-            dg.write_jsonl(out_dir / "rounds" / f"{tag}_scn{i}_s{seed}.jsonl", res["rows"])
+            dg.write_jsonl(f, res["rows"])
         sm = summaries[-args.seeds:]
         print(f"[group] {tag} scn{i} K={sc['group_size']} q={sc['q']:g} c/b={sc['c']/sc['b']:.2f} "
               f"vs {sc['groupmates'][0]}: coop={np.mean([x['cooperation_rate'] for x in sm]):.2f} "
