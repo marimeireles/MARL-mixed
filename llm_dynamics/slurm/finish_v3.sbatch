@@ -15,8 +15,9 @@ API=$(cat "$ENDPOINT_FILE"); echo "endpoint $API model $MODEL ($(date -Iseconds)
 export JAX_PLATFORMS=cpu
 RUN="/nas/ucb/marimeireles/MARL-mixed/.venv-jaxmarl/bin/python -m llm_dynamics.run_experiments"
 COMMON="--api-base $API --model $MODEL"; P=llm_dynamics/results/probes; L=llm_dynamics/logs/suite-v3fin-${SLURM_JOB_ID}; R=llm_dynamics/results
-echo "== matrix rerun: $STRATS =="
+echo "== matrix rerun (idempotent): $STRATS =="
 for s in $STRATS; do
+  n=$(find $R/${TAG}_matrix_v3/$s/rounds -name '*.jsonl' 2>/dev/null | wc -l); [ "$n" -ge 48 ] && { echo "skip $s ($n files)"; continue; }
   $RUN matrix-sweep $COMMON --games ipd,chicken,staghunt,harmony --memories 1,2,3 --strategies $s \
       --seeds 4 --rounds 20 --skip-portraits --out ${TAG}_matrix_v3/$s > $L.matrix.$s.log 2>&1 &
 done; wait
