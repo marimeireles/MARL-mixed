@@ -49,6 +49,13 @@ means the artifact does not exist yet.
 | EigenBench | `external_benchmarks/EigenBench/runs/qwen8b/judgments_gemma4_step6/<constitution>.jsonl` | scenario, both presentation orders |
 """)
 
+# --- Section 0: written review (from FINDINGS_qwen8b.md, embedded at build time) ---
+_f = os.path.join(os.path.dirname(os.path.abspath(__file__)), "FINDINGS_qwen8b.md")
+if os.path.exists(_f):
+    md("## 0. Full review — where the models diverge (written analysis)\n\n"
+       "*This section is the human-readable review; every number in it is computed in the sections below.*\n\n---\n\n"
+       + open(_f).read())
+
 code(r"""import os, sys, json, glob, math, itertools, collections
 import numpy as np, pandas as pd
 from scipy import stats
