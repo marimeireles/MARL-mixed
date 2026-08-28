@@ -429,9 +429,14 @@ suspicious TFT} we pick the opponent against which the RL models differ **most**
 the base model on the reference game — the **IPD** (memory 1) for the matrix games,
 the **donors game** (memory full, c/b = 0.5, pooled over w × q) for the donors
 setting. Interest = mean over RL arms of |Δ cooperation| + |Δ payoff| / max payoff.
-The chosen opponent is then held fixed and the models are compared across games:
-x = game, bars = mean **points per round** (95% CI over seeds), dots = **cooperation
-rate** (right axis). Same for the donors game across the (w, q) grid.""")
+The chosen opponent is then held fixed and the models are compared across games,
+in two aligned panels sharing the x axis (games for the matrix setting, (w, q)
+cells for the donors game):
+
+* **top panel** — bars = mean **points per round** per model (95% CI over
+  seeds); the black dashed line is the **optimum**: the points per round of the
+  DP best response against that opponent (the most any strategy could earn).
+* **bottom panel** — bars = **cooperation rate** per model (0–1), same x.""")
 code(r"""ARMS = [(TB, 'base')] + [(t, t.replace('qwen8b_', '')) for t in TAGS_RL]
 CANDS = ['random', 'grim_trigger', 'tit_for_two_tats', 'suspicious_tit_for_tat']
 ARM_COL = ['#7a7a7a', '#c0392b', '#2c6e9e', '#2f6f3e', '#a14a3b']
@@ -476,10 +481,11 @@ it_d = interest_table('donors'); opp_d = pick(it_d)
 display(Markdown(f'#### Donors game — candidate opponents (chosen: **{opp_d}**)')); display(it_d.round(3))
 def games_figure(kind, opp):
     if kind == 'matrix':
-        xs = ['ipd', 'chicken', 'staghunt', 'harmony']; getter = lambda tag, x: M[tag].get((x, opp), []); key = 'payoff'; xlabels = ["Prisoner's Dilemma", 'Chicken', 'Stag Hunt', 'Harmony']; ttl = f'Matrix games vs {opp} (memory 1): points per round (bars) and cooperation rate (dots)'
+        xs = ['ipd', 'chicken', 'staghunt', 'harmony']; getter = lambda tag, x: M[tag].get((x, opp), []); key = 'payoff'; xlabels = ["Prisoner's Dilemma", 'Chicken', 'Stag Hunt', 'Harmony']; ttl = f'Matrix games vs {opp} (memory 1)'
     else:
-        xs = sorted({(w, q) for tag, _ in ARMS for (w, q, s) in D[tag] if s == opp}); getter = lambda tag, x: D[tag].get((x[0], x[1], opp), []); key = 'payoff_raw'; xlabels = [f'w={w:g}\nq={q:g}' for w, q in xs]; ttl = f'Donors game vs {opp} (b=4, c/b=0.5, memory full): points per round (bars) and cooperation rate (dots)'
-    fig, ax = plt.subplots(figsize=(1.6 * len(xs) + 4, 4.2)); ax2 = ax.twinx(); n = len(ARMS); wdt = 0.8 / n
+        xs = sorted({(w, q) for tag, _ in ARMS for (w, q, s) in D[tag] if s == opp}); getter = lambda tag, x: D[tag].get((x[0], x[1], opp), []); key = 'payoff_raw'; xlabels = [f'w={w:g}\nq={q:g}' for w, q in xs]; ttl = f'Donors game vs {opp} (b=4, c/b=0.5, memory full)'
+    n = len(ARMS); wdt = 0.8 / n
+    fig, (axP, axC) = plt.subplots(2, 1, sharex=True, figsize=(1.6 * len(xs) + 4, 6.6))
     for k, (tag, arm) in enumerate(ARMS):
         means, los, his, cs = [], [], [], []
         for x in xs:
@@ -488,10 +494,22 @@ def games_figure(kind, opp):
             else: m, lo, hi, c = np.nan, np.nan, np.nan, np.nan
             means.append(m); los.append(0 if np.isnan(m) else m - lo); his.append(0 if np.isnan(m) else hi - m); cs.append(c)
         pos = np.arange(len(xs)) + (k - (n - 1) / 2) * wdt
-        ax.bar(pos, means, wdt * 0.95, yerr=[los, his], capsize=3, color=ARM_COL[k % len(ARM_COL)], label=arm)
-        ax2.scatter(pos, cs, color=ARM_COL[k % len(ARM_COL)], edgecolor='k', zorder=5, s=45)
-    ax.set_xticks(range(len(xs))); ax.set_xticklabels(xlabels); ax.set_ylabel('points per round'); ax2.set_ylabel('cooperation rate (dots)'); ax2.set_ylim(0, 1.05)
-    ax.set_title(ttl, fontsize=10); ax.legend(loc='upper left', fontsize=8); plt.tight_layout(); plt.show()
+        axP.bar(pos, means, wdt * 0.95, yerr=[los, his], capsize=3, color=ARM_COL[k % len(ARM_COL)], label=arm)
+        axC.bar(pos, cs, wdt * 0.95, color=ARM_COL[k % len(ARM_COL)], label=arm)
+    lbl = 'optimum (DP best response)'
+    for i, x in enumerate(xs):
+        games = next((getter(tag, x) for tag, _ in ARMS if getter(tag, x)), [])
+        if not games: continue
+        h = len(games[0])
+        try:
+            pay = A._payoff_fn({'game': x} if kind == 'matrix' else {'b': 4.0, 'c': 2.0})
+            opt = A.best_response_value(opp, h, pay)[0] / h
+        except Exception: continue
+        axP.hlines(opt, i - 0.45, i + 0.45, color='k', ls='--', lw=1.4, label=lbl); lbl = None
+    axP.set_ylabel('points per round'); axP.set_title(ttl, fontsize=11); axP.legend(loc='upper left', fontsize=8, ncol=2)
+    axC.set_ylabel('cooperation rate'); axC.set_ylim(0, 1.05)
+    axC.set_xticks(range(len(xs))); axC.set_xticklabels(xlabels)
+    plt.tight_layout(); plt.show()
 games_figure('matrix', opp_m)
 games_figure('donors', opp_d)
 # numeric companion tables
