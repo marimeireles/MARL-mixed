@@ -615,8 +615,11 @@ else:
             lines.append(f"| {c} | {t['n']} | {c0} | {c1} | {t['diff']:+.3f} | {t.get('p_ttest', float('nan')):.3f} | {t.get('p_wilcoxon', float('nan')):.3f} |")
         display(Markdown(f'### Paired by game: {a1} vs {a0} — **bold** = better arm on that metric'))
         display(Markdown('\n'.join(lines)))
-        display(Markdown(f'### Per-game table ({a1} vs {a0}, reps averaged)')); display(pg[[('auc_level',a0),('auc_level',a1),('levels_beaten',a0),('levels_beaten',a1),('turns',a0),('turns',a1)]].round(3))
-    if 'tier' in d: display(Markdown('### By tier')); display(d.groupby(['tier','arm'])[['auc_level','levels_beaten']].mean().unstack('arm').round(3))""")
+        display(Markdown(f'### Per-game table ({a1} vs {a0}, reps averaged) — **bold** = better arm'))
+        display(bold_arms(pg[[('auc_level',a0),('auc_level',a1),('levels_beaten',a0),('levels_beaten',a1),('turns',a0),('turns',a1)]]))
+    if 'tier' in d:
+        display(Markdown('### By tier — **bold** = best arm'))
+        display(bold_arms(d.groupby(['tier','arm'])[['auc_level','levels_beaten']].mean().unstack('arm')))""")
 
 # ── 4. EigenBench ─────────────────────────────────────────────────────────
 md(r"""## 4. EigenBench (external judge: Gemma-4-31B-it)
