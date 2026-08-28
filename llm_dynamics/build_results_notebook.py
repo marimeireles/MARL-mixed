@@ -96,6 +96,53 @@ def paired_tests(a, b):
     return out
 
 def pending(what): display(Markdown(f'**{what}: pending** (artifact not found)'))
+
+HI_M = {'agreement','br_captured','welfare_captured','coop','ppr','points','rho','r1','mean_rho','mean_r1',
+        'recovered_frac','mutual_c_rate','a_total','b_total','trajectory_scalar','mean_reward',
+        'game.score','points_pct_of_max','achievements','reached_end','auc_level','levels_beaten','level_reached','max_level_seen'}
+LO_M = {'recovery_rounds','mean_cfe','mean_brier','parse_failures','latency','R_std'}
+def _direction(name):
+    n = str(name)
+    if n in HI_M: return 1
+    if n in LO_M or n.startswith(('violations', 'power', 'utility', 'raw.')): return -1
+    return 0
+def _fmtv(v, nd):
+    if isinstance(v, (int, float, np.floating)):
+        return '' if v != v else f'{v:.{nd}f}'
+    return str(v)
+def bold_arms(df, nd=3):
+    '''Render a DataFrame whose columns are (metric, arm) (or metric-only) as a
+    Markdown table, bolding the best arm per row within each metric
+    (direction from the metric name; directionless metrics stay unbolded).'''
+    cols = list(df.columns)
+    multi = isinstance(df.columns, pd.MultiIndex)
+    groups = {}
+    for c in cols: groups.setdefault(c[:-1] if multi else (c,), []).append(c)
+    headers = [' '.join(str(x) for x in c) if multi else str(c) for c in cols]
+    inames = [str(n or '') for n in (df.index.names if df.index.nlevels > 1 else [df.index.name or ''])]
+    lines = ['| ' + ' | '.join(inames + headers) + ' |', '|' + '---|' * (len(inames) + len(cols))]
+    for ix, row in df.iterrows():
+        bold = set()
+        for g, gc in groups.items():
+            d = _direction(g[-1]) if len(gc) > 1 else 0
+            if d:
+                vals = {c: row[c] for c in gc if isinstance(row[c], (int, float, np.floating)) and row[c] == row[c]}
+                if vals: bold.add(max(vals, key=vals.get) if d > 0 else min(vals, key=vals.get))
+        ivals = [str(x) for x in (ix if isinstance(ix, tuple) else (ix,))]
+        lines.append('| ' + ' | '.join(ivals + [('**' + _fmtv(row[c], nd) + '**') if c in bold else _fmtv(row[c], nd) for c in cols]) + ' |')
+    return Markdown(chr(10).join(lines))
+def bold_paired(rows, a0='base', a1='rl', nd=3):
+    '''rows: list of dicts with metric plus a0/a1 columns and stats; bold the better arm.'''
+    extra = [k for k in rows[0] if k not in ('metric', a0, a1)]
+    lines = ['| metric | ' + a0 + ' | ' + a1 + ' | ' + ' | '.join(extra) + ' |', '|' + '---|' * (3 + len(extra))]
+    for r in rows:
+        d = _direction(r['metric'])
+        c0, c1 = _fmtv(r[a0], nd), _fmtv(r[a1], nd)
+        if d and r[a0] == r[a0] and r[a1] == r[a1]:
+            if (r[a1] > r[a0]) == (d > 0): c1 = '**' + c1 + '**'
+            else: c0 = '**' + c0 + '**'
+        lines.append('| ' + str(r['metric']) + ' | ' + c0 + ' | ' + c1 + ' | ' + ' | '.join(_fmtv(r[k], 4) if isinstance(r[k], (int, float, np.floating)) else str(r[k]) for k in extra) + ' |')
+    return Markdown(chr(10).join(lines))
 print('ready')""" % (TB, TR, VER, TAGS_RL))
 
 # ── 1. dynamics ───────────────────────────────────────────────────────────
@@ -133,10 +180,16 @@ if dyn[TB] is not None:
     def cell_table(df):
         g = df.groupby(keys)
         out = g[METRICS].mean(); out['R_std'] = g['R'].std(ddof=0); out['n_seeds'] = g.size(); return out
-    tb = cell_table(dyn[TB]); display(Markdown(f'### Base — per-cell means ({len(tb)} cells)')); display(tb.round(3))
+    tb = cell_table(dyn[TB])
     if dyn[TR] is not None:
-        tr = cell_table(dyn[TR]); display(Markdown(f'### RL — per-cell means ({len(tr)} cells)')); display(tr.round(3))
+        tr = cell_table(dyn[TR])
         both = tb.join(tr, lsuffix='_base', rsuffix='_rl', how='inner')
+        side = pd.concat({m: both[[f'{m}_base', f'{m}_rl']].set_axis(['base', 'rl'], axis=1) for m in METRICS + ['R_std']}, axis=1)
+        display(Markdown(f'### Per-cell means, base vs RL side by side ({len(side)} cells) — **bold** = better arm (direction-aware; directionless metrics unbolded)'))
+        display(bold_arms(side))
+    else:
+        display(Markdown(f'### Base — per-cell means ({len(tb)} cells)')); display(tb.round(3))
+    if dyn[TR] is not None:
         display(Markdown('### RL − base per cell (memory full), with the summary over all cells'))
         diff = pd.DataFrame({m: both[f'{m}_rl'] - both[f'{m}_base'] for m in METRICS + ['R_std']})
         display(diff.xs('full', level='memory').round(3) if 'full' in diff.index.get_level_values('memory') else diff.round(3))
@@ -145,7 +198,7 @@ if dyn[TB] is not None:
             t = paired_tests(both[f'{m}_base'], both[f'{m}_rl'])
             rows.append(dict(metric=m, n_cells=t['n'], base=t['mean_base'], rl=t['mean_rl'], diff=t['diff'],
                              diff_ci=fmt(t['diff'], *t.get('diff_ci', (np.nan, np.nan))), p_ttest=t.get('p_ttest'), p_wilcoxon=t.get('p_wilcoxon')))
-        display(Markdown('### Aggregate over cells (paired by cell)')); display(pd.DataFrame(rows).round(4))
+        display(Markdown('### Aggregate over cells (paired by cell) — **bold** = better arm')); display(bold_paired(rows))
         display(Markdown('### By strategy (memory full): RL − base'))
         display(diff.reset_index().query("memory=='full'").groupby('strategy')[METRICS].mean().round(3))
         display(Markdown('### By (w, q) (memory full): RL − base'))
@@ -163,28 +216,42 @@ code(r"""for label, pat in [('c/b sweep', f'{{tag}}_donors_{VER}_cb*'), ('horizo
     if not frames: pending(label); continue
     df = pd.concat(frames)
     display(Markdown(f'### {label}'))
-    display(df.groupby(['setting','arm','strategy'])[['coop','br_captured','welfare_captured','agreement']].mean().unstack('arm').round(3))""")
+    display(bold_arms(df.groupby(['setting','strategy','arm'])[['coop','br_captured','welfare_captured','agreement']].mean().unstack('arm')))""")
 
 md(r"""### 1.2 Repair after a forced defection, group-selection stage, self-play""")
-code(r"""for tag in (TB, TR):
+code(r"""rep, grp, gci, slf = {}, {}, {}, {}
+for tag in (TB, TR):
     arm = 'base' if tag == TB else 'rl'
     d = f'{R}/{tag}_donors_{VER}_perturb'
     if os.path.isdir(d):
-        t = A.signal_table([d]); rows = [dict(strategy=k[0], w=k[2], q=k[1], recovery_rounds=v['recovery'], recovered_frac=v['recovered_frac'], n=v['n']) for k, v in t.items()]
-        display(Markdown(f'### Repair — {arm}')); display(pd.DataFrame(rows).round(2))
-    else: pending(f'repair ({arm})')
+        t = A.signal_table([d])
+        rep[arm] = pd.DataFrame([dict(strategy=k[0], w=k[2], q=k[1], recovery_rounds=v['recovery'], recovered_frac=v['recovered_frac']) for k, v in t.items()]).set_index(['strategy','w','q'])
     f = glob.glob(f'{R}/{tag}_group_{VER}/summary_*.csv')
     if f:
         g = pd.read_csv(f[0]); num = g.select_dtypes('number').drop(columns=[c for c in ('scenario','seed','K','G','rounds') if c in g], errors='ignore')
-        display(Markdown(f'### Group stage — {arm} ({len(g)} games): mean [bootstrap CI]'))
-        display(pd.DataFrame({c: [fmt(*boot_ci(num[c]))] for c in num.columns}).T.rename(columns={0: 'mean [95% CI]'}))
-        display(g.groupby('partner')[['cooperation_rate','mean_r1','mean_rho','mean_cfe','mean_brier','trajectory_scalar']].mean().round(3))
-    else: pending(f'group stage ({arm})')
+        gci[arm] = pd.Series({c: fmt(*boot_ci(num[c])) for c in num.columns}, name=arm)
+        grp[arm] = g.groupby('partner')[['cooperation_rate','mean_r1','mean_rho','mean_cfe','mean_brier','trajectory_scalar']].mean()
+        grp[arm + '_n'] = len(g)
     f = glob.glob(f'{R}/{tag}_selfplay_{VER}/summary_*.csv')
     if f:
-        s = pd.read_csv(f[0]); display(Markdown(f'### Self-play — {arm}'))
-        display(s.groupby(['w','q'])[['a_cooperation_rate','b_cooperation_rate','mutual_c_rate','a_total','b_total']].agg(['mean','std']).round(2))
-    else: pending(f'self-play ({arm})')""")
+        slf[arm] = pd.read_csv(f[0]).groupby(['w','q'])[['a_cooperation_rate','b_cooperation_rate','mutual_c_rate','a_total','b_total']].mean()
+def side(dd):
+    arms_ = [a for a in ('base', 'rl') if a in dd]
+    return pd.concat({a: dd[a] for a in arms_}, axis=1).swaplevel(axis=1).sort_index(axis=1, level=0, sort_remaining=False)[dd[arms_[0]].columns.tolist()]
+if rep:
+    display(Markdown('### Repair after a forced defection — **bold** = better arm (fewer recovery rounds / more recovered)'))
+    display(bold_arms(side(rep), nd=2))
+else: pending('repair')
+if gci:
+    display(Markdown(f'### Group stage — mean [bootstrap CI] per arm (base n={grp.get("base_n", 0)}, rl n={grp.get("rl_n", 0)} games)'))
+    display(pd.DataFrame(gci))
+    display(Markdown('### Group stage by partner — **bold** = better arm (higher r₁/ρ/trajectory, lower CFE/Brier; cooperation rate is descriptive)'))
+    display(bold_arms(side({a: grp[a] for a in ('base', 'rl') if a in grp})))
+else: pending('group stage')
+if slf:
+    display(Markdown('### Self-play (means over seeds) — **bold** = better arm'))
+    display(bold_arms(side(slf), nd=2))
+else: pending('self-play')""")
 
 md(r"""### 1.3 Probed conditional policies (memory 1) and the reciprocity-plane stars""")
 code(r"""def probe_df(tag):
@@ -352,7 +419,7 @@ if len(gs) == 2:
     for c in cols_:
         t = paired_tests(gs['base'].sort_values(['scenario','seed'])[c].values, gs['RL'].sort_values(['scenario','seed'])[c].values) if len(gs['base']) == len(gs['RL']) else None
         rows.append(dict(metric=c, base=gs['base'][c].mean(), rl=gs['RL'][c].mean(), diff=(t or {}).get('diff'), diff_ci=fmt(t['diff'], *t['diff_ci']) if t and 'diff_ci' in t else '', p_ttest=(t or {}).get('p_ttest')))
-    display(pd.DataFrame(rows).round(4))
+    display(bold_paired(rows, nd=4))
 else: pending('group-stage evaluation (both arms)')""")
 
 md(r"""### 1.5 Games × models, against the most discriminating opponent
