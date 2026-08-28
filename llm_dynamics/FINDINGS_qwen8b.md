@@ -20,14 +20,30 @@ lives almost entirely in **thinking mode** — the mode the model was trained in
 
 **Donors game, thinking ON (w=1), cooperation with cooperators:**
 
-| vs | base | s6 | s51 |
-|---|---|---|---|
-| tit-for-tat | 0.36 | 0.35 | **0.68** |
-| grim trigger | 0.42 | 0.34 | **0.71** |
-| always-cooperate | 0.47 | 0.42 | **0.72** |
-| generous TFT | 0.19 | **0.62** | 0.43 |
-| overall (all 9 strategies) | 0.33 | 0.35 | **0.44** |
-| BR captured overall | 0.79 | 0.80 | **0.82** |
+Cooperation rate and reward (points per round, raw units: mutual cooperation
+= 4.0/round; "optimum" = DP best-response payoff against that opponent):
+
+| vs | coop base | coop s6 | coop s51 | pts base | pts s6 | pts s51 | optimum |
+|---|---|---|---|---|---|---|---|
+| tit-for-tat | 0.36 | 0.35 | **0.68** | 2.88 | 2.83 | **3.44** | 4.1 |
+| grim trigger | 0.42 | 0.34 | **0.71** | 2.95 | 2.79 | **3.48** | 4.1 |
+| always-cooperate | 0.47 | 0.42 | 0.72 | 5.06 | **5.16** | 4.57 | 6.0 |
+| generous TFT | 0.19 | **0.62** | 0.43 | 3.30 | **3.76** | 3.64 | 4.1 |
+| tit-for-two-tats | **0.78** | 0.73 | 0.66 | **3.72** | 3.66 | 3.48 | 5.1 |
+| WSLS | 0.58 | 0.60 | 0.67 | 4.00 | 3.98 | 3.99 | 4.1 |
+| always-defect | 0.02 | 0.01 | 0.02 | 1.97 | 1.98 | 1.97 | 2.0 |
+| suspicious TFT | 0.03 | 0.02 | 0.03 | 2.05 | 2.03 | 2.06 | 3.9 |
+| random | 0.08 | 0.06 | 0.08 | 3.42 | 3.47 | 3.44 | 4.0 |
+| **overall** | 0.33 | 0.35 | **0.44** | 3.26 | 3.30 | **3.34** | 4.16 |
+| BR captured overall | 0.79 | 0.80 | **0.82** | | | | |
+
+The reward columns sharpen the story: s51's extra cooperation earns points
+exactly where cooperation is the best response (vs TFT 2.88 → 3.44, Grim
+2.95 → 3.48, closing about half the gap to the 4.1 optimum) and costs points
+where exploitation is (vs AllC 5.06 → 4.57, vs TF2T 3.72 → 3.48). Net over
+the pool it still comes out ahead because reciprocators dominate: s51 shifted
+its prior toward cooperation, profitable against conditional cooperators and
+mildly costly against unconditional ones.
 
 The base model in thinking mode is a heavy defector even against perfect
 reciprocators (0.36 vs TFT — it reasons its way into exploitation and pays for
