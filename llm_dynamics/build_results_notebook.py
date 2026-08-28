@@ -50,7 +50,8 @@ means the artifact does not exist yet.
 """)
 
 # --- Section 0: written review (from FINDINGS_qwen8b.md, embedded at build time) ---
-_f = os.path.join(os.path.dirname(os.path.abspath(__file__)), "FINDINGS_qwen8b.md")
+_f = os.path.join(os.path.dirname(os.path.abspath(__file__)), f"FINDINGS_{TR}.md")
+if not os.path.exists(_f): _f = os.path.join(os.path.dirname(os.path.abspath(__file__)), "FINDINGS_qwen8b.md")
 if os.path.exists(_f):
     md("## 0. Full review — where the models diverge (written analysis)\n\n"
        "*This section is the human-readable review; every number in it is computed in the sections below.*\n\n---\n\n"
@@ -100,7 +101,9 @@ def pending(what): display(Markdown(f'**{what}: pending** (artifact not found)')
 HI_M = {'agreement','br_captured','welfare_captured','coop','ppr','points','rho','r1','mean_rho','mean_r1',
         'recovered_frac','mutual_c_rate','a_total','b_total','trajectory_scalar','mean_reward',
         'game.score','points_pct_of_max','achievements','reached_end','auc_level','levels_beaten','level_reached','max_level_seen'}
-LO_M = {'recovery_rounds','mean_cfe','mean_brier','parse_failures','latency','R_std'}
+LO_M = {'recovery_rounds','mean_cfe','mean_brier','parse_failures','latency','R_std','suckered'}
+ARM_KEYS = {'qwen8b_rl_s6': 'rl', 'qwen8b_rl_s51': 'rl51', 'qwen8b_rl_s75': 'rl75'}
+BENCH_ARMS = ['base'] + [ARM_KEYS.get(t, t) for t in TAGS_RL]   # only the arms this notebook is about
 def _direction(name):
     n = str(name)
     if n in HI_M: return 1
@@ -166,7 +169,8 @@ def per_game_metrics(dirs):
             r0 = rr[0]; g = A.analyze_game(rr); s = A.signal_metrics(rr)
             rows.append(dict(strategy=r0['opponent_strategy'], w=r0['w'], q=r0['q'], memory=A._mem_tag(r0), seed=r0['seed'],
                              agreement=g['agreement'], br_captured=g['captured'], welfare_captured=g['welfare_captured'],
-                             coop=A._coop_rate(rr), rho=s['mean_rho'], r1=s['mean_r1'], R=s['R'], latency=s['latency']))
+                             coop=A._coop_rate(rr), rho=s['mean_rho'], r1=s['mean_r1'], R=s['R'], latency=s['latency'],
+                             ppr=float(np.mean([r.get('payoff_raw', r.get('payoff', np.nan)) for r in rr]))))
     return pd.DataFrame(rows)
 dyn = {}
 for tag in (TB, TR):
@@ -204,7 +208,44 @@ if dyn[TB] is not None:
         display(Markdown('### By (w, q) (memory full): RL − base'))
         display(diff.reset_index().query("memory=='full'").groupby(['w','q'])[METRICS].mean().round(3))
         display(Markdown('### By memory window: RL − base'))
-        display(diff.reset_index().groupby('memory')[METRICS].mean().round(3))""")
+        display(diff.reset_index().groupby('memory')[METRICS].mean().round(3))
+        # ---- level tables, base vs RL side by side (all cells pooled) ----
+        def levels(by, cols):
+            return pd.concat({c: pd.DataFrame({'base': dyn[TB].groupby(by)[c].mean(), 'rl': dyn[TR].groupby(by)[c].mean()}) for c in cols}, axis=1)
+        ORDER = ['always_cooperate','tit_for_two_tats','generous_tit_for_tat','tit_for_tat','grim_trigger','wsls','random','suspicious_tit_for_tat','always_defect']
+        display(Markdown('### Levels by opponent (all w, q, memory, seeds pooled) — cooperation, points/round, BR captured, agreement; **bold** = better arm'))
+        display(bold_arms(levels('strategy', ['coop','ppr','br_captured','agreement']).reindex(ORDER), nd=3))
+        display(Markdown('### Cooperation rate and BR captured by (w, q) — all opponents, memories and seeds pooled'))
+        display(bold_arms(levels(['w','q'], ['coop','br_captured','agreement']), nd=3))
+        display(Markdown('### Cooperation rate and agreement by memory window'))
+        display(bold_arms(levels('memory', ['coop','agreement','br_captured']), nd=3))""")
+
+md(r"""### 1.0b Outcome structure — how often the model is suckered vs exploiting
+
+Share of rounds in each joint outcome: **suckered** = model cooperated while the
+partner defected; **exploiting** = model defected while the partner cooperated;
+mutual C; mutual D. Being suckered is set mostly by the opponent (it happens
+against partners that defect regardless); exploiting is the model's choice, and
+is what training changes. Direct play pools all (w, q, memory) cells; thinking
+mode is the w=1 training-mode sweep.""")
+code(r"""def outcome_df(tag, sub):
+    rows = []
+    for f in glob.glob(f'{R}/{tag}_{sub}/*/rounds/*.jsonl'):
+        rr = [json.loads(l) for l in open(f) if l.strip()]
+        if not rr or 'q' not in rr[0]: continue
+        st = [(r['model_action'][0], r['opp_action'][0]) for r in rr]
+        rows.append(dict(strategy=rr[0]['opponent_strategy'], mutual_C=np.mean([x == ('C','C') for x in st]), mutual_D=np.mean([x == ('D','D') for x in st]),
+                         suckered=np.mean([x == ('C','D') for x in st]), exploiting=np.mean([x == ('D','C') for x in st])))
+    return pd.DataFrame(rows)
+ORDER = ['always_cooperate','tit_for_two_tats','generous_tit_for_tat','tit_for_tat','grim_trigger','wsls','random','suspicious_tit_for_tat','always_defect']
+for sub, label in [(f'donors_{VER}', 'Direct play (no thinking)'), (f'donors_{VER}_think', 'Thinking mode (w=1)')]:
+    ob, orl = outcome_df(TB, sub), outcome_df(TR, sub)
+    if not len(ob) or not len(orl): pending(f'outcome structure — {label}'); continue
+    cols = ['suckered','exploiting','mutual_C','mutual_D']
+    tab = pd.concat({c: pd.DataFrame({'base': ob.groupby('strategy')[c].mean(), 'rl': orl.groupby('strategy')[c].mean()}) for c in cols}, axis=1).reindex(ORDER)
+    tab.loc['ALL'] = pd.concat({c: pd.Series({'base': ob[c].mean(), 'rl': orl[c].mean()}) for c in cols})
+    display(Markdown(f'### {label} — share of rounds (bold = fewer suckered rounds; other columns descriptive)'))
+    display(bold_arms(tab * 100, nd=1))""")
 
 md(r"""### 1.1 c/b sweep, horizons, thinking-on — cooperation rate and BR captured per arm""")
 code(r"""for label, pat in [('c/b sweep', f'{{tag}}_donors_{VER}_cb*'), ('horizon N', f'{{tag}}_donors_{VER}_N*'), ('thinking on (w=1)', f'{{tag}}_donors_{VER}_think')]:
@@ -539,7 +580,7 @@ else:
     num = [c for c in m.select_dtypes('number').columns if c not in ('episode',)]
     HI = {'game.score', 'points_pct_of_max', 'achievements', 'reached_end'}
     LO = {c for c in num if c.startswith(('violations', 'power', 'utility', 'raw.'))} | {'parse_failures', 'random_actions'}
-    ARMS = [a for a in ('base', 'rl', 'rl51') if a in set(m.arm)] or sorted(m.arm.unique())
+    ARMS = [a for a in BENCH_ARMS if a in set(m.arm)] or sorted(m.arm.unique())
     def best_arm(c, vals):
         ok = {a: v for a, v in vals.items() if v == v}
         if not ok: return None
@@ -600,7 +641,7 @@ else:
     num = [c for c in ('auc_level','levels_beaten','level_reached','max_level_seen','turns','llm_calls','prompt_tokens','output_tokens','total_tokens','wall_s','llm_s','creative_turns','mean_reasoning_chars','zero_reasoning_turns','transport_warnings') if c in d]
     HI = {'auc_level', 'levels_beaten', 'level_reached', 'max_level_seen'}
     LO = {'transport_warnings', 'zero_reasoning_turns'}
-    ARMS = [a for a in ('base', 'rl', 'rl51') if a in set(d.arm)] or sorted(d.arm.unique())
+    ARMS = [a for a in BENCH_ARMS if a in set(d.arm)] or sorted(d.arm.unique())
     def best_arm(c, vals):
         ok = {a: v for a, v in vals.items() if v == v}
         if not ok: return None
