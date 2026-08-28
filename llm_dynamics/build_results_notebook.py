@@ -631,7 +631,29 @@ orders agree in arm terms; an order-flip is a position effect and scores a tie
 RL win rate with Wilson CI, tie and flip rates, per-criterion preferences, a
 sign test on per-scenario net preference, and the length control — net
 preference regressed on the difference in visible response length (the artifact
-that explained the 32B kindness effect).""")
+that explained the 32B kindness effect).
+
+**How to read the summary table:**
+
+* **verdicts** = scenarios × criteria; each is won by RL, won by base, or a tie.
+  Order-flips (the judge switched sides when presentation order swapped) count
+  as ties.
+* **rl_win_rate** — RL's share of the *decided* (non-tie) verdicts, Wilson 95%
+  CI. 0.500 = the judge has no preference.
+* **net_pref** — (RL wins − base wins) ÷ *all* verdicts, on a −1…+1 scale. E.g.
+  +0.064 = a net 6.4 percentage points of all criterion-judgments favor RL —
+  equivalently, RL beats base on ~0.06 × criteria-per-scenario extra criteria
+  on an average scenario. It is *not* "6% of scenarios".
+* **p_sign** — sign test over scenarios: is the direction consistent?
+* **rho_len / R2_len / net_at_equal_len** — judges favor longer answers, so net
+  preference is regressed on the length difference; the intercept
+  (`net_at_equal_len`) is the preference expected at equal length — the number
+  to quote.
+* **Constitutions**: kindness and oct_goodness are positive (higher = better);
+  oct_misalignment and oct_sycophancy are **reverse-scored** (RL winning =
+  *more* misaligned/sycophantic = worse); oct_humor and oct_poeticism are
+  style **controls** that should not move — if they move as much as kindness,
+  suspect a style shift rather than a moral one.""")
 code(r"""STEP = TR.rsplit('_s', 1)[-1]  # judgments matching this notebook's RL arm
 JD = f'{EB}/EigenBench/runs/qwen8b/judgments_gemma4_step{STEP}'
 H2H = f'{EB}/EigenBench/runs/qwen8b/responses/arms_head_to_head_step{STEP}.jsonl'
@@ -648,6 +670,11 @@ def arm_pref(order, val):
 files = sorted(glob.glob(f'{JD}/*.jsonl'))
 if not files: pending('EigenBench judgments')
 summary = []
+plain = []
+ROLE = {'kindness': 'positive', 'oct_goodness': 'positive',
+        'oct_misalignment': 'reverse-scored: RL winning = MORE misaligned (bad)',
+        'oct_sycophancy': 'reverse-scored: RL winning = MORE sycophantic (bad)',
+        'oct_humor': 'control (should not move)', 'oct_poeticism': 'control (should not move)'}
 for f in files:
     const = os.path.basename(f)[:-6]
     rows = [json.loads(l) for l in open(f) if l.strip()]
@@ -680,11 +707,14 @@ for f in files:
             sl, ic, rr, pv, se = stats.linregress(x, y); row['rho_len'] = stats.spearmanr(x, y).correlation; row['R2_len'] = rr**2
             row['net_at_equal_len'] = fmt(ic, ic - 1.96*se*0 - 1.96*np.std(y - (sl*x+ic))/math.sqrt(len(y)), ic + 1.96*np.std(y - (sl*x+ic))/math.sqrt(len(y)), 4)
     summary.append(row)
+    plain.append(f"**{const}** ({ROLE.get(const, '')}): the judge decided {dec:,} of {total:,} verdicts ({dec/total:.0%}; the rest ties). Of those, RL won {p:.1%}. Net over all verdicts: {nets.mean()*100:+.1f} pp = RL wins {nets.mean()*ncrit:+.2f} of {ncrit} criteria per scenario on average; at equal response length: {row.get('net_at_equal_len', 'n/a')}.")
     display(Markdown(f'### {const}: per-criterion (order-stable) preferences'))
     display(pd.DataFrame({k: dict(v) for k, v in sorted(per_crit.items())}).T.fillna(0).astype(int))
 if summary:
     display(Markdown('### Summary over constitutions (rl_win_rate = RL share of decided verdicts, Wilson CI; net_pref = per-scenario (RL−base)/criteria; length control: Spearman ρ and R² of net vs Δlength, intercept = net at equal length)'))
-    display(pd.DataFrame(summary).set_index('constitution'))""")
+    display(pd.DataFrame(summary).set_index('constitution'))
+    display(Markdown('### In plain language'))
+    display(Markdown(chr(10).join('- ' + l for l in plain)))""")
 
 md(r"""## 5. Reading guide
 
