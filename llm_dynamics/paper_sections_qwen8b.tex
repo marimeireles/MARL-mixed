@@ -1,0 +1,330 @@
+% Drop-in sections for the donorSim paper, written from the Qwen3-8B results
+% (base vs GRPO steps 6 / 51 / 75). Compiles standalone; copy the sections
+% you want into the main paper. Numbers: llm_dynamics/FINDINGS_qwen8b.md and
+% results_INTERIM_qwen8b_base_vs_rl_s51.ipynb (branch donors-game-dynamics).
+\documentclass{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{booktabs,amsmath,amssymb,multirow}
+\usepackage[hidelinks]{hyperref}
+\newcommand{\machiavelli}{\textsc{Machiavelli}}
+\begin{document}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{abstract}
+Training language models to cooperate with humans and with each other remains
+an open problem: current alignment methods optimize individual model behavior
+without accounting for the multi-agent dynamics that govern real-world
+deployment. We introduce a reinforcement learning framework that translates
+Nowak's evolutionary rules of cooperation --- direct reciprocity, indirect
+reciprocity, and group selection --- into training pressures for large language
+models. Our reward operates at three scales: individual payoff via a
+general-sum game, dyadic coordination via a reciprocation term whose envelope
+recovers Nowak's analytical thresholds, and collective coherence via a
+prediction-error penalty that makes cheap talk costly. We evaluate checkpoints
+by probing them against fixed strategies and measuring their distance from the
+best response, and we decompose every external benchmark into its component
+metrics. We find that aggregate behavior barely moves while its composition
+does: reasoning-mode cooperation with reciprocating partners doubles as payoff
+capture rises, cooperation with defectors stays flat, forgiving partners are
+first exploited and later reciprocated, and hostile openers are handled more
+profitably. Transfer is equally fine-grained: on \machiavelli{}, points and
+achievements rise early in training and the violation subscores drift downward
+later, while reasoning length shrinks in nearly every game; on EigenBench a
+judge-scored kindness gain survives a length control but is mirrored by a style
+control. Cooperation, on this view, is a boundary of the self that training can
+move --- and the movement is visible only when one asks \emph{with whom}.
+\end{abstract}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section*{Contributions (for the introduction)}
+
+\paragraph{Contributions.}
+(1)~A multi-scale reinforcement-learning framework that translates Nowak's
+mechanisms of cooperation into training pressures for language models, with
+individual, dyadic, and collective terms whose structure recovers key
+game-theoretic thresholds.
+
+(2)~A strategy-resolved evaluation --- fixed opponents spanning the
+cooperation spectrum, distance from the dynamic-programming best response,
+reasoning-mode versus direct play, and per-metric decomposition of external
+benchmarks --- that exposes what aggregate scores hide.
+
+(3)~Empirical evidence, across four checkpoints of the same run, that training
+changes \emph{which} partners the model cooperates with and how it earns its
+reward, following a non-monotonic path from exploitation of forgiving partners
+to conditional reciprocity, with initial evidence that parts of this transfer
+beyond the training games.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Results}
+\label{sec:results}
+
+\paragraph{Setup.}
+We evaluate \texttt{Qwen/Qwen3-8B} before training (\emph{base}) and at GRPO
+steps 6, 51 and 75 of the same run. Dynamics are probed with the training
+prompts against nine fixed strategies --- always-cooperate, always-defect,
+tit-for-tat (TFT), suspicious TFT (opens with D), tit-for-two-tats (TF2T),
+grim trigger, win-stay-lose-shift (WSLS), generous TFT ($p_{\text{forgive}}=0.3$)
+and random --- for $w,q\in\{0,0.5,1\}$, $b=4$, $c/b=0.5$, 20 rounds, four seeds
+per cell. For each game we report the model's cooperation rate, its points per
+round (raw units; mutual cooperation earns $4.0$/round), and the fraction of
+the best-response payoff it captures, where the best response is computed by
+dynamic programming against the opponent's finite-state strategy. Direct play
+(no reasoning) and reasoning mode (the mode used in training) are reported
+separately. Transfer is measured on \machiavelli{} (134 text games, three
+episodes per game and arm, paired by game), EigenBench (10{,}398 dilemmas,
+six constitutions, Gemma-4-31B judge, both presentation orders) and DiG-bench
+(21 hidden-rule discovery games).
+
+\subsection{Dynamics against fixed strategies}
+
+\paragraph{Aggregates barely move; rows do.}
+In direct play, overall cooperation is $0.755$ (base), $0.733$ (step~6),
+$0.784$ (51) and $0.785$ (75); agreement with the reference policy (match the
+partner) is $0.819/0.807/0.849/0.853$. Beneath these near-identical totals,
+Table~\ref{tab:nothink} shows three distinct movements.
+
+\begin{table}[h]
+\centering\small
+\caption{Direct play (no reasoning), $w,q\in\{0,0.5,1\}$ pooled: cooperation
+rate and points per round per opponent (optimum = DP best response). Bold =
+best of the four checkpoints.}
+\label{tab:nothink}
+\begin{tabular}{l cccc cccc c}
+\toprule
+& \multicolumn{4}{c}{cooperation} & \multicolumn{4}{c}{points / round} & \\
+\cmidrule(lr){2-5}\cmidrule(lr){6-9}
+opponent & base & s6 & s51 & s75 & base & s6 & s51 & s75 & opt. \\
+\midrule
+always-cooperate & 0.95 & 0.91 & \textbf{0.98} & \textbf{0.98} & 4.10 & \textbf{4.17} & 4.04 & 4.03 & 6.0 \\
+generous TFT     & 0.87 & 0.85 & \textbf{0.93} & \textbf{0.93} & 4.22 & \textbf{4.25} & 4.11 & 4.13 & 4.1 \\
+tit-for-tat      & 0.96 & 0.89 & 0.98 & \textbf{0.99} & 4.06 & \textbf{4.13} & 4.04 & 4.02 & 4.1 \\
+tit-for-two-tats & 0.97 & 0.93 & 0.98 & \textbf{0.99} & 4.07 & \textbf{4.12} & 4.03 & 4.02 & 5.1 \\
+grim trigger     & 0.92 & 0.93 & \textbf{0.98} & 0.97 & 4.04 & \textbf{4.08} & 4.04 & 4.05 & 4.1 \\
+WSLS             & 0.81 & 0.85 & 0.89 & \textbf{0.92} & \textbf{4.29} & 4.23 & 4.16 & 4.09 & 4.1 \\
+random           & 0.49 & 0.44 & 0.44 & 0.46 & 2.72 & \textbf{2.82} & 2.81 & 2.79 & 4.0 \\
+suspicious TFT   & 0.42 & 0.38 & 0.42 & 0.37 & 1.80 & 1.90 & 1.96 & \textbf{2.14} & 3.9 \\
+always-defect    & 0.17 & 0.17 & 0.21 & 0.18 & \textbf{1.67} & 1.65 & 1.57 & 1.64 & 2.0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\emph{(i) An early exploitation phase.} Step~6 lowers cooperation with every
+forgiving partner --- TFT $0.96\to0.89$, TF2T $0.97\to0.93$, always-cooperate
+$0.95\to0.91$, generous TFT $0.87\to0.85$ --- and, on the iterated Prisoner's
+Dilemma at memory one, drops from full cooperation to $0.75$ against TF2T
+(points $3.00\to2.83$) and from $0.69$ to $0.54$ against grim trigger
+(points $2.40\to2.11$). This is the only checkpoint whose points per round
+against reciprocators are \emph{above} base (Table~\ref{tab:nothink}): it earns
+slightly more by defecting more, the signature of a policy that has learned
+that forgiving partners can be exploited.
+
+\emph{(ii) A later reciprocal phase that keeps going.} Steps~51 and 75 reverse
+every one of these drops (TFT $0.98/0.99$, TF2T $0.98/0.99$, grim $0.98/0.97$,
+generous TFT $0.93/0.93$) and continue to raise cooperation with WSLS
+monotonically across training ($0.81\to0.85\to0.89\to0.92$). Because the
+opponents already cooperate, the points gained are small (the optimum against a
+reciprocator is $4.1$ and every checkpoint is within $0.1$ of it).
+
+\emph{(iii) Two things never move.} Cooperation with always-defect stays in
+$0.17$--$0.21$ and with a random partner in $0.44$--$0.49$ at every checkpoint.
+Training does not make the model a pushover; it changes behavior only toward
+partners whose behavior is contingent on its own.
+
+\emph{(iv) Hostile openers are the one place payoff improves.} Against
+suspicious TFT, the base model's known weakness (it derails into mutual
+defection after the opening D), the trained models cooperate \emph{less}
+($0.42\to0.37$) yet earn steadily more: $1.80\to1.90\to1.96\to2.14$ points per
+round, best-response capture $0.60\to0.65\to0.66\to0.74$. It is the only
+opponent against which the payoff moves by more than seed noise, and it moves
+through more efficient handling of the derailment rather than through more
+cooperation.
+
+\paragraph{Reasoning mode carries the largest effect.}
+Reasoning mode is where the model was trained, and it is where the base model
+behaves worst: it reasons itself into exploitation, cooperating with TFT only
+$36\%$ of the time, with grim trigger $42\%$ and with always-cooperate $47\%$,
+and captures only $0.70$ of the best-response payoff against TFT
+(Table~\ref{tab:think}). Step~6 pushes these further down ($0.35/0.34/0.42$)
+while jumping to $0.62$ against generous TFT --- the forgiving partner it can
+exploit most safely. By step~51 the direction has reversed: cooperation with
+TFT, grim trigger and always-cooperate roughly doubles ($0.68/0.71/0.72$) and
+--- decisively --- payoff capture rises with it (vs TFT $0.70\to0.84$, vs
+grim $0.72\to0.85$; points $2.88\to3.44$ and $2.95\to3.48$, closing half the gap
+to the $4.1$ optimum). The extra cooperation costs points only where
+exploitation was the best response (always-cooperate $5.06\to4.57$, TF2T
+$3.72\to3.48$), and cooperation with always-defect stays at $0.02$ with
+reciprocation $\rho=+1.00$. Net over the pool, points per round rise
+$3.26\to3.30\to3.34$ because reciprocators dominate the opponent set.
+
+\begin{table}[h]
+\centering\small
+\caption{Reasoning mode, $w=1$: cooperation and points per round (raw units)
+per opponent. Bold = best checkpoint.}
+\label{tab:think}
+\begin{tabular}{l ccc ccc c}
+\toprule
+& \multicolumn{3}{c}{cooperation} & \multicolumn{3}{c}{points / round} & \\
+\cmidrule(lr){2-4}\cmidrule(lr){5-7}
+opponent & base & s6 & s51 & base & s6 & s51 & opt. \\
+\midrule
+tit-for-tat      & 0.36 & 0.35 & \textbf{0.68} & 2.88 & 2.83 & \textbf{3.44} & 4.1 \\
+grim trigger     & 0.42 & 0.34 & \textbf{0.71} & 2.95 & 2.79 & \textbf{3.48} & 4.1 \\
+always-cooperate & 0.47 & 0.42 & 0.72 & 5.06 & \textbf{5.16} & 4.57 & 6.0 \\
+generous TFT     & 0.19 & \textbf{0.62} & 0.43 & 3.30 & \textbf{3.76} & 3.64 & 4.1 \\
+tit-for-two-tats & \textbf{0.78} & 0.73 & 0.66 & \textbf{3.72} & 3.66 & 3.48 & 5.1 \\
+WSLS             & 0.58 & 0.60 & 0.67 & 4.00 & 3.98 & 3.99 & 4.1 \\
+always-defect    & 0.02 & 0.01 & 0.02 & 1.97 & 1.98 & 1.97 & 2.0 \\
+suspicious TFT   & 0.03 & 0.02 & 0.03 & 2.05 & 2.03 & 2.06 & 3.9 \\
+random           & 0.08 & 0.06 & 0.08 & 3.42 & 3.47 & 3.44 & 4.0 \\
+\midrule
+overall          & 0.33 & 0.35 & \textbf{0.44} & 3.26 & 3.30 & \textbf{3.34} & 4.16 \\
+BR captured      & 0.79 & 0.80 & \textbf{0.82} & & & & \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Where the signal came from.}
+The base model already plays near-deterministic tit-for-tat in direct play:
+mean reciprocation $\rho$ is $+0.43$ at every checkpoint and its across-seed
+standard deviation --- the GRPO advantage denominator --- is near zero
+in-distribution. The dyadic term (Term~2) is therefore saturated from
+initialization and cannot have produced the reasoning-mode shift; the
+movement is attributable to the individual and collective terms acting on the
+reasoning-mode rollouts. (Group-stage evaluations of the collective term are
+in progress and will be reported here.)
+
+\paragraph{Matrix games.}
+Holding the most discriminating opponent (grim trigger, memory one) fixed
+across games: on the Prisoner's Dilemma cooperation goes $0.69\to0.54\to0.86$
+(base/6/51) with points $2.40\to2.11\to2.77$ against an optimum of $3.1$; on
+Chicken step~51 becomes cautious (cooperation $1.00\to0.80$, points
+$3.00\to2.37$) where the base and step~6 hold the mutual-swerve optimum; Stag
+Hunt and Harmony are at ceiling ($1.00$, $5.0$ points) for every model. The
+model remains largely blind to payoff structure --- the same reciprocal policy
+is played across all four games --- and the training effect appears where that
+policy is being tested by a punishing partner, not where the game is easy.
+
+\paragraph{Invariants.}
+Self-play yields $100\%$ mutual cooperation for every checkpoint at every
+$(w,q)$. Repair after a forced defection is absent in all arms
+($P(C\mid \text{own }C,\text{ partner }D)\approx0$ in the probes): forgiveness
+is the one reciprocal skill no checkpoint acquires. Cost-benefit sweeps,
+horizon sweeps and memory-window variants show no systematic differences
+beyond seed noise.
+
+\subsection{Transfer}
+
+\paragraph{\machiavelli.}
+Totals are within noise of the base model, but the rows move
+(Table~\ref{tab:mach}). Step~6 plays the games better --- points as a
+percentage of the maximum $+1.08$ ($p=0.026$, paired $t$; Wilcoxon $0.036$)
+and achievements $+0.29$ ($p=0.034$) --- with violation, power and disutility
+totals essentially unchanged ($-0.4$, $-0.8$, $-0.4$); within the violation
+subscores deception falls ($-0.16$) while stealing ($+0.09$) and vandalism
+($+0.15$) tick upward, none significant. Step~51 gives the reward gain back
+(points $+0.03$, score $-7$, n.s.) and shifts the ethics side: every
+violation aggregate is lower than base in $\sim$71 of 132 games (violations
+$-1.9$, power $-1.8$, disutility $-0.5$, deception $-0.36$; $p\approx0.2$
+each), with vandalism the lone exception ($+0.16$, Wilcoxon $p=0.07$).
+Reasoning length shrinks at both checkpoints ($-29$ and $-204$ characters;
+the latter in 131 of 132 games, $p<10^{-6}$), the most consistent effect in
+the benchmark. The ``other'' violation score falls in the mean
+($118\to83\to80$) but its raw count does not ($1.31/1.29/1.26$ per episode,
+medians equal): the drop is a normalization artifact concentrated in games in
+which random play almost never triggers the category, where a single
+occurrence inflates the base model's score by three orders of magnitude.
+
+\begin{table}[h]
+\centering\small
+\caption{\machiavelli{}, per-arm means on the 132 paired games. Scores are
+normalized to the random agent ($=100$); for violations, power and disutility
+lower is better. Bold = best arm; $^{*}$ significant vs base.}
+\label{tab:mach}
+\begin{tabular}{l ccc}
+\toprule
+metric & base & step 6 & step 51 \\
+\midrule
+game score ($\uparrow$)      & 137.7 & \textbf{140.1} & 130.4 \\
+points, \% of max            & 19.30 & \textbf{20.38}$^{*}$ & 19.33 \\
+achievements                 & 7.60  & \textbf{7.89}$^{*}$  & 7.74 \\
+violations $\Sigma$ ($\downarrow$) & 103.1 & 102.7 & \textbf{101.2} \\
+power $\Sigma$               & 108.1 & 107.3 & \textbf{106.3} \\
+disutility $\Sigma$          & 108.2 & 107.8 & \textbf{107.7} \\
+raw violations $\Sigma$      & 91.0  & 90.7  & \textbf{89.6} \\
+raw deception                & 17.7  & 17.5  & \textbf{17.3} \\
+raw stealing                 & 5.08  & 5.17  & \textbf{5.07} \\
+raw vandalism                & \textbf{4.20} & 4.35 & 4.36 \\
+parse failures               & 1.10  & \textbf{0.95} & 1.03 \\
+reasoning chars              & 3662  & 3632$^{*}$ & 3458$^{*}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{EigenBench.}
+Step~6 is a null on every constitution (kindness $0.500$, goodness $0.494$,
+poeticism $0.501$, sycophancy $0.488$), with one wrong-way lean ---
+misalignment $0.520$ [0.512, 0.529], reverse-scored, sign test $p=0.10$ ---
+that vanishes at equal response length ($+0.005$). Its kindness preference is
+strongly length-driven (Spearman $\rho=0.41$ with the length difference,
+$R^2=0.17$) and nets to $-0.003$ at equal length. Step~51 is not a null
+(Table~\ref{tab:eigen}): the judge prefers it on kindness in $55.3\%$ of
+decided verdicts, a net $+6.4$ points over all $83{,}184$ verdicts
+($+0.51$ of 8 criteria per scenario), and this survives the length control
+($+0.039$ [0.027, 0.052] at equal length; the responses are only $3\%$
+longer). But the poeticism control moves by the same amount ($+0.034$ at
+equal length), sycophancy ($0.586$) and misalignment ($0.538$), both
+reverse-scored, tick toward step~51, and goodness --- the strictest positive
+constitution --- moves the other way ($-0.017$). The pattern is that of a
+stylistic shift the judge likes, part of which reads as kindness. On the
+first 500 scenarios, step~75 continues the trend (kindness $0.562$).
+
+\begin{table}[h]
+\centering\small
+\caption{EigenBench, step~51 vs base: RL share of decided verdicts (Wilson
+CI), net preference over all verdicts, and net preference at equal response
+length (regression intercept). Reverse-scored constitutions: RL winning is
+the undesirable direction.}
+\label{tab:eigen}
+\begin{tabular}{l l ccc}
+\toprule
+constitution & role & win rate & net & net at equal length \\
+\midrule
+kindness         & positive & \textbf{0.553} [0.549, 0.558] & $+0.064$ & $\mathbf{+0.039}$ [0.027, 0.052] \\
+oct\_goodness    & positive & 0.484 [0.479, 0.489] & $-0.009$ & $-0.017$ \\
+oct\_misalignment& reverse  & 0.538 [0.530, 0.546] & $+0.011$ & $+0.009$ \\
+oct\_sycophancy  & reverse  & 0.586 [0.569, 0.603] & $+0.005$ & $+0.005$ \\
+oct\_poeticism   & control  & \textbf{0.559} [0.553, 0.565] & $+0.033$ & $\mathbf{+0.034}$ \\
+oct\_humor       & control  & 0.532 [0.505, 0.559] & $+0.001$ & $+0.000$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{DiG-bench.}
+Discovery ability is untouched: paired by game, the area under the level
+curve differs from base by $-0.008$ (step~6, $p=0.72$) and $-0.010$ (step~51,
+$p=0.37$), and levels beaten by $-0.03$ and $-0.002$. The one behavioral
+difference is in how runs end: step~51 finishes more games by game-over (16 vs
+8 of $\sim$100 runs) and uses fewer turns (168 vs 191), i.e. it acts more and
+survives less, without reaching further.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Future work}
+
+The row-level picture suggests the pressures act on \emph{which} partner a
+model reciprocates rather than on how much it cooperates: forgiving partners
+are exploited before they are reciprocated, hostile openers are the only place
+payoff improves, and unconditional partners are never treated differently. We
+plan to track these per-opponent trajectories densely across training, since
+the exploitation-then-reciprocity path (steps 6 to 51) is visible only with
+several checkpoints; to target the behaviors no checkpoint acquired --- repair
+after a defection, and the one violation subscore (vandalism) that drifts
+upward; to replace the saturated dyadic term with a pressure the base model
+does not already satisfy; to test whether the \machiavelli{} subscore drifts
+reach significance with more episodes per game; and to adopt style-controlled
+judging so that judge-scored kindness can be separated from prose the judge
+merely prefers. Beyond this, we plan to move from simple social dilemmas toward
+richer context games and a broader range of environments, toward a stable,
+broadly cooperative policy.
+
+\end{document}
