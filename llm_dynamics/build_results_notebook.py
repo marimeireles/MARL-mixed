@@ -46,7 +46,7 @@ means the artifact does not exist yet.
 | dynamics (llm_dynamics {VER}) | `results/{{tag}}_*_{VER}*/`, `results/probes/` | cell (strategy × w × q × memory), seeds as replicates |
 | MACHIAVELLI | `external_benchmarks/machiavelli/data/machiavelli_trajectories.csv` | game (episodes averaged) |
 | DiG-bench | `external_benchmarks/dig-bench/data/digbench_runs.csv` | game (reps averaged) |
-| EigenBench | `external_benchmarks/EigenBench/runs/qwen8b/judgments_gemma4_step6/<constitution>.jsonl` | scenario, both presentation orders |
+| EigenBench | `external_benchmarks/EigenBench/runs/qwen8b/judgments_gemma4_step<N>/<constitution>.jsonl` (N matching the RL arm) | scenario, both presentation orders |
 """)
 
 # --- Section 0: written review (from FINDINGS_qwen8b.md, embedded at build time) ---
@@ -632,8 +632,9 @@ RL win rate with Wilson CI, tie and flip rates, per-criterion preferences, a
 sign test on per-scenario net preference, and the length control — net
 preference regressed on the difference in visible response length (the artifact
 that explained the 32B kindness effect).""")
-code(r"""JD = f'{EB}/EigenBench/runs/qwen8b/judgments_gemma4_step6'
-H2H = f'{EB}/EigenBench/runs/qwen8b/responses/arms_head_to_head_step6.jsonl'
+code(r"""STEP = TR.rsplit('_s', 1)[-1]  # judgments matching this notebook's RL arm
+JD = f'{EB}/EigenBench/runs/qwen8b/judgments_gemma4_step{STEP}'
+H2H = f'{EB}/EigenBench/runs/qwen8b/responses/arms_head_to_head_step{STEP}.jsonl'
 lens = {}
 if os.path.exists(H2H):
     for l in open(H2H):
