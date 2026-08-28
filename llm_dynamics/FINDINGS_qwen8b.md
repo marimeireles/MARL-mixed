@@ -103,15 +103,30 @@ Read with the battery's own discriminant logic, this is a nuanced result:
 ## MACHIAVELLI (132 paired games × 3 episodes per arm)
 
 The step-6 reward tilt is now significant with full data, and step 51 gives it
-back:
+back. Per-arm means on the 132 paired games — **bold = the arm that did
+better** on that metric (higher is better for score/points/achievements,
+lower is better for violations/power/utility); * marks the differences vs
+base that are statistically significant:
 
-| metric (paired by game) | s6 − base | s51 − base |
-|---|---|---|
-| points % of max | **+1.08 (p = 0.026)** | +0.03 (n.s.) |
-| achievements | **+0.29 (p = 0.034)** | +0.14 (n.s.) |
-| violations.Σ (normalized) | −0.4 (n.s.) | −1.9 (n.s., 71/132 games *lower*) |
-| power.Σ / utility.Σ | ≈ 0 | −1.8 / −0.5 (n.s.) |
-| reasoning chars | **−29 (p < 0.001)** | **−204 (p < 0.001, shorter in 131/132 games)** |
+| metric (132 paired games) | base | s6 | s51 |
+|---|---|---|---|
+| game.score (higher better) | 137.7 | **140.1** | 130.4 |
+| points % of max | 19.30 | **20.38** \*(p = 0.026) | 19.33 |
+| achievements | 7.60 | **7.89** \*(p = 0.034) | 7.74 |
+| violations.Σ (lower better) | 103.1 | 102.7 | **101.2** |
+| power.Σ | 108.1 | 107.3 | **106.3** |
+| utility.Σ | 108.2 | 107.8 | **107.7** |
+| raw violations Σ | 91.0 | 90.7 | **89.6** |
+| raw deception | 17.7 | 17.5 | **17.3** |
+| raw stealing | 5.08 | 5.17 | **5.07** |
+| raw vandalism | **4.20** | 4.35 | 4.36 |
+| parse failures | 1.10 | **0.95** | 1.03 |
+| reasoning chars | 3662 | 3632 \*(p < 0.001) | 3458 \*(p < 0.001, shorter in 131/132 games) |
+
+Only s6's points/achievements gains (and both reasoning-length drops) are
+significant; every ethics-side bold (s51 lower on all violation/power/utility
+aggregates, in ~71 of 132 games each) points the right way but is not
+individually significant.
 
 So: s6 = slightly better at the games, ethics unchanged (the early
 stealing/vandalism signal from the 45-game interim washed out with full data —
@@ -122,8 +137,28 @@ the 32B runs showed (4800→3790 chars there), now 3662→3458 here.
 
 ## DiG-bench (partial: 102/105/68 runs of 210 per arm)
 
-Nothing separates the arms: auc_level 1.19 / 1.20 / 1.16, paired-by-game
-differences ~0 (p = 0.72 / 0.37). Discovery ability is untouched by this
+*How to read this benchmark:* each run drops the agent into a hidden-rule
+discovery game for up to 200 turns; games have numbered levels and every run
+starts on level 1. `levels_beaten` = levels actually completed (a mean of
+0.25 = the agent beats even the first level in only ~1 run in 4 — these games
+are very hard for 8B models). `auc_level`, the primary endpoint, is the
+agent's current level averaged over the turns of the run, so it rewards
+reaching levels early; a run stuck on level 1 the whole time scores exactly
+1.0, and values like 1.19 mean "mostly still on level 1". Most runs end by
+hitting the 200-turn cap (94/92/50 per arm), not by finishing the game.
+
+Per-arm means — **bold = best arm** (but note the s51 arm has only covered 19
+of 21 games so far, so its raw means aren't comparable; the paired tests are):
+
+| metric | base | s6 | s51 |
+|---|---|---|---|
+| auc_level | 1.186 | **1.198** | 1.156 |
+| levels_beaten | **0.255** | 0.248 | 0.221 |
+| level_reached | **1.255** | 1.248 | 1.221 |
+| runs so far (of 210) | 102 | 105 | 68 |
+
+Paired by game, nothing separates the arms: auc_level diff −0.008 (s6,
+p = 0.72) and −0.010 (s51, p = 0.37). Discovery ability is untouched by this
 training — neither harmed nor helped. (Consistent with the 32B result:
 auc 1.32 vs 1.31, p = 0.64.)
 

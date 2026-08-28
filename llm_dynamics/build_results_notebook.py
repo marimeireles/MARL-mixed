@@ -452,46 +452,104 @@ if not os.path.exists(f): pending('MACHIAVELLI aggregate')
 else:
     m = pd.read_csv(f); display(Markdown(f'{len(m)} trajectories; arms: {m.arm.value_counts().to_dict()}; games per arm: {m.groupby("arm").game.nunique().to_dict()}'))
     num = [c for c in m.select_dtypes('number').columns if c not in ('episode',)]
-    display(Markdown('### Per-arm means with bootstrap CIs (all trajectories)'))
-    tab = pd.DataFrame({arm: {c: fmt(*boot_ci(m.loc[m.arm == arm, c]), nd=2) for c in num} for arm in m.arm.unique()})
-    display(tab)
-    if m.arm.nunique() == 2:
-        arms = sorted(m.arm.unique()); a0 = 'base' if 'base' in arms else arms[0]; a1 = [a for a in arms if a != a0][0]
-        pg = m.groupby(['game', 'arm'])[num].mean().unstack('arm').dropna()
-        rows = []
+    HI = {'game.score', 'points_pct_of_max', 'achievements', 'reached_end'}
+    LO = {c for c in num if c.startswith(('violations', 'power', 'utility', 'raw.'))} | {'parse_failures', 'random_actions'}
+    ARMS = [a for a in ('base', 'rl', 'rl51') if a in set(m.arm)] or sorted(m.arm.unique())
+    def best_arm(c, vals):
+        ok = {a: v for a, v in vals.items() if v == v}
+        if not ok: return None
+        if c in HI: return max(ok, key=ok.get)
+        if c in LO: return min(ok, key=ok.get)
+        return None
+    def bold_table(cols, means, cells, arms_):
+        lines = ['| metric | ' + ' | '.join(arms_) + ' |', '|---' * (len(arms_) + 1) + '|']
+        for c in cols:
+            b = best_arm(c, {a: means[a][c] for a in arms_})
+            lines.append('| ' + c + ' | ' + ' | '.join(f'**{cells[a][c]}**' if a == b else str(cells[a][c]) for a in arms_) + ' |')
+        return Markdown('\n'.join(lines))
+    means = {a: m[m.arm == a][num].mean().to_dict() for a in ARMS}
+    cells = {a: {c: fmt(*boot_ci(m.loc[m.arm == a, c]), nd=2) for c in num} for a in ARMS}
+    display(Markdown('### Per-arm means with bootstrap CIs — **bold** = best arm on that metric (direction-aware: higher is better for score/points/achievements, lower for violations/power/utility; cost/telemetry metrics unbolded)'))
+    display(bold_table(num, means, cells, ARMS))
+    a0 = 'base' if 'base' in ARMS else ARMS[0]
+    for a1 in [a for a in ARMS if a != a0]:
+        pg = m[m.arm.isin([a0, a1])].groupby(['game', 'arm'])[num].mean().unstack('arm').dropna()
+        lines = [f'| metric | n games | {a0} | {a1} | diff | p t-test | p wilcoxon |', '|---|---|---|---|---|---|---|']
         for c in num:
             t = paired_tests(pg[(c, a0)], pg[(c, a1)])
-            rows.append(dict(metric=c, n_games=t['n'], base=t['mean_base'], rl=t['mean_rl'], diff=t['diff'], diff_ci=fmt(t['diff'], *t.get('diff_ci', (np.nan, np.nan)), nd=2), p_ttest=t.get('p_ttest'), p_wilcoxon=t.get('p_wilcoxon')))
-        display(Markdown(f'### Paired by game: {a1} − {a0}')); display(pd.DataFrame(rows).round(4))
-        display(Markdown('### Per-game table (episodes averaged)')); display(pg.round(1))
+            b = best_arm(c, {a0: t['mean_base'], a1: t['mean_rl']})
+            c0, c1 = f"{t['mean_base']:.2f}", f"{t['mean_rl']:.2f}"
+            if b == a0: c0 = f'**{c0}**'
+            if b == a1: c1 = f'**{c1}**'
+            lines.append(f"| {c} | {t['n']} | {c0} | {c1} | {t['diff']:+.2f} | {t.get('p_ttest', float('nan')):.3f} | {t.get('p_wilcoxon', float('nan')):.3f} |")
+        display(Markdown(f'### Paired by game: {a1} vs {a0} — **bold** = better arm on that metric'))
+        display(Markdown('\n'.join(lines)))
     display(Markdown('### Episode-level extras')); display(m.groupby('arm')[[c for c in ('steps','reached_end','parse_failures','random_actions','mean_reasoning_chars','total_completion_tokens','wall_s') if c in m]].agg(['mean','std']).round(2))""")
 
 # ── 3. DiG-bench ──────────────────────────────────────────────────────────
 md(r"""## 3. DiG-bench
 
-21 public games × reps per arm through the baseline harness (guided-json move
-channel). Primary endpoint `auc_level` (mean level over turns), secondary
-`levels_beaten`; also `level_reached`, turns, tokens, reasoning length, stop
-reasons. Pairing unit = game (reps averaged).""")
+Hidden-rule discovery games (digbench.ai): the agent is dropped into a game
+whose rules it must figure out by experimenting, for at most 200 turns per
+run; each game has numbered levels. How to read the metrics:
+
+* `level_reached` — highest level the agent was on when the run ended (every
+  run starts on level 1).
+* `levels_beaten` = `level_reached` − 1 — levels actually completed. A mean of
+  0.25 means the agent beats even the *first* level in only ~1 run in 4; these
+  games are very hard for 8B models.
+* `auc_level` — the primary endpoint: the agent's current level averaged over
+  the turns of the run. It rewards reaching levels *early*; a run stuck on
+  level 1 for all 200 turns scores exactly 1.0, so values like 1.19 mean
+  "mostly still on level 1".
+* `turns` + `stop_reason` — `max_steps` = hit the 200-turn cap still playing
+  (the typical outcome); `done`/`game_over` = the game itself ended.
+* everything else is cost/telemetry (tokens, wall time, reasoning length).
+
+21 public games × 10 reps per arm through the baseline harness (guided-json
+move channel). Pairing unit = game (reps averaged).""")
 code(r"""f = f'{EB}/dig-bench/data/digbench_runs.csv'
 if not os.path.exists(f): pending('DiG-bench aggregate')
 else:
-    d = pd.read_csv(f); display(Markdown(f'{len(d)} runs; arms: {d.arm.value_counts().to_dict()}'))
+    d = pd.read_csv(f); display(Markdown(f'{len(d)} runs; arms: {d.arm.value_counts().to_dict()}; games per arm: {d.groupby("arm").game.nunique().to_dict()}'))
     num = [c for c in ('auc_level','levels_beaten','level_reached','max_level_seen','turns','llm_calls','prompt_tokens','output_tokens','total_tokens','wall_s','llm_s','creative_turns','mean_reasoning_chars','zero_reasoning_turns','transport_warnings') if c in d]
-    display(Markdown('### Per-arm means with bootstrap CIs (all runs)'))
-    display(pd.DataFrame({arm: {c: fmt(*boot_ci(d.loc[d.arm == arm, c]), nd=3) for c in num} for arm in d.arm.unique()}))
+    HI = {'auc_level', 'levels_beaten', 'level_reached', 'max_level_seen'}
+    LO = {'transport_warnings', 'zero_reasoning_turns'}
+    ARMS = [a for a in ('base', 'rl', 'rl51') if a in set(d.arm)] or sorted(d.arm.unique())
+    def best_arm(c, vals):
+        ok = {a: v for a, v in vals.items() if v == v}
+        if not ok: return None
+        if c in HI: return max(ok, key=ok.get)
+        if c in LO: return min(ok, key=ok.get)
+        return None
+    def bold_table(cols, means, cells, arms_):
+        lines = ['| metric | ' + ' | '.join(arms_) + ' |', '|---' * (len(arms_) + 1) + '|']
+        for c in cols:
+            b = best_arm(c, {a: means[a][c] for a in arms_})
+            lines.append('| ' + c + ' | ' + ' | '.join(f'**{cells[a][c]}**' if a == b else str(cells[a][c]) for a in arms_) + ' |')
+        return Markdown('\n'.join(lines))
+    means = {a: d[d.arm == a][num].mean().to_dict() for a in ARMS}
+    cells = {a: {c: fmt(*boot_ci(d.loc[d.arm == a, c]), nd=3) for c in num} for a in ARMS}
+    display(Markdown('### Per-arm means with bootstrap CIs — **bold** = best arm on that metric (higher is better for level metrics; cost/telemetry unbolded). NOTE: raw means are not comparable across arms with unequal game coverage — trust the paired tables below.'))
+    display(bold_table(num, means, cells, ARMS))
     display(Markdown('### Stop reasons / results by arm')); display(pd.crosstab(d.arm, d.stop_reason));
     if 'result' in d: display(pd.crosstab(d.arm, d.result))
-    if d.arm.nunique() == 2:
-        arms = sorted(d.arm.unique()); a0 = 'base' if 'base' in arms else arms[0]; a1 = [a for a in arms if a != a0][0]
-        pg = d.groupby(['game','arm'])[num].mean().unstack('arm').dropna()
-        rows = []
+    a0 = 'base' if 'base' in ARMS else ARMS[0]
+    for a1 in [a for a in ARMS if a != a0]:
+        pg = d[d.arm.isin([a0, a1])].groupby(['game', 'arm'])[num].mean().unstack('arm').dropna()
+        if not len(pg): continue
+        lines = [f'| metric | n games | {a0} | {a1} | diff | p t-test | p wilcoxon |', '|---|---|---|---|---|---|---|']
         for c in num:
             t = paired_tests(pg[(c, a0)], pg[(c, a1)])
-            rows.append(dict(metric=c, n_games=t['n'], base=t['mean_base'], rl=t['mean_rl'], diff=t['diff'], diff_ci=fmt(t['diff'], *t.get('diff_ci', (np.nan, np.nan))), p_ttest=t.get('p_ttest'), p_wilcoxon=t.get('p_wilcoxon')))
-        display(Markdown(f'### Paired by game: {a1} − {a0}')); display(pd.DataFrame(rows).round(4))
-        display(Markdown('### Per-game table (reps averaged)')); display(pg[[('auc_level',a0),('auc_level',a1),('levels_beaten',a0),('levels_beaten',a1),('turns',a0),('turns',a1)]].round(3))
-        if 'tier' in d: display(Markdown('### By tier')); display(d.groupby(['tier','arm'])[['auc_level','levels_beaten']].mean().unstack('arm').round(3))""")
+            b = best_arm(c, {a0: t['mean_base'], a1: t['mean_rl']})
+            c0, c1 = f"{t['mean_base']:.3f}", f"{t['mean_rl']:.3f}"
+            if b == a0: c0 = f'**{c0}**'
+            if b == a1: c1 = f'**{c1}**'
+            lines.append(f"| {c} | {t['n']} | {c0} | {c1} | {t['diff']:+.3f} | {t.get('p_ttest', float('nan')):.3f} | {t.get('p_wilcoxon', float('nan')):.3f} |")
+        display(Markdown(f'### Paired by game: {a1} vs {a0} — **bold** = better arm on that metric'))
+        display(Markdown('\n'.join(lines)))
+        display(Markdown(f'### Per-game table ({a1} vs {a0}, reps averaged)')); display(pg[[('auc_level',a0),('auc_level',a1),('levels_beaten',a0),('levels_beaten',a1),('turns',a0),('turns',a1)]].round(3))
+    if 'tier' in d: display(Markdown('### By tier')); display(d.groupby(['tier','arm'])[['auc_level','levels_beaten']].mean().unstack('arm').round(3))""")
 
 # ── 4. EigenBench ─────────────────────────────────────────────────────────
 md(r"""## 4. EigenBench (external judge: Gemma-4-31B-it)
