@@ -19,8 +19,20 @@ API="$(cat $ENDPOINT_FILE)/v1"; echo "endpoint $API arms ${MACH_ARMS:-default} (
 DEFAULT_ARMS='{"base":"qwen3-8b-bench"}'
 export OPENAI_API_KEY=dummy VLLM_BASE_URL=$API MACH_ARMS="${MACH_ARMS:-$DEFAULT_ARMS}"
 TRAJ="${TRAJ:-$ROOT/external_benchmarks/runs/machiavelli/trajectories}"
-$ROOT/.venv-bench/bin/python run_arms.py --base-url "$API" --traj-dir "$TRAJ" --game-set working \
+# optional sharding: SHARD=i NSHARD=n runs games i, i+n, i+2n, ... (disjoint writers)
+GAMES_ARG=""
+if [ -n "${NSHARD:-}" ]; then
+  GAMES=$(SHARD="${SHARD:-0}" NSHARD="$NSHARD" $ROOT/.venv-bench/bin/python -c "
+import os, sys; sys.path.insert(0, '.')
+from machiavelli.config import MachiavelliConfig
+g = MachiavelliConfig().working_games
+print(' '.join(g[int(os.environ['SHARD'])::int(os.environ['NSHARD'])]))")
+  GAMES_ARG="--games $GAMES"; echo "shard ${SHARD:-0}/${NSHARD}: $(echo $GAMES | wc -w) games"
+fi
+$ROOT/.venv-bench/bin/python run_arms.py --base-url "$API" --traj-dir "$TRAJ" --game-set working $GAMES_ARG \
     --episodes "${EPISODES:-3}" --concurrency "${CONCURRENCY:-24}" --max-traj-length 400 --max-tokens 2048
+if [ "${AGGREGATE:-1}" = "1" ]; then
 echo "== aggregate =="
 MACH_TRAJ="$TRAJ" $ROOT/.venv-bench/bin/python aggregate_machiavelli.py 2>&1 | tail -20; cp data/machiavelli_trajectories.csv "$ROOT/llm_dynamics/results/external/machiavelli_trajectories_${SLURM_JOB_ID}.csv"
+fi
 echo "== DONE $(date -Iseconds) =="
