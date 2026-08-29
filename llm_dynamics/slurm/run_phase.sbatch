@@ -49,6 +49,16 @@ case "$PHASE" in
           --q-values ${Q:?} --w-values 1.0 --strategies $s --memories full --seeds 12 --rounds 20 \
           --skip-portraits --out ${TAG}_donors_v3_think_rep12/$s > $L.thinkrep.q$Q.$s.log 2>&1 &
     done; wait ;;
+  fine_w)   # fine sweep in w at q=0.5, c/b=0.5: threshold test for direct reciprocity (w > c/b)
+    for s in tit_for_tat grim_trigger generous_tit_for_tat always_cooperate always_defect; do
+      $RUN donors-sweep $COMMON --b 4 --c-over-b 0.5 --q-values 0.5 --w-values 0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0 \
+          --strategies $s --memories full --seeds 6 --rounds 20 --skip-portraits --out ${TAG}_donors_v3_wfine/$s > $L.wfine.$s.log 2>&1 &
+    done; wait ;;
+  fine_q)   # fine sweep in q at w=1, c/b=0.5: threshold test for indirect reciprocity (q > c/b)
+    for s in tit_for_tat grim_trigger generous_tit_for_tat always_cooperate always_defect; do
+      $RUN donors-sweep $COMMON --b 4 --c-over-b 0.5 --w-values 1.0 --q-values 0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0 \
+          --strategies $s --memories full --seeds 6 --rounds 20 --skip-portraits --out ${TAG}_donors_v3_qfine/$s > $L.qfine.$s.log 2>&1 &
+    done; wait ;;
   perturb_selfplay)
     $RUN donors-perturb $COMMON --seeds 4 --rounds 20 --perturb-round 8 --out ${TAG}_donors_v3_perturb > $L.perturb.log 2>&1 &
     $RUN donors-selfplay $COMMON --q-values 0,1.0 --w-values 0,1.0 --seeds 4 --rounds 20 --out ${TAG}_selfplay_v3 > $L.selfplay.log 2>&1 &
