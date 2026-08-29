@@ -2,12 +2,12 @@
 
 *Written 2026-08-28 from the artifacts in `llm_dynamics/results/` and
 `external_benchmarks/`. Comparisons in this file are **base vs step 75 only**.
-Status: the donors direct-play main sweep is complete (1,296 games per arm);
-the c/b = 0.25 and 0.75 side sweeps are complete; thinking mode, horizons,
-matrix games, probes, perturbation, self-play and the group stage are still
-running for step 75. EigenBench is ~50% judged (kindness, misalignment, humor
-only), MACHIAVELLI has one episode per game (108/408), DiG-bench has just
-started (2/210 runs). Everything external is provisional.*
+Status: the donors direct-play main sweep, all c/b and horizon side sweeps,
+the matrix games, probes, perturbation and self-play are complete for step 75;
+the thinking-mode sweep and the group stage are still running. EigenBench is ~80% judged on kindness/misalignment/humor and has just started
+on goodness/sycophancy/poeticism (so no length control yet); MACHIAVELLI is in
+its second episode per game (~590/1224 files); DiG-bench is ~30%. Everything
+external is provisional.*
 
 **Arms.** base = `Qwen/Qwen3-8B`; s75 = `3l3ktr4/donorsim-qwen3-8b-modeAB-step75`
 (merged weights, step 75 of the same GRPO run as steps 6 and 51). Identical
@@ -128,15 +128,72 @@ that the base model falls into.
 The base model is blind to c/b (0.71 / 0.75 / 0.73 — no gradient). Step 75
 cooperates more at both the cheap and the costly end without becoming
 sensitive to cost either; the biggest gain is where cooperating is nearly free
-(c/b = 0.25, +0.07). c/b = 1.0 and 1.25, where cooperation should collapse,
-are still running.
+(c/b = 0.25, +0.07). The two settings where cooperation should collapse are
+below.
+
+### c/b where cooperation should collapse (c/b = 1.0, 1.25) — the counterweight
+
+| c/b | meaning | coop base → s75 | BR captured base → s75 |
+|---|---|---|---|
+| 1.0 | mutual C nets zero (cooperation weakly dominated) | 0.71 → **0.76** | 0.74 → **0.72** |
+| 1.25 | cooperation destroys value (b < c) | 0.06 → **0.16** | 0.96 → **0.91** |
+
+At c/b = 1.25 the base model correctly almost never cooperates (6%) and
+captures 96% of the optimum; step 75 cooperates nearly three times as often
+(vs grim 0 → 27%, vs TFT 9 → 29%) and drops to 91%. Training raised the
+cooperation prior across the board, including where cooperation is
+irrational: the model did **not** become more cost-sensitive.
+
+## Matrix games (IPD / Chicken / Stag Hunt / Harmony; memory 1–3; 432 games per arm, paired)
+
+| game | coop base → s75 | p | points/round | BR captured |
+|---|---|---|---|---|
+| Prisoner's Dilemma | 0.678 → 0.703 | 0.16 | 2.47 → 2.54 | 0.804 → 0.820 |
+| Chicken | 0.785 → 0.794 | 0.56 | 2.45 → 2.48 | 0.755 → 0.770 |
+| Stag Hunt | 0.740 → 0.746 | 0.57 | 3.84 → 3.80 | 0.895 → 0.880 |
+| Harmony | 0.836 → **0.862** | 0.050 | 4.04 → 4.11 | 0.854 → 0.876 |
+
+Small, uniformly positive shifts; the model remains largely blind to payoff
+structure (the same reciprocal policy is played in all four games). The
+movement is concentrated at **memory 1** (cooperation 0.731 → 0.769, BR
+0.809 → 0.839; memories 2–3 unchanged), as in the donors game.
+
+**IPD, memory 1, by opponent** — where the profile differs from the donors game:
+
+| opponent | coop base → s75 | points base → s75 | BR base → s75 |
+|---|---|---|---|
+| grim trigger | 0.69 → **1.00** | 2.40 → **3.00** | 0.77 → **0.97** |
+| generous TFT | 0.54 → **0.99** | 2.66 → **3.02** | 0.86 → **0.98** |
+| WSLS | 0.94 → 1.00 | 3.02 → 3.00 | 0.98 → 0.97 |
+| tit-for-two-tats | 1.00 → 1.00 | 3.00 → 3.00 | 0.73 → 0.73 |
+| tit-for-tat | 0.95 → 0.82 | 2.95 → 2.75 | 0.95 → 0.89 |
+| **always-cooperate** | 1.00 → **0.65** | 3.00 → **3.70** | 0.60 → **0.74** |
+| always-defect | 0.15 → 0.10 | 0.85 → 0.90 | 0.85 → 0.90 |
+| suspicious TFT | 0.08 → 0.14 | 1.23 → 1.41 | 0.42 → 0.48 |
+| random | 0.19 → 0.25 | 2.49 → 2.41 | 0.83 → 0.80 |
+
+Step 75 removes the base model's memory-1 derailments against grim trigger
+and generous TFT (both to full cooperation, +0.6 points/round). But on the IPD
+it also does something it never does in the donors game: it **exploits
+always-cooperate** (cooperation 1.00 → 0.65, points 3.0 → 3.7 — the correct
+best response) and cooperates slightly less with plain TFT (0.95 → 0.82, which
+costs it). The games×models figure (section 1.5, grim trigger held fixed)
+shows the PD bar moving from 2.4 to 3.0 points while Chicken, Stag Hunt and
+Harmony stay at ceiling for both arms.
+
+**Conditional-policy probes** (memory 1, IPD) are identical for base and s75:
+P(C | cc) = 1.0, P(C | cd) = P(C | dc) = P(C | dd) = 0.0 — the one-round
+policy is still hard tit-for-tat with no forgiveness at either checkpoint; the
+behavioral differences above arise over longer histories and in how the models
+handle the opening rounds, not in the memory-1 response function.
+
+**Repair after a forced defection, self-play**: unchanged from base
+(no forgiveness; 100% mutual cooperation in self-play).
 
 ## Pending for step 75 (running)
 
-Thinking-mode sweep (where the step-51 headline effect lives), horizons N ∈
-{5, 10}, matrix games (IPD / Chicken / Stag Hunt / Harmony, memory 1–3),
-conditional-policy probes, forced-defection repair, self-play, and the
-training-environment group stage.
+Thinking-mode sweep (where the step-51 headline effect lives; 85/108 games
+at the time of writing) and the training-environment group stage.
 
 ## EigenBench (Gemma-4-31B judge; partial: ~half the 10,398 scenarios; no length control yet)
 
