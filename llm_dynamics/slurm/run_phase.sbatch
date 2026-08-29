@@ -21,6 +21,18 @@ RUN="/nas/ucb/marimeireles/MARL-mixed/.venv-jaxmarl/bin/python -m llm_dynamics.r
 COMMON="--api-base $API --model $MODEL"
 P=llm_dynamics/results/probes; L=llm_dynamics/logs/phase-${SLURM_JOB_ID}; R=llm_dynamics/results
 case "$PHASE" in
+  main)   # main direct-play donors sweep: 9 opponents x 3 w x 3 q x 4 memories x 4 seeds
+    for s in $STRATS; do
+      $RUN donors-sweep $COMMON --b 4 --c-over-b 0.5 --q-values 0,0.5,1.0 --w-values 0,0.5,1.0 \
+          --strategies $s --memories full,1,2,note2 --seeds 4 --rounds 20 --skip-portraits \
+          --out ${TAG}_donors_v3/$s > $L.donors.$s.log 2>&1 &
+    done; wait ;;
+  cb)     # c/b side sweeps
+    for cb in 0.25 0.75 1.0 1.25; do for s in $STRATS; do
+      $RUN donors-sweep $COMMON --b 4 --c-over-b $cb --q-values 0,1.0 --w-values 0.5,1.0 \
+          --strategies $s --memories full --seeds 4 --rounds 20 --skip-portraits \
+          --out ${TAG}_donors_v3_cb${cb}/$s > $L.cb$cb.$s.log 2>&1 &
+    done; wait; done ;;
   horizons)
     for n in 5 10; do for s in $STRATS; do
       $RUN donors-sweep $COMMON --b 4 --c-over-b 0.5 --q-values 0.5 --w-values 1.0 --strategies $s \
