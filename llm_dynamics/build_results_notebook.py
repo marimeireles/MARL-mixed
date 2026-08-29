@@ -102,7 +102,8 @@ HI_M = {'agreement','br_captured','welfare_captured','coop','ppr','points','rho'
         'recovered_frac','mutual_c_rate','a_total','b_total','trajectory_scalar','mean_reward',
         'game.score','points_pct_of_max','achievements','reached_end','auc_level','levels_beaten','level_reached','max_level_seen'}
 LO_M = {'recovery_rounds','mean_cfe','mean_brier','parse_failures','latency','R_std','suckered'}
-ARM_KEYS = {'qwen8b_rl_s6': 'rl', 'qwen8b_rl_s51': 'rl51', 'qwen8b_rl_s75': 'rl75'}
+ARM_KEYS = {'qwen8b_rl_s6': 'rl', 'qwen8b_rl_s51': 'rl51', 'qwen8b_rl_s75': 'rl75', 'qwen8b_rl_abs20': 'abs20'}
+EIGEN_DIR = {'qwen8b_rl_s6': 'step6', 'qwen8b_rl_s51': 'step51', 'qwen8b_rl_s75': 'step75', 'qwen8b_rl_abs20': 'abs20'}
 BENCH_ARMS = ['base'] + [ARM_KEYS.get(t, t) for t in TAGS_RL]   # only the arms this notebook is about
 def _direction(name):
     n = str(name)
@@ -723,9 +724,9 @@ that explained the 32B kindness effect).
   *more* misaligned/sycophantic = worse); oct_humor and oct_poeticism are
   style **controls** that should not move — if they move as much as kindness,
   suspect a style shift rather than a moral one.""")
-code(r"""STEP = TR.rsplit('_s', 1)[-1]  # judgments matching this notebook's RL arm
-JD = f'{EB}/EigenBench/runs/qwen8b/judgments_gemma4_step{STEP}'
-H2H = f'{EB}/EigenBench/runs/qwen8b/responses/arms_head_to_head_step{STEP}.jsonl'
+code(r"""SUF = EIGEN_DIR.get(TR, TR)   # judgments matching this notebook's RL arm
+JD = f'{EB}/EigenBench/runs/qwen8b/judgments_gemma4_{SUF}'
+H2H = f'{EB}/EigenBench/runs/qwen8b/responses/arms_head_to_head_{SUF}.jsonl'
 lens = {}
 if os.path.exists(H2H):
     for l in open(H2H):

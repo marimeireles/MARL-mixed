@@ -1,0 +1,1198 @@
+\documentclass{article}
+
+% if you need to pass options to natbib, use, e.g.:
+%     \PassOptionsToPackage{numbers, compress}{natbib}
+% before loading neurips_2026
+
+\usepackage[dblblindworkshop]{neurips_2026}
+\usepackage[most]{tcolorbox}
+\usepackage{listings}
+\definecolor{NatureRiverDark}{HTML}{1F4F73}
+\definecolor{NatureClayDark}{HTML}{6F3329}
+
+\newtcblisting{modelprompt}[1][]{
+  listing only,
+  breakable,
+  width=\linewidth,
+  enhanced,
+  colback=NatureRiver!8!white,
+  colframe=NatureRiver!55!black,
+  colbacktitle=NatureRiver!15!white,
+  coltitle=NatureRiverDark,
+  title={#1},
+  fonttitle=\bfseries\small,
+  boxrule=0.6pt,
+  arc=1.5mm,
+  left=1mm,
+  right=1mm,
+  top=1mm,
+  bottom=1mm,
+  boxsep=1mm,
+  listing options={
+    basicstyle=\ttfamily\footnotesize\color{NatureRiverDark},
+    breaklines=true,
+    breakatwhitespace=true,
+    columns=fullflexible,
+    keepspaces=true,
+    showstringspaces=false
+  }
+}
+
+\newtcblisting{groupprompt}[1][]{
+  listing only,
+  breakable,
+  width=\linewidth,
+  enhanced,
+  colback=NatureClay!8!white,
+  colframe=NatureClay!55!black,
+  colbacktitle=NatureClay!15!white,
+  coltitle=NatureClayDark,
+  title={#1},
+  fonttitle=\bfseries\small,
+  boxrule=0.6pt,
+  arc=1.5mm,
+  left=1mm,
+  right=1mm,
+  top=1mm,
+  bottom=1mm,
+  boxsep=1mm,
+  listing options={
+    basicstyle=\ttfamily\footnotesize\color{NatureClayDark},
+    breaklines=true,
+    breakatwhitespace=true,
+    columns=fullflexible,
+    keepspaces=true,
+    showstringspaces=false
+  }
+}
+
+\newtcblisting{memoryprompt}[1][]{
+  listing only,
+  breakable,
+  width=\linewidth,
+  enhanced,
+  colback=black!4!white,
+  colframe=black!35!white,
+  colbacktitle=black!8!white,
+  coltitle=black,
+  title={#1},
+  fonttitle=\bfseries\small,
+  boxrule=0.6pt,
+  arc=1.5mm,
+  left=1mm,
+  right=1mm,
+  top=1mm,
+  bottom=1mm,
+  boxsep=1mm,
+  listing options={
+    basicstyle=\ttfamily\scriptsize,
+    breaklines=true,
+    breakatwhitespace=true,
+    columns=fullflexible,
+    keepspaces=true,
+    showstringspaces=false
+  }
+}
+
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{hyperref}
+\usepackage{fontawesome5}
+\usepackage{url}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{makecell}
+\usepackage{siunitx}
+\usepackage{threeparttable}
+\usepackage{multirow}
+
+\usepackage{amsfonts}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{nicefrac}
+
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{fadings}
+\usepackage{xspace}
+
+\usepackage{pifont}
+\usepackage{graphicx}
+\usepackage{floatflt}
+\usepackage{enumitem}
+\usepackage{wrapfig}
+\usepackage{etoolbox}
+\usepackage{titletoc}
+\usepackage{comment}
+
+\newcommand\DoToC{%
+  \startcontents
+  \printcontents{}{1}{%
+    \section*{Appendix}
+    \vskip3pt\hrule\vskip5pt
+  }
+  \titlecontents{section}[0em]{\vspace{2pt}}{\bfseries \thecontentslabel \quad}{}{\titlerule*[0.5em]{.}\contentspage}
+  \titlecontents{subsection}[2em]{\vspace{2pt}}{\thecontentslabel\quad}{}{\titlerule*[0.5em]{.}\contentspage}
+}
+
+\definecolor{NaturePine}{HTML}{2F6F3E}
+\definecolor{NatureClay}{HTML}{A14A3B}
+\definecolor{NatureRiver}{HTML}{2C6E9E}
+
+\newcommand{\gcheck}{{\color{NaturePine}\ding{51}}}%
+\newcommand{\cross}{{\color{NatureClay}\ding{55}}}%
+\newcommand{\bolddash}{\textbf{--}}
+
+\newcommand{\ourWork}{{\textsc{\textbf{Define-ourWork}}}\xspace}
+
+\hypersetup{
+    colorlinks=true,
+    urlcolor=NatureRiver,
+}
+
+\newcommand{\logo}{%
+    \raisebox{-0.8ex}{%
+        \includegraphics[width=2em,keepaspectratio]{images/logo.png}%
+    }%
+}
+
+\title{Toward collective intelligence: evolutionary pressures for cooperative language models}
+\workshoptitle{Foundations of Agentic Systems Theory}
+
+\author{
+Anonymous Authors
+}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+\begin{abstract}
+Many of life's major evolutionary transitions arose when previously independent units learned to coordinate at a larger scale, from the endosymbiotic origins of eukaryotic cells to increasingly complex animal societies. Inspired by this pattern, we ask whether language models can be trained across widening scales of cooperation from pursuing individual interests, synchronizing to partners, and contributing to the coherence of a group.
+We translate three of Nowak's mechanisms for the evolution of cooperation --- direct reciprocity, indirect reciprocity, and group selection --- into reinforcement-learning pressures at progressively wider scales of the self.
+Preliminary results show that training increases cooperation with reciprocating partners while reducing the tendency to exploit partners. These effects hold across a broad range of Donor game conditions, which constitute our training setting, as well as modest positive results in the Prisoner's Dilemma, which the model was not trained on. Although transfer to broader social and ethical benchmarks also remains modest, we see preliminary evidence of more cooperative and prosocial behavior, as well as promising avenues for strengthening this transfer.
+
+\end{abstract}
+
+\end{abstract}
+
+\section{Introduction}
+
+Systems that achieve high levels of collective coordination gain substantial
+advantages over those that cannot: they surpass their individual capabilities
+and often give rise to entirely new behaviors~\citep{levy1997}. Nature has
+repeatedly solved the coordination problem across major transitions in
+biological complexity~\citep{prokopenko2024}: from the endosymbiotic
+integration that gave rise to mitochondria~\citep{zachar2020}, to animals
+coordinating through increasingly sophisticated social and cognitive
+mechanisms~\citep{bshary2006,melis2023}, to societies coordinating through
+market signals~\citep{lyons2024}. These transitions can also be understood as
+expansions of the self: formerly independent agents become integrated into
+larger systems whose goals span a wider scale. Levin describes this boundary
+as a cognitive ``light cone'', i.e. the range of events a system can sense,
+model, and act upon~\citep{levin2019self}. Drawing inspiration from these
+evolutionary processes, we develop a new post-training regime for language
+models that elicits cooperative capabilities.
+
+Central to this approach is identifying the conditions under which cooperation has evolved. To capture these conditions systematically, we ground our work in Nowak's seminal framework, which establishes five mechanisms for the evolution of cooperation~\citep{nowak2006}:\textit{kin selection}, which leverages genetic proximity to promote cooperation; \textit{direct reciprocity}, which sustains cooperation through repeated encounters; \textit{indirect reciprocity}, which does so through reputation; \textit{network reciprocity}, which does so through interaction topology; and \textit{group selection}, which leverages competition between groups. 
+% The translation from the biological framework to the context of language models is non-trivial --- in the latter, cooperation must be sustained through artifices of communication like memory and shared beliefs rather than the genetic relatedness modeled by Nowak.
+
+As the boundaries of the self expand, so too do the principles governing its behavior. Anderson's ``More is Different'' captured this idea explaining how higher levels of organization exhibit dynamics of their own~\citep{anderson1972}. We therefore study cooperation across individuals, dyads, and groups, operationalizing it in direct reciprocity, indirect reciprocity, and group selection as training mechanisms. Agents play iterated Donor's Games inside persistent groups, where cooperation is individually costly but can benefit future partners and the group as a whole. The dyadic term draws on the HKB model of coordination~\citep{kelso2012}, while the collective term draws on work on shared prediction and synchrony~\citep{taniguchi2026symbiotic,wiltermuth2009}. Together, these pressures ask not simply whether a model cooperates, but whether it learns \emph{when}, \emph{with whom}, and \emph{at what scale} cooperation becomes worthwhile.
+
+We then evaluate whether these cooperative pressures transfer beyond the training environment. We use our own game theory matrix game benchmark released with this work, as well as the \textsc{Machiavelli} suite~\citep{pan2023machiavelli}, which measures ethical violations in text-based games, and EigenBench~\citep{chang2026eigenbench}, which scores value alignment against a specified constitution without ground-truth labels. We find [results summary].
+
+\paragraph{Contributions.}
+(1)~A multi-scale reinforcement-learning framework that translates Nowak's
+mechanisms of cooperation into training pressures for language models, with
+individual, dyadic, and collective terms whose scales are calibrated to
+Nowak's game-theoretic thresholds.
+
+(2)~Empirical evidence, from strategy-resolved evaluation against fixed
+opponents, that these pressures change \emph{with whom} a small language model
+cooperates: it exploits cooperating partners less and recovers the reward lost
+to punishing ones, while its treatment of defectors is unchanged --- with
+initial evidence of transfer beyond the training games.
+
+\section{Related Literature}
+
+Recent work has brought Nowak's mechanisms into LLM research, much of it
+analyzing existing LLM behavior through Nowak's lens~\citep{ren2025,zhu2026}.
+Closest to our approach, Tennant et al.\ fine-tune LLMs with explicit intrinsic
+rewards, including a penalty against defecting after cooperation motivated by
+direct and indirect reciprocity~\citep{tennant2025}. Their objective encodes
+reciprocity as a moral norm; ours instead treats it as a symmetric,
+context-dependent training pressure whose strength is tied to the evolutionary
+conditions under which cooperation is sustained.
+
+At the dyadic scale, this view also connects to coordination dynamics.
+Coordination dynamics has been extended from coordinated movement to
+interpersonal coordination~\citep{schmidt2008dynamics}, with later work
+explicitly developing HKB in the context of social coordination
+~\citep{tognoli2020}, including real-time interaction between humans and
+virtual partners~\citep{dumas2014human}.
+
+At the group scale, another relevant part of our contribution is how we address
+cheap talk: communication that is non-binding and need not reflect subsequent
+behaviour~\citep{crawford1982,farrell1996}. MARL has addressed related
+problems by rewarding social influence~\citep{jaques2019social}, while
+peer-prediction mechanisms reward informative reports~\citep{prelec2004bayesian},
+and collective predictive coding models communication as inference toward a
+shared representation~\citep{taniguchi2024collective,taniguchi2026symbiotic}.
+We combine these ideas differently, penalizing both disagreement in the
+group's predictions and error between those predictions and what the group
+actually does, making the accuracy of the group's shared self-model part of
+the reward.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Methods}
+\label{sec:methods}
+
+The reward design translates three of Nowak's mechanisms into training
+pressures that operate at progressively wider scales of the self: individual
+payoff (Term~1), dyadic reciprocation (Term~2), and collective coherence
+(Term~3).  We fine-tune \texttt{Qwen/Qwen3-8B}~\citep{qwen3} with GRPO~\citep{deepseekmath} on LoRA adapters~\citep{hu2022lora} using \texttt{verl}~\citep{sheng2024verl} with an async \texttt{vLLM} rollout~\citep{kwon2023vllm}. Full configuration is available in Appendix~\ref{app:experimental_details}.
+
+\subsection{Environment}
+\label{subsec:env}
+
+All experiments use the iterated donor's game. In each round, each player
+chooses whether to pay a cost $c \geq 0$ to give their partner a benefit
+$b > 0$ (\textsc{Cooperate}), or pay nothing (\textsc{Defect}). Let
+$a_k^i \in \{\mathrm{C},\mathrm{D}\}$ denote the trained model's action in
+round $k \in \{1,\dots,N\}$, and $a_k^{-i}$ its partner's action.
+
+Each scenario contains $G$ competing groups of $M$ agents and lasts $N$
+rounds. We sample:
+\[
+M \in \{4,6\},\qquad
+G \in \{2,3,4\},\qquad
+N \sim \mathcal{U}\{5,\dots,10\},\qquad
+b \sim \mathcal{U}[3,6],\qquad
+c/b \sim \mathcal{U}[0.1,1.5].
+\]
+
+The trained model observes only its own repeated interaction with one partner.
+Other agents follow fixed action strategies drawn from a calibrated opponent
+pool, while their communication may vary independently of those actions.
+The construction and calibration of this pool are described in
+Appendix~\ref{app:env_details}. Opponents reputation visibility is sampled as
+$q \in \{0,0.25,0.5,0.75,1\}$ for each scenario. Partners rotate within the group, with the next partner drawn uniformly from the model's $M-1$ groupmates. Thus, for $M\geq2$, the probability of re-encountering any particular partner is $w=1/(M-1)$. $q$ and $w$ are made available to the model through prompt (Appendix~\ref{app:prompts}).
+
+\subsection{Reward}
+\label{subsec:reward}
+
+At each round $k$, the environment combines the individual, dyadic, and
+collective pressures into a single reward,
+\begin{equation}
+r_k=r_1(k)+r_2(k)+r_3(k)+\mathbf{1}[k=N]\cdot\mathrm{bonus}.
+\label{eq:reward}
+\end{equation}
+Their scales are calibrated to remain comparable
+(Appendix~\ref{app:reward_details}).
+
+\paragraph{Term 1 --- normalised donor-game payoff.}
+At the individual scale, we begin with the game itself: as in standard RL
+treatments of social dilemmas, the model is rewarded according to the payoff
+produced by the joint action~\citep{leibo2017}.
+\begin{equation}
+r_1(k)=\frac{\pi_k+c}{b+c},
+\qquad
+\begin{array}{c|cc}
+\pi_k & \text{Partner C} & \text{Partner D} \\ \hline
+\text{Model C} & b-c & -c \\
+\text{Model D} & b   & 0
+\end{array}
+\label{eq:t1}
+\end{equation}
+Since $\pi_k\in[-c,b]$, this affine transformation maps the game payoff to
+$[0,1]$ without changing the ordering of outcomes.
+
+\paragraph{Term 2 --- dyadic reciprocation.}
+Inspired by the Haken--Kelso--Bunz (HKB) model of how coupled systems transition between coordination regimes~\citep{haken1985hkb,kelso2012}, we score whether the model matches its partner's previous action, rewarding conditional responsiveness. 
+\begin{equation}
+r_2(k) ;=; \lambda_{\text{tom}}\bigl(4q + c/b\bigr)\rho_k,
+\qquad
+\rho_k =
+\begin{cases}
++1 & a_k^{i} = a_{k-1}^{-i}\\
+-1 & a_k^{i} \neq a_{k-1}^{-i}\\
+0 & k = 1 .
+\end{cases}
+\label{eq:t2}
+\end{equation}
+
+The envelope is calibrated on HKB: with $a=4q$, $b_{\neg k}=c/b$, the critical ratio $b_{\neg k}/a=1/4$ is Nowak's threshold $q=c/b$, and $\lambda_{\text{tom}}$ holds Term~2 on Term~1's scale. Term~2 is smooth, the objective is not: after a partner cooperates, cooperating is the myopic best reply of $r_1+r_2$ iff $2\lambda_{\text{tom}}(4q+c/b)>c/(b+c)$ --- a sharp switch at $q^{*}=\tfrac{c}{b}(4-\tfrac{c}{b})/(4(1+\tfrac{c}{b}))$, just below $q=c/b$ here (Appendix~\ref{app:reward_details}).
+
+\paragraph{Term 3 --- collective forecast error (CFE).}
+At the collective scale, we ask whether the group can form a shared and
+accurate picture of its own behavior and we positively reinforce our model when its guesses match reality. Alongside its action, each member $j$
+predicts the group's cooperation rate, $\hat g_j \in [0,1]$. We penalize both
+disagreement between members and error in their collective forecast:
+\begin{equation}
+\mathrm{CFE}_k =
+\underbrace{\frac{1}{M}\sum_{j=1}^{M}
+   \mathrm{KL}\!\left(
+   \mathrm{Bern}(\hat g_j)\,\|\,\mathrm{Bern}(\bar g)
+   \right)}_{\text{disagreement}}
++
+\underbrace{(\bar g-\bar c)^2}_{\text{forecast error}},
+\label{eq:cfe}
+\end{equation}
+where $\bar g$ is the group's mean prediction and $\bar c$ its realised
+cooperation rate. The reward is
+\[
+r_3(k)=-\lambda_g\,\mathrm{CFE}_k,
+\qquad \lambda_g=0.5.
+\]
+The reason we penalize member's disagreement is so we create a punishment for cheap talk ~\citep{crawford1982}.
+
+Groupmate forecasts are produced by auxiliary LLM agents with their own
+conversation histories; full details are given in
+Appendix~\ref{app:reward_details}.
+
+\paragraph{End-of-game bonus.}
+Finally, we introduce a group rewarded according to how well a group performed relative to its competitors,
+\begin{equation}
+\mathrm{bonus}
+=
+\mathrm{clip}\!\left(
+\alpha
+\frac{P_{\text{our group}}-\overline{P}_{\text{other groups}}}
+     {M N},
+-1,+1
+\right),
+\qquad
+\alpha=0.5.
+\label{eq:bonus}
+\end{equation}
+The normalization $\alpha$ keeps the bonus comparable in scale to a single round of
+reward. Competing groups are simulated under the same environment and strategy
+distribution.
+
+\subsection{Reproducibility}
+\label{subsec:repro}
+
+Code, training scripts, and LoRA adapters are publicly available.
+Appendices~\ref{app:experimental_details}--\ref{app:compaction} document the
+training setup, environment, reward design, credit assignment, and context
+handling; Appendix~\ref{app:prompts} gives the full interaction protocol and
+prompts, and Appendix~\ref{app:evaluation} gives the evaluation procedure.
+```
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Preliminary Results}\label{sec:results}
+
+\begin{itemize}
+    \item \textbf{In its reasoning mode, the trained model learns to cooperate where it pays.} Untrained \texttt{Qwen3-8B} reasons itself into exploitation: against reciprocating partners it cooperates 48\% of the time and captures 79\% of the attainable reward. After training, over $192$ paired games (16 seeds) cooperation rises to $0.65$ ($p{=}10^{-4}$) and reward with it ($p{=}0.04$; capture $\to0.83$, $p{=}0.009$), while cooperation with always-defect stays at 2\%.
+
+    \item \textbf{In direct play it becomes a more discerning cooperator.} Over $1{,}296$ paired games it halves its exploitation of reciprocating partners (5.7\% of rounds vs.\ 7.8\%, $p{<}10^{-4}$), converting them into mutual cooperation. In the Prisoner's Dilemma ($20$ seeds) it stops provoking punishment it cannot recover from: vs.\ grim trigger cooperation rises $0.72\to0.97$, reward $2.49\to2.95$ ($p{=}0.018$).
+
+    \item \textbf{Direct reciprocity moves; reputation was already there.} Cooperation rises with $w$ more steeply after training ($+0.054$, $p{=}0.02$, vs.\ $+0.040$), as direct reciprocity predicts. Reputation the base model already uses --- cooperation with a known defector falls with $q$ at every $w$ ($p{<}0.001$) --- and training leaves it unchanged; cost sensitivity appears in neither.
+
+    \item \textbf{Transfer.} On \textsc{Machiavelli}~\citep{pan2023machiavelli} it earns more achievements ($+0.29$, $p{=}0.03$) with violation totals unchanged; on EigenBench a judge prefers its answers for kindness (55.8\%, robust to length), though a style control moves comparably.
+\end{itemize}
+
+\section{Future work}
+
+We plan to move beyond simple social dilemmas toward richer context games, and to study how social behavior changes over the course of training. The ablation needed to attribute these effects (Term~1; 1+2; 1+2+3; $\pm$ bonus) is not yet run, so we report where the change appears, not its cause. Early checkpoints suggest a non-monotonic trajectory, with harmful behavior increasing before later becoming more cooperative. Training across a broader range of environments may further improve generalization toward a stable, broadly cooperative policy.
+
+\bibliographystyle{plainnat}
+\bibliography{main}
+
+\section*{NeurIPS Paper Checklist}
+
+%%% BEGIN INSTRUCTIONS %%%
+The checklist is designed to encourage best practices for responsible machine learning research, addressing issues of reproducibility, transparency, research ethics, and societal impact. Do not remove the checklist: {\bf The papers not including the checklist will be desk rejected.} The checklist should follow the references and follow the (optional) supplemental material.  The checklist does NOT count towards the page
+limit.
+
+Please read the checklist guidelines carefully for information on how to answer these questions. For each question in the checklist:
+\begin{itemize}
+    \item You should answer \answerYes{}, \answerNo{}, or \answerNA{}.
+    \item \answerNA{} means either that the question is Not Applicable for that particular paper or the relevant information is Not Available.
+    \item Please provide a short (1--2 sentence) justification right after your answer (even for \answerNA).
+   % \item {\bf The papers not including the checklist will be desk rejected.}
+\end{itemize}
+
+{\bf The checklist answers are an integral part of your paper submission.} They are visible to the reviewers, area chairs, senior area chairs, and ethics reviewers. You will also be asked to include it (after eventual revisions) with the final version of your paper, and its final version will be published with the paper.
+
+The reviewers of your paper will be asked to use the checklist as one of the factors in their evaluation. While \answerYes{} is generally preferable to \answerNo{}, it is perfectly acceptable to answer \answerNo{} provided a proper justification is given (e.g., error bars are not reported because it would be too computationally expensive'' or ``we were unable to find the license for the dataset we used''). In general, answering \answerNo{} or \answerNA{} is not grounds for rejection. While the questions are phrased in a binary way, we acknowledge that the true answer is often more nuanced, so please just use your best judgment and write a justification to elaborate. All supporting evidence can appear either in the main paper or the supplemental material, provided in appendix. If you answer \answerYes{} to a question, in the justification please point to the section(s) where related material for the question can be found.
+
+IMPORTANT, please:
+\begin{itemize}
+    \item {\bf Delete this instruction block, but keep the section heading ``NeurIPS Paper Checklist"},
+    \item  {\bf Keep the checklist subsection headings, questions/answers and guidelines below.}
+    \item {\bf Do not modify the questions and only use the provided macros for your answers}.
+\end{itemize}
+
+
+%%% END INSTRUCTIONS %%%
+
+
+\begin{enumerate}
+
+\item {\bf Claims}
+    \item[] Question: Do the main claims made in the abstract and introduction accurately reflect the paper's contributions and scope?
+    \item[] Answer: \answerTODO{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
+    \item[] Justification: \justificationTODO{}
+    \item[] Guidelines:
+    \begin{itemize}
+        \item The answer \answerNA{} means that the abstract and introduction do not include the claims made in the paper.
+        \item The abstract and/or introduction should clearly state the claims made, including the contributions made in the paper and important assumptions and limitations. A \answerNo{} or \answerNA{} answer to this question will not be perceived well by the reviewers.
+        \item The claims made should match theoretical and experimental results, and reflect how much the results can be expected to generalize to other settings.
+        \item It is fine to include aspirational goals as motivation as long as it is clear that these goals are not attained by the paper.
+    \end{itemize}
+
+\item {\bf Limitations}
+    \item[] Question: Does the paper discuss the limitations of the work performed by the authors?
+    \item[] Answer: \answerTODO{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
+    \item[] Justification: \justificationTODO{}
+    \item[] Guidelines:
+    \begin{itemize}
+        \item The answer \answerNA{} means that the paper has no limitation while the answer \answerNo{} means that the paper has limitations, but those are not discussed in the paper.
+        \item The authors are encouraged to create a separate ``Limitations'' section in their paper.
+        \item The paper should point out any strong assumptions and how robust the results are to violations of these assumptions (e.g., independence assumptions, noiseless settings, model well-specification, asymptotic approximations only holding locally). The authors should reflect on how these assumptions might be violated in practice and what the implications would be.
+        \item The authors should reflect on the scope of the claims made, e.g., if the approach was only tested on a few datasets or with a few runs. In general, empirical results often depend on implicit assumptions, which should be articulated.
+        \item The authors should reflect on the factors that influence the performance of the approach. For example, a facial recognition algorithm may perform poorly when image resolution is low or images are taken in low lighting. Or a speech-to-text system might not be used reliably to provide closed captions for online lectures because it fails to handle technical jargon.
+        \item The authors should discuss the computational efficiency of the proposed algorithms and how they scale with dataset size.
+        \item If applicable, the authors should discuss possible limitations of their approach to address problems of privacy and fairness.
+        \item While the authors might fear that complete honesty about limitations might be used by reviewers as grounds for rejection, a worse outcome might be that reviewers discover limitations that aren't acknowledged in the paper. The authors should use their best judgment and recognize that individual actions in favor of transparency play an important role in developing norms that preserve the integrity of the community. Reviewers will be specifically instructed to not penalize honesty concerning limitations.
+    \end{itemize}
+
+\item {\bf Theory assumptions and proofs}
+    \item[] Question: For each theoretical result, does the paper provide the full set of assumptions and a complete (and correct) proof?
+    \item[] Answer: \answerTODO{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
+    \item[] Justification: \justificationTODO{}
+    \item[] Guidelines:
+    \begin{itemize}
+        \item The answer \answerNA{} means that the paper does not include theoretical results.
+        \item All the theorems, formulas, and proofs in the paper should be numbered and cross-referenced.
+        \item All assumptions should be clearly stated or referenced in the statement of any theorems.
+        \item The proofs can either appear in the main paper or the supplemental material, but if they appear in the supplemental material, the authors are encouraged to provide a short proof sketch to provide intuition.
+        \item Inversely, any informal proof provided in the core of the paper should be complemented by formal proofs provided in appendix or supplemental material.
+        \item Theorems and Lemmas that the proof relies upon should be properly referenced.
+    \end{itemize}
+
+    \item {\bf Experimental result reproducibility}
+    \item[] Question: Does the paper fully disclose all the information needed to reproduce the main experimental results of the paper to the extent that it affects the main claims and/or conclusions of the paper (regardless of whether the code and data are provided or not)?
+    \item[] Answer: \answerTODO{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
+    \item[] Justification: \justificationTODO{}
+    \item[] Guidelines:
+    \begin{itemize}
+        \item The answer \answerNA{} means that the paper does not include experiments.
+        \item If the paper includes experiments, a \answerNo{} answer to this question will not be perceived well by the reviewers: Making the paper reproducible is important, regardless of whether the code and data are provided or not.
+        \item If the contribution is a dataset and\slash or model, the authors should describe the steps taken to make their results reproducible or verifiable.
+        \item Depending on the contribution, reproducibility can be accomplished in various ways. For example, if the contribution is a novel architecture, describing the architecture fully might suffice, or if the contribution is a specific model and empirical evaluation, it may be necessary to either make it possible for others to replicate the model with the same dataset, or provide access to the model. In general. releasing code and data is often one good way to accomplish this, but reproducibility can also be provided via detailed instructions for how to replicate the results, access to a hosted model (e.g., in the case of a large language model), releasing of a model checkpoint, or other means that are appropriate to the research performed.
+        \item While NeurIPS does not require releasing code, the conference does require all submissions to provide some reasonable avenue for reproducibility, which may depend on the nature of the contribution. For example
+        \begin{enumerate}
+            \item If the contribution is primarily a new algorithm, the paper should make it clear how to reproduce that algorithm.
+            \item If the contribution is primarily a new model architecture, the paper should describe the architecture clearly and fully.
+            \item If the contribution is a new model (e.g., a large language model), then there should either be a way to access this model for reproducing the results or a way to reproduce the model (e.g., with an open-source dataset or instructions for how to construct the dataset).
+            \item We recognize that reproducibility may be tricky in some cases, in which case authors are welcome to describe the particular way they provide for reproducibility. In the case of closed-source models, it may be that access to the model is limited in some way (e.g., to registered users), but it should be possible for other researchers to have some path to reproducing or verifying the results.
+        \end{enumerate}
+    \end{itemize}
+
+
+\item {\bf Open access to data and code}
+    \item[] Question: Does the paper provide open access to the data and code, with sufficient instructions to faithfully reproduce the main experimental results, as described in supplemental material?
+    \item[] Answer: \answerTODO{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
+    \item[] Justification: \justificationTODO{}
+    \item[] Guidelines:
+    \begin{itemize}
+        \item The answer \answerNA{} means that paper does not include experiments requiring code.
+        \item Please see the NeurIPS code and data submission guidelines (\url{https://neurips.cc/public/guides/CodeSubmissionPolicy}) for more details.
+        \item While we encourage the release of code and data, we understand that this might not be possible, so \answerNo{} is an acceptable answer. Papers cannot be rejected simply for not including code, unless this is central to the contribution (e.g., for a new open-source benchmark).
+        \item The instructions should contain the exact command and environment needed to run to reproduce the results. See the NeurIPS code and data submission guidelines (\url{https://neurips.cc/public/guides/CodeSubmissionPolicy}) for more details.
+        \item The authors should provide instructions on data access and preparation, including how to access the raw data, preprocessed data, intermediate data, and generated data, etc.
+        \item The authors should provide scripts to reproduce all experimental results for the new proposed method and baselines. If only a subset of experiments are reproducible, they should state which ones are omitted from the script and why.
+        \item At submission time, to preserve anonymity, the authors should release anonymized versions (if applicable).
+        \item Providing as much information as possible in supplemental material (appended to the paper) is recommended, but including URLs to data and code is permitted.
+    \end{itemize}
+
+
+\item {\bf Experimental setting/details}
+    \item[] Question: Does the paper specify all the training and test details (e.g., data splits, hyperparameters, how they were chosen, type of optimizer) necessary to understand the results?
+    \item[] Answer: \answerTODO{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
+    \item[] Justification: \justificationTODO{}
+    \item[] Guidelines:
+    \begin{itemize}
+        \item The answer \answerNA{} means that the paper does not include experiments.
+        \item The experimental setting should be presented in the core of the paper to a level of detail that is necessary to appreciate the results and make sense of them.
+        \item The full details can be provided either with the code, in appendix, or as supplemental material.
+    \end{itemize}
+
+\item {\bf Experiment statistical significance}
+    \item[] Question: Does the paper report error bars suitably and correctly defined or other appropriate information about the statistical significance of the experiments?
+    \item[] Answer: \answerTODO{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
+    \item[] Justification: \justificationTODO{}
+    \item[] Guidelines:
+    \begin{itemize}
+        \item The answer \answerNA{} means that the paper does not include experiments.
+        \item The authors should answer \answerYes{} if the results are accompanied by error bars, confidence intervals, or statistical significance tests, at least for the experiments that support the main claims of the paper.
+        \item The factors of variability that the error bars are capturing should be clearly stated (for example, train/test split, initialization, random drawing of some parameter, or overall run with given experimental conditions).
+        \item The method for calculating the error bars should be explained (closed form formula, call to a library function, bootstrap, etc.)
+        \item The assumptions made should be given (e.g., Normally distributed errors).
+        \item It should be clear whether the error bar is the standard deviation or the standard error of the mean.
+        \item It is OK to report 1-sigma error bars, but one should state it. The authors should preferably report a 2-sigma error bar than state that they have a 96\% CI, if the hypothesis of Normality of errors is not verified.
+        \item For asymmetric distributions, the authors should be careful not to show in tables or figures symmetric error bars that would yield results that are out of range (e.g., negative error rates).
+        \item If error bars are reported in tables or plots, the authors should explain in the text how they were calculated and reference the corresponding figures or tables in the text.
+    \end{itemize}
+
+\item {\bf Experiments compute resources}
+    \item[] Question: For each experiment, does the paper provide sufficient information on the computer resources (type of compute workers, memory, time of execution) needed to reproduce the experiments?
+    \item[] Answer: \answerTODO{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
+    \item[] Justification: \justificationTODO{}
+    \item[] Guidelines:
+    \begin{itemize}
+        \item The answer \answerNA{} means that the paper does not include experiments.
+        \item The paper should indicate the type of compute workers CPU or GPU, internal cluster, or cloud provider, including relevant memory and storage.
+        \item The paper should provide the amount of compute required for each of the individual experimental runs as well as estimate the total compute.
+        \item The paper should disclose whether the full research project required more compute than the experiments reported in the paper (e.g., preliminary or failed experiments that didn't make it into the paper).
+    \end{itemize}
+
+\item {\bf Code of ethics}
+    \item[] Question: Does the research conducted in the paper conform, in every respect, with the NeurIPS Code of Ethics \url{https://neurips.cc/public/EthicsGuidelines}?
+    \item[] Answer: \answerTODO{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
+    \item[] Justification: \justificationTODO{}
+    \item[] Guidelines:
+    \begin{itemize}
+        \item The answer \answerNA{} means that the authors have not reviewed the NeurIPS Code of Ethics.
+        \item If the authors answer \answerNo, they should explain the special circumstances that require a deviation from the Code of Ethics.
+        \item The authors should make sure to preserve anonymity (e.g., if there is a special consideration due to laws or regulations in their jurisdiction).
+    \end{itemize}
+
+
+\item {\bf Broader impacts}
+    \item[] Question: Does the paper discuss both potential positive societal impacts and negative societal impacts of the work performed?
+    \item[] Answer: \answerTODO{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
+    \item[] Justification: \justificationTODO{}
+    \item[] Guidelines:
+    \begin{itemize}
+        \item The answer \answerNA{} means that there is no societal impact of the work performed.
+        \item If the authors answer \answerNA{} or \answerNo, they should explain why their work has no societal impact or why the paper does not address societal impact.
+        \item Examples of negative societal impacts include potential malicious or unintended uses (e.g., disinformation, generating fake profiles, surveillance), fairness considerations (e.g., deployment of technologies that could make decisions that unfairly impact specific groups), privacy considerations, and security considerations.
+        \item The conference expects that many papers will be foundational research and not tied to particular applications, let alone deployments. However, if there is a direct path to any negative applications, the authors should point it out. For example, it is legitimate to point out that an improvement in the quality of generative models could be used to generate Deepfakes for disinformation. On the other hand, it is not needed to point out that a generic algorithm for optimizing neural networks could enable people to train models that generate Deepfakes faster.
+        \item The authors should consider possible harms that could arise when the technology is being used as intended and functioning correctly, harms that could arise when the technology is being used as intended but gives incorrect results, and harms following from (intentional or unintentional) misuse of the technology.
+        \item If there are negative societal impacts, the authors could also discuss possible mitigation strategies (e.g., gated release of models, providing defenses in addition to attacks, mechanisms for monitoring misuse, mechanisms to monitor how a system learns from feedback over time, improving the efficiency and accessibility of ML).
+    \end{itemize}
+
+\item {\bf Safeguards}
+    \item[] Question: Does the paper describe safeguards that have been put in place for responsible release of data or models that have a high risk for misuse (e.g., pre-trained language models, image generators, or scraped datasets)?
+    \item[] Answer: \answerTODO{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
+    \item[] Justification: \justificationTODO{}
+    \item[] Guidelines:
+    \begin{itemize}
+        \item The answer \answerNA{} means that the paper poses no such risks.
+        \item Released models that have a high risk for misuse or dual-use should be released with necessary safeguards to allow for controlled use of the model, for example by requiring that users adhere to usage guidelines or restrictions to access the model or implementing safety filters.
+        \item Datasets that have been scraped from the Internet could pose safety risks. The authors should describe how they avoided releasing unsafe images.
+        \item We recognize that providing effective safeguards is challenging, and many papers do not require this, but we encourage authors to take this into account and make a best faith effort.
+    \end{itemize}
+
+\item {\bf Licenses for existing assets}
+    \item[] Question: Are the creators or original owners of assets (e.g., code, data, models), used in the paper, properly credited and are the license and terms of use explicitly mentioned and properly respected?
+    \item[] Answer: \answerTODO{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
+    \item[] Justification: \justificationTODO{}
+    \item[] Guidelines:
+    \begin{itemize}
+        \item The answer \answerNA{} means that the paper does not use existing assets.
+        \item The authors should cite the original paper that produced the code package or dataset.
+        \item The authors should state which version of the asset is used and, if possible, include a URL.
+        \item The name of the license (e.g., CC-BY 4.0) should be included for each asset.
+        \item For scraped data from a particular source (e.g., website), the copyright and terms of service of that source should be provided.
+        \item If assets are released, the license, copyright information, and terms of use in the package should be provided. For popular datasets, \url{paperswithcode.com/datasets} has curated licenses for some datasets. Their licensing guide can help determine the license of a dataset.
+        \item For existing datasets that are re-packaged, both the original license and the license of the derived asset (if it has changed) should be provided.
+        \item If this information is not available online, the authors are encouraged to reach out to the asset's creators.
+    \end{itemize}
+
+\item {\bf New assets}
+    \item[] Question: Are new assets introduced in the paper well documented and is the documentation provided alongside the assets?
+    \item[] Answer: \answerTODO{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
+    \item[] Justification: \justificationTODO{}
+    \item[] Guidelines:
+    \begin{itemize}
+        \item The answer \answerNA{} means that the paper does not release new assets.
+        \item Researchers should communicate the details of the dataset\slash code\slash model as part of their submissions via structured templates. This includes details about training, license, limitations, etc.
+        \item The paper should discuss whether and how consent was obtained from people whose asset is used.
+        \item At submission time, remember to anonymize your assets (if applicable). You can either create an anonymized URL or include an anonymized zip file.
+    \end{itemize}
+
+\item {\bf Crowdsourcing and research with human subjects}
+    \item[] Question: For crowdsourcing experiments and research with human subjects, does the paper include the full text of instructions given to participants and screenshots, if applicable, as well as details about compensation (if any)?
+    \item[] Answer: \answerTODO{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
+    \item[] Justification: \justificationTODO{}
+    \item[] Guidelines:
+    \begin{itemize}
+        \item The answer \answerNA{} means that the paper does not involve crowdsourcing nor research with human subjects.
+        \item Including this information in the supplemental material is fine, but if the main contribution of the paper involves human subjects, then as much detail as possible should be included in the main paper.
+        \item According to the NeurIPS Code of Ethics, workers involved in data collection, curation, or other labor should be paid at least the minimum wage in the country of the data collector.
+    \end{itemize}
+
+\item {\bf Institutional review board (IRB) approvals or equivalent for research with human subjects}
+    \item[] Question: Does the paper describe potential risks incurred by study participants, whether such risks were disclosed to the subjects, and whether Institutional Review Board (IRB) approvals (or an equivalent approval/review based on the requirements of your country or institution) were obtained?
+    \item[] Answer: \answerTODO{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
+    \item[] Justification: \justificationTODO{}
+    \item[] Guidelines:
+    \begin{itemize}
+        \item The answer \answerNA{} means that the paper does not involve crowdsourcing nor research with human subjects.
+        \item Depending on the country in which research is conducted, IRB approval (or equivalent) may be required for any human subjects research. If you obtained IRB approval, you should clearly state this in the paper.
+        \item We recognize that the procedures for this may vary significantly between institutions and locations, and we expect authors to adhere to the NeurIPS Code of Ethics and the guidelines for their institution.
+        \item For initial submissions, do not include any information that would break anonymity (if applicable), such as the institution conducting the review.
+    \end{itemize}
+
+\item {\bf Declaration of LLM usage}
+    \item[] Question: Does the paper describe the usage of LLMs if it is an important, original, or non-standard component of the core methods in this research? Note that if the LLM is used only for writing, editing, or formatting purposes and does \emph{not} impact the core methodology, scientific rigor, or originality of the research, declaration is not required.
+    %this research?
+    \item[] Answer: \answerTODO{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
+    \item[] Justification: \justificationTODO{}
+    \item[] Guidelines:
+    \begin{itemize}
+        \item The answer \answerNA{} means that the core method development in this research does not involve LLMs as any important, original, or non-standard components.
+        \item Please refer to our LLM policy in the NeurIPS handbook for what should or should not be described.
+    \end{itemize}
+
+\end{enumerate}
+
+\newpage
+\appendix
+
+\DoToC
+\newpage
+
+\section{Experimental Details}
+\label{app:experimental_details}
+
+\subsection{Training configuration}
+
+Table~\ref{tab:hyperparams} lists the full configuration. Values are drawn
+from \texttt{lambda/sbatch\_modeb\_32b\_clariden.sh} and
+\texttt{lambda/verl\_train\_clariden.sh}, which together constitute the verl
+override set.
+
+\begin{table}[h]
+\centering
+\small
+\caption{Training configuration.}
+\label{tab:hyperparams}
+\begin{tabular}{@{}lll@{}}
+\toprule
+& \textbf{Setting} & \textbf{Value} \\ \midrule
+\multirow{5}{*}{Model}
+& Backbone & \texttt{Qwen/Qwen3-32B}, thinking mode on \\
+& LoRA $r$ / $\alpha$ & 16 / 32 (scaling $\alpha/r = 2.0$), bf16, dropout 0 \\
+& LoRA targets & \{q,k,v,o,gate,up,down\}\_proj, exclude \texttt{lm\_head} \\
+& Framework & \texttt{verl 0.7.1} + \texttt{vLLM 0.11.2} async, FSDP2 sharded \\
+& Compute & $4\times$ GH200 (training) $+$ $4\times$ GH200 (auxiliary), TP$=$4 \\ \midrule
+\multirow{6}{*}{Algorithm}
+& Advantage & GRPO outcome-advantage, $n = 8$ rollouts per prompt \\
+& Clipping & symmetric $\varepsilon_{\text{low}} = \varepsilon_{\text{high}} = 0.2$, dual-clip $10.0$ \\
+& KL loss & on, coefficient $1\times10^{-3}$, \texttt{low\_var\_kl} \\
+& KL-in-reward & off \\
+& Optimiser & AdamW, default $\beta$ \\
+& LR schedule & cosine, peak $3\times10^{-5}$, $10\%$ warmup \\
+& Batch / mini-batch & 8 / 8 (single PPO epoch per rollout) \\ \midrule
+\multirow{6}{*}{Rollout}
+& Temperature & 0.8 \\
+& Max prompt / response & 2048 / 8000 tokens \\
+& Compaction threshold & 5000 characters of accumulated turn text \\
+& Max assistant / user turns & 24 / 24 \\
+& Multi-turn format & \texttt{hermes}, tool-agent loop \\
+& Checkpoints & every 5 steps \\ \bottomrule
+\end{tabular}
+\end{table}
+
+Turn caps are $24/24$ against a ceiling of one assistant turn and ${\sim}1.19$
+user turns per round: a 10-round game needs 10 assistant and ${\sim}12$ user
+turns, so the caps leave margin without letting a runaway trajectory spin.
+
+\paragraph{Wall-clock breakdown.} The auxiliary node serves the same base
+weights to Mode~B groupmates. Its decode latency sits on the critical path of
+every Mode~B rollout: generation is $89\%$ of step time, and because a step
+waits for its slowest trajectory, the gap between mean rollout time
+(1000\,s) and the slowest (2806\,s) accounts for $52\%$ of wall-clock. The
+straggler is not the longest trajectory --- it is the one waiting on
+sequential per-round auxiliary calls.
+
+\section{Environment Details}
+\label{app:env_details}
+
+\paragraph{Episode length.} Games are 5--10 rounds. Shorter games (3--6) were
+used earlier and rejected: they made ${\sim}22\%$ of all rounds the \emph{last}
+round, so endgame behaviour dominated every aggregate, and they gave reactive
+strategies too little time to separate --- \texttt{grim\_trigger} and
+\texttt{tit\_for\_tat} are indistinguishable until a defection has been
+punished.
+
+\paragraph{Opponent pool calibration.} The $64\%$ reciprocator share is not
+arbitrary: we swept three fixed policies (always-cooperate, always-defect,
+tit-for-tat) over the scenario distribution and selected the pool maximising
+$\min(\,\overline{r}_{\text{TFT}} - \overline{r}_{\text{allC}},\;
+\overline{r}_{\text{TFT}} - \overline{r}_{\text{allD}}\,)$ --- the binding
+constraint, since the policy can collapse into either failure mode. That
+criterion peaks at $64\%$ ($+0.167$) and \emph{falls} on both sides
+($46\%\!:\!+0.119$, $85\%\!:\!+0.070$, $100\%\!:\!+0.000$).
+
+The collapse at $100\%$ is a property of the stage rather than a tuning
+detail. With $w=1.0$ the partner never changes, so tit-for-tat is never given
+an occasion to retaliate against a reciprocator and plays \emph{identically}
+to unconditional cooperation ($0.8169$ vs $0.8169$ against
+\texttt{tit\_for\_tat}; $0.8671$ vs $0.8671$ against \texttt{grim\_trigger}).
+All discrimination between conditional and unconditional cooperation comes
+from \texttt{always\_defect} and \texttt{random}. Remove them and the reward
+can no longer tell the two policies apart.
+
+\section{Reward Design Details}
+\label{app:reward_details}
+
+\paragraph{Component ranges.} $r_1 \in [0,1]$, $r_2 \in
+[-\lambda_{\text{tom}}(4q + c/b),\, +\lambda_{\text{tom}}(4q + c/b)]$
+($\pm 0.50$ at the corner $q\!=\!1$, $c/b\!=\!1$; mean magnitude $0.254$ under
+this scenario distribution), $r_3 \in [-\lambda_g\,\mathrm{CFE}_{\max}, 0]$,
+and $\mathrm{bonus} \in [-1,+1]$. All are on the same per-round order.
+$\rho_k$ in Eq.~\ref{eq:t2} is also zeroed on the first round after a partner
+swap (relevant only in the direct/indirect stage,
+Appendix~\ref{app:unused}).
+
+\paragraph{Why the HKB potential was replaced.} The HKB form scores
+$s_t = a_t^{i} a_t^{-i}$, i.e. whether the two players matched \emph{this}
+round. Against a reactive opponent that is not a coordination reward at all:
+substituting tit-for-tat's rule $a_t^{-i} = a_{t-1}^{i}$ gives
+\[
+s_t \;=\; \mathbf{1}\bigl[a_t^{i} = a_t^{-i}\bigr]
+      \;=\; \mathbf{1}\bigl[a_t^{i} = a_{t-1}^{i}\bigr],
+\]
+so the model is paid to \emph{repeat itself}. That is a freeze pressure:
+mutual-C and mutual-D both sit at $\varphi = 0$ and earn identical $r_2$, so
+the HKB term stabilises whichever absorbing state the trajectory falls into
+and supplies no gradient between them. The envelope
+$\lambda_{\text{tom}}(4q + c/b)$ of Eq.~\ref{eq:t2} is deliberately the value
+the HKB potential takes at $\varphi = 0$, which is where ${\sim}95\%$ of
+evaluated rounds sat, so the per-turn scale of Term~2 is unchanged; the
+difference is that $r_2$ is now genuinely two-sided, where before it was a
+near-constant $+0.25$ offset once a trajectory locked in.
+
+\paragraph{On $\delta\omega$.} The HKB detuning parameter is the
+intrinsic-frequency \emph{difference} between two coupled oscillators, and the
+original specification set $\delta\omega = 1$. It is $0$ here, and would be
+even if the HKB form were retained: the game is not self-play. The partner is
+a scripted strategy from a fixed pool, so there is no second policy whose
+intrinsic frequency could differ from the model's, and a non-zero
+$\delta\omega$ would contribute a linear $\delta\omega\!\cdot\!\varphi$ drift
+that tilts the potential toward the anti-phase well independently of anything
+the model could learn. Calibrating $\delta\omega$ against genuine
+between-policy asymmetry requires a cross-policy setup and is left to
+follow-up work.
+
+\paragraph{Why the consensus term is a squared error.} The original
+specification used $\mathrm{KL}(\bar g \,\|\, \bar c)$, but $\bar c$ is a
+realised frequency in $\{0, 1/K, \dots, 1\}$, so the KL targets a degenerate
+distribution whenever the group is unanimous --- unbounded in principle and in
+practice equal to whatever the clipping constant ($\varepsilon = 10^{-6}$,
+clipping into $(\varepsilon, 1-\varepsilon)$) happens to be. Measured on an
+earlier run, mean CFE was $4.58$ at $\bar c = 0$ against $1.58$ at
+$\bar c = 1$ and ${\sim}0.2$ in the interior, with $22\%$ of rounds sitting on
+a boundary. That $6\times$ asymmetry is not a property of the game: it arises
+because predictions are optimistic ($\bar g \approx 0.7$), so unanimous
+defection is always more ``surprising'', and because the clamp sets the
+magnitude. The Brier form is bounded in $[0,1]$, symmetric, still a strictly
+proper scoring rule, and is literally forecast error --- the name of the term.
+
+\paragraph{Calibration of $\lambda_g$.} $\lambda_g$ was raised from $0.2$ to
+$0.5$ to compensate for the rescale. The fraction of rounds in which Term~3
+changes the argmax of the per-round reward: $90.8\%$ under the old KL form at
+$\lambda_g = 0.2$ (mostly an artefact of the clipping constant), $8.7\%$ under
+the new form at $\lambda_g = 0.2$ --- near inert --- and $22.7\%$ at
+$\lambda_g = 0.5$.
+
+\paragraph{Mode A / Mode B assignment.} Half of all scenarios run in each
+regime, assigned per scenario so that all $8$ GRPO rollouts of a prompt share
+it. This makes the comparison within-run: same weights, same reward, same
+step, only the discussion differs. Every prior A/B comparison in this project
+was across runs with other variables moving. In Mode~B the said-versus-played
+pair is logged per member, and the discussion runs while the next round's
+prompt is assembled, so groupmate speech reaches the model in the same round
+and the model's speech reaches groupmates with a one-round lag.
+
+\paragraph{Parsing.} $\hat g$ is parsed from a \texttt{PREDICT:} line; a miss
+falls back to $\hat g = 0.5$ and out-of-range values are clamped into $[0,1]$,
+so a malformed prediction is treated as ``no signal'' rather than discarded.
+The action (\texttt{DECISION:}) is parsed strictly: a miss scores $-5$ and
+ends the episode.
+
+\section{Credit Assignment Details}
+\label{app:credit}
+
+\paragraph{Truncation penalty.} The full trajectory scalar is
+$R = \frac{1}{N_{\text{played}}}\sum_k r_k -
+\mathbf{1}[\text{truncated}]\cdot\tau$ with $\tau = 0.1$; in practice spoiled
+rollouts are dropped before this applies. A rollout that truncates against the
+response budget, or that fails to parse a decision, is excised from its GRPO
+group entirely rather than kept with a bad score. Within a prompt, the
+standard deviation of the trajectory scalar is $0.138$, so any penalty large
+enough to discourage truncation would dominate the within-group advantage
+signal and teach length rather than behaviour. Dropping costs group size;
+penalising costs the gradient. A pre-flight check asserts the patch
+implementing this is live and the launcher aborts if it is not.
+
+\paragraph{Per-turn placement.} The reward manager emits each round's scalar
+alongside the token index that ends the corresponding assistant turn. Under
+the GRPO outcome-advantage estimator used here --- which collapses
+\texttt{token\_level\_rewards.sum(dim=-1)} into one trajectory score before
+within-group normalisation --- per-turn placement and scalar-at-last-token are
+\emph{arithmetically equivalent}, so the sidecar values are currently
+diagnostic rather than load-bearing, and the placement patch is not installed.
+We record the design because it is a real constraint on any future move to a
+per-token estimator, and because of the failure mode it avoids: placing
+reward-to-go values $R_k = \sum_{j\geq k} r_j$ at each turn-end would evaluate
+under the sum reduction to the position-weighted total $\sum_k k\cdot r_k$,
+silently over-counting late turns. This is unit-tested.
+
+\section{Context Compaction Details}
+\label{app:compaction}
+
+The response mask in verl's agent loop is append-only, so a multi-turn episode
+terminates when its \emph{cumulative} length crosses the response budget. This
+kills late rounds and only late rounds: the counter starts around 430 tokens
+and crosses an 8000-token cap near round~7. Combined with dropping spoiled
+rollouts, $31\%$ of rollouts contributed no gradient at all, and the loss fell
+hardest on exactly the late-game rounds this work exists to study.
+
+When the accumulated turn text crosses 5000 characters, the interaction is
+asked for a structured memory note --- where the agent is, who said what and
+what they did, its own recent play, and what it said it would do --- and the
+accumulated turns are replaced by that note, resetting the counter. Measured
+effect over eleven steps:
+
+\begin{center}
+\begin{tabular}{@{}lcc@{}}
+\toprule
+& baseline & with compaction \\ \midrule
+truncation rate      & 0.311 & \textbf{0.027} \\
+rounds per episode   & 14.67 & \textbf{16.25} \\
+response length (mean) & 6343 & 2834 \\ \bottomrule
+\end{tabular}
+\end{center}
+
+Two costs, both stated rather than absorbed. Pre-compaction tokens are
+discarded from the gradient --- they were generated under a context that no
+longer exists, so their importance ratio is not recoverable --- meaning early
+rounds count toward the reward but not the update. And steps run roughly
+$2\times$ slower, because episodes now run to completion instead of being cut
+off.
+
+\section{Evaluation Procedure}
+\label{app:evaluation}
+
+\paragraph{Nowak benchmark.} Each rule is an inequality between a mechanism
+parameter and $c/b$ ($w>c/b$, $q>c/b$, $b/c>k$, $b/c>1+n/m$). Per axis we
+sweep the parameter over several seeds and score the Spearman correlation
+between it and the model's cooperation rate ($+1$: cooperation rises
+exactly when the theory favours it; $0$: mechanism ignored; $-1$:
+anti-compliance; negated for network and group, where the expected
+direction is inverted). Three sweeps per axis, reported separately and as
+their mean: \emph{binary} (fix $c/b=0.75$, sweep the parameter),
+\emph{continuous} (fix the parameter, sweep $c/b$ past $1$ so the
+predicted sign flip is inside the grid), \emph{population} (vary $n$,
+$w=q=1/(n-1)$). Table~\ref{tab:bench_presets} lists the grids.
+
+\paragraph{Strategy-resolved evaluation.} The results in
+Section~\ref{sec:results} compare the base model and the step-75 checkpoint
+under identical prompts, opponents, seeds and decoding. \emph{Direct play}:
+donor game with $b=4$, $c=2$, 20 rounds, nine fixed opponents (always
+cooperate, always defect, tit-for-tat, suspicious TFT, tit-for-two-tats, grim
+trigger, win--stay--lose--shift, generous TFT with $p_{\mathrm{forgive}}=0.3$,
+random), $w,q\in\{0,0.5,1\}$, four memory conditions (full, last 1, last 2,
+last 2 + compaction note), four seeds; $324$ cells and $1{,}296$ games per
+arm, temperature $0.6$, thinking disabled. \emph{Reasoning mode}: same
+opponents, $w=1$, $q\in\{0,0.5,1\}$, full memory, four seeds ($108$ games
+per arm), thinking enabled with $4{,}096$ tokens. \emph{Prisoner's Dilemma}:
+$R,T,S,P=3,5,0,1$, 20 rounds, the same nine opponents, memory windows
+$m\in\{1,2,3\}$, four seeds ($108$ games per arm). Reward is reported per
+round and as the fraction of the dynamic-programming best response against
+each opponent; ``exploiting'' is the share of rounds in which the model
+defected while its partner cooperated. All comparisons are paired by cell and
+seed (paired $t$ and Wilcoxon tests; 95\% bootstrap CIs over games).
+
+\begin{table}[h]
+\centering\small
+\caption{Statistics behind the headline numbers, base vs.\ step~75. Means with
+95\% bootstrap CIs over games; $p$ from paired $t$-tests. Reasoning-mode
+rows pool the original sweep with an independent 12-seed replication ($16$ seeds $\times\,3$ values of $q$).}
+\label{tab:stats}
+\begin{tabular}{@{}llrllr@{}}
+\toprule
+setting & quantity & $n$ & base & step 75 & $p$ \\
+\midrule
+reasoning & cooperation vs.\ tit-for-tat & 48 & 0.44 [0.31, 0.57] & 0.64 [0.51, 0.77] & 0.014 \\
+reasoning & cooperation vs.\ generous TFT & 48 & 0.39 [0.26, 0.52] & 0.61 [0.48, 0.74] & 0.014 \\
+reasoning & cooperation vs.\ grim trigger & 48 & 0.50 [0.37, 0.64] & 0.65 [0.52, 0.77] & 0.10 \\
+reasoning & cooperation vs.\ always-cooperate & 48 & 0.59 [0.46, 0.71] & 0.70 [0.57, 0.83] & 0.22 \\
+reasoning & cooperation, four reciprocators & 192 & 0.481 [0.414, 0.548] & 0.651 [0.588, 0.714] & $10^{-4}$ \\
+reasoning & points/round, same games & 192 & 3.62 & 3.78 & 0.036 \\
+reasoning & best-response capture & 192 & 0.790 & 0.833 & 0.009 \\
+direct & cooperation rate (all cells) & 1296 & 0.729 & 0.761 & $<10^{-3}$ \\
+direct & agreement with reference policy & 1296 & 0.821 & 0.842 & 0.002 \\
+direct & best-response capture & 1296 & 0.763 & 0.764 & 0.99 \\
+direct & exploiting, \% of rounds & 1296 & 7.8 [7.0, 8.6] & 5.7 [5.1, 6.3] & $<10^{-4}$ \\
+direct & cooperation, $w{=}1$ minus $w{=}0$ & 432/432 & $+0.040$ & $+0.054$ & 0.12 / 0.02 \\
+PD, $m{=}1$ & points/round vs.\ grim trigger & 4 & 2.40 (2.0, 3.0, 1.6, 3.0) & 3.00 (3.0, 3.0, 3.0, 3.0) & 0.19 \\
+PD, $m{=}1$ & points/round vs.\ always-cooperate & 4 & 3.00 & 3.70 (3.0, 4.1, 4.7, 3.0) & 0.20 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Independent replication.} The reasoning-mode comparison was
+repeated with $12$ fresh seeds against the four reciprocating opponents. The
+effect is directionally identical but smaller than the original four-seed
+estimate suggested: pooling both runs ($16$ seeds, $192$ paired games),
+cooperation rises $0.481\to0.651$ ($p{=}10^{-4}$), reward $3.62\to3.78$
+($p{=}0.036$) and best-response capture $0.790\to0.833$ ($p{=}0.009$), but
+only tit-for-tat and generous tit-for-tat are individually significant
+($p{=}0.014$ each); grim trigger ($p{=}0.10$) and always-cooperate
+($p{=}0.22$) are directional only. Between-seed variance in reasoning mode is
+large, and single-digit seed counts overstate the effect. The
+Prisoner's-Dilemma comparison was likewise repeated with $20$ fresh seeds per
+opponent and memory window. Against grim
+trigger the effect holds and sharpens ($2.49\to2.95$ points per round,
+$p{=}0.018$ paired, $n{=}20$ at $m{=}1$; $2.76\to2.98$, $p{=}0.020$ pooled
+over $m\in\{1,2,3\}$), with cooperation $0.72\to0.97$. Two apparent effects at
+$n{=}4$ did not survive: against generous tit-for-tat the difference vanishes
+($2.92\to2.93$, $p{=}0.87$), and against always-cooperate it reverses --- the
+trained model cooperates \emph{more} ($0.78\to0.98$) and therefore earns less
+($3.44\to3.03$, $p{=}0.012$), consistent with the reduced exploitation seen in
+the donor game rather than with the opposite reading suggested by the smaller
+sample.
+
+\paragraph{Threshold sweeps.} To test whether the switch derived in
+Eq.~\ref{eq:t2} is visible behaviorally, we swept $w$ and $q$ in steps of
+$0.1$ at $c/b=0.5$ (six seeds, five opponents, full memory), which places
+Nowak's thresholds at $w=0.5$ and $q=0.5$. No kink appears at either. Against
+reciprocators, cooperation rises smoothly in $w$ (base $0.84\to1.00$, step~75
+$0.94\to1.00$; slopes below and above $0.5$ are statistically
+indistinguishable) and is at ceiling for all $q$ at $w=1$. The thresholds
+therefore act as a scale on the reward, not as a discontinuity in the learned
+policy.
+
+\paragraph{EigenBench detail.} Over all $10{,}398$ scenarios judged in both
+orders, the trained model wins $55.8\%$ of decided kindness verdicts (net
+$+0.069$; $+0.044$ [$+0.031,+0.056$] at equal response length, which differs by
+only $1.03\times$). The two reverse-scored constitutions move slightly the
+wrong way (misalignment $+0.008$, sycophancy $+0.004$ at equal length) and
+goodness is flat ($-0.010$). The poeticism control moves as much as kindness
+($+0.036$ at equal length), so part of the kindness gain is a stylistic shift
+the judge rewards rather than a specifically moral one; a style-controlled
+judge is needed to separate them.
+
+\paragraph{Group-stage evaluation.} Scored on the training reward itself
+($100$ paired scenarios), no term moves significantly: cooperation
+$0.524\to0.435$ ($p{=}0.058$), $r_1$ $0.568\to0.562$, reciprocation $\rho$
+$0.637\to0.710$ ($p{=}0.27$), CFE $0.279\to0.276$, forecast Brier
+$0.081\to0.067$ ($p{=}0.08$), trajectory scalar $0.567\to0.586$. The behavioral
+changes reported above are therefore not accompanied by a detectable shift in
+the reward the model was trained on, which is consistent with $\rho$ being
+close to saturation in this setting from initialization.
+
+\paragraph{Reputation use.} Cooperation with always-defect in direct play
+falls with reputation visibility for both arms (base $0.28/0.12/0.02$, step~75
+$0.31/0.11/0.04$ at $q=0/0.5/1$; $n=48$ games per cell), while cooperation
+with always-cooperate is at ceiling at every $q$: the reputation report is
+read and acted on, by the base model as much as by the trained one. Per-round
+reciprocation $\rho$ (Term~2) is likewise unchanged in direct play ($0.425$
+vs.\ $0.433$), so the dyadic term is saturated from initialization in that
+setting; the reasoning-mode shift is where training acted.
+
+\section{Interaction Protocols and Prompts}
+\label{app:prompts}
+
+\paragraph{Round structure.} Each round: (1)~every groupmate's action is
+settled from its strategy before anyone speaks; (2)~in Mode~B each
+groupmate makes one auxiliary call returning \texttt{MESSAGE} and
+\texttt{PREDICT}, having seen last round's transcript and been told its own
+settled action --- it is never asked for a decision; (3)~the model receives
+the previous result, its pairing, the transcript and the answer format, and
+replies with \texttt{MESSAGE}/\texttt{PREDICT}/\texttt{DECISION};
+(4)~Terms~1--3 are computed (bonus on round~$N$); (5)~with probability
+$1-w$, $w=1/(M-1)$, the next partner is a different groupmate, with
+per-partner histories stashed and restored so a returning partner
+remembers the model's earlier play; (6)~when accumulated turn text exceeds
+the compaction threshold, a memory note replaces the accumulated turns.
+\texttt{DECISION:} is matched by a regular expression (a miss ends the
+episode at $-5$ and the rollout is dropped); \texttt{PREDICT:} is clamped
+to $[0,1]$, a miss reads $0.5$; \texttt{MESSAGE:} is optional.
+
+\paragraph{Model, round 1.}
+The rotation bullet reads ``Your group has only two members, so you play the
+same fellow member for all \{N\} rounds.'' when $M=2$; the reputation line
+appears with probability $q$.
+
+\begin{modelprompt}[Trained model --- round 1]
+You are Alice, a member of a {M}-player group competing against {G-1} other groups.
+
+Rules:
+- Each round you play one fellow member of your group. After each round your next
+  partner is drawn at random from the other {M-1} members, so there is a {100w}% chance
+  you keep the same partner and a {100(1-w)}% chance you are paired with a different
+  groupmate. Groupmates remember how you treated them when you meet again.
+- If you COOPERATE: you receive 0 points, your partner receives {b} points.
+- If you DEFECT: you receive {c} points, your partner receives 0 points.
+- {payoff description}
+- {reputation-visibility description of q}
+- After {N} rounds, the lowest-scoring group is eliminated.
+- Within a surviving group, the highest-scoring individual wins overall.
+
+Strategic context:
+- Defecting raises your individual score relative to cooperating groupmates.
+- BUT if your group's total score is lowest, your whole group is eliminated and you lose.
+- Cooperating helps your group survive at a cost to your individual rank.
+
+Before each round the group talks: you will see what the others said, and what you say
+is shown to them. Nobody sees anyone else's actual decision -- only what they choose to
+say -- so talk can be honest or not.
+
+You are also asked each round for a forecast: the fraction of your group -- all {M}
+members including yourself -- that you expect to COOPERATE this round. 0.0 means nobody,
+1.0 means everybody. Judge it from what the others have said and from what they have
+done in past rounds.
+
+Each round, you will (1) say one sentence to your group, (2) give that forecast, then
+(3) decide whether YOU will cooperate. Reason briefly, then finish with exactly three
+lines in this format (the DECISION line must be one of the two shown options, not both):
+  MESSAGE: <one sentence to the group>
+  PREDICT: <fraction of the group you expect to cooperate, between 0.0 and 1.0>
+  DECISION: COOPERATE         (or: DECISION: DEFECT)
+
+Your group: Alice, Bob, Charlie, ...
+Your partner this round is Bob.
+Reputation report on your partner: in {n} prior interactions with other players, they
+cooperated {k}/{n} times ({pct}%).
+
+This is round 1 of {N}. Nobody has spoken yet.
+Say something to the group, give your prediction, and give your decision for round 1.
+\end{modelprompt}
+
+
+\paragraph{Model, rounds $2,\dots,N$.}
+The pairing line is ``Your partner for round \{k\} is again \{X\}.'' when
+unchanged, and is omitted for $M=2$; on a first meeting, the model is told
+``You have not played \{X\} yet.'' together with any available reputation
+report. The final round reports the result and final total only.
+
+\begin{modelprompt}[Trained model --- later rounds]
+Round {k-1} result: you played {DECISION}, {partner} played {ACTION}. You earned {p}
+points this round (total so far: {total}).
+
+Partners rotate: for round {k} you are paired with {X}. You have played {X} before
+({n} rounds).
+
+This is round {k} of {N}. Group discussion for round {k}:
+  Bob: "<message>"
+  Charlie: "<message>"
+  Alice: "<the model's own previous MESSAGE>"
+
+First forecast the fraction of your group -- all {M} members including yourself -- that
+you expect to COOPERATE this round (0.0 means nobody, 1.0 means everybody), then give
+your decision.
+End your reply with exactly three lines (the DECISION line must be one of the two
+options, not both):
+  MESSAGE: <one sentence to your group; they will see it, but not your decision>
+  PREDICT: <fraction of the group you expect to cooperate, between 0.0 and 1.0>
+  DECISION: COOPERATE          (or: DECISION: DEFECT)
+\end{modelprompt}
+
+
+\paragraph{Groupmates (Mode B).}
+Auxiliary groupmates use the same base weights with independent conversation
+histories (temperature $0.7$, thinking enabled). Their actions are fixed by
+their strategies; only their messages and forecasts are generated.
+
+\begin{groupprompt}[Auxiliary groupmate --- system prompt]
+You are {name}, a member of a {M}-player group playing an iterated donor's game.
+
+Your behaviour is fixed. You play the strategy '{strategy}', and your action each round
+is whatever that strategy dictates -- you do not choose it and you are not asked for
+it. You will be told what it is before you speak.
+
+What you SAY is entirely your own choice. Before each round the group talks: you will
+see what the others said, and what you say is shown to them. Nobody ever sees anyone
+else's actual decision -- only what they choose to say. So you may describe your
+intention honestly, or misrepresent it, whichever you judge serves you better.
+
+You are also asked each round for a forecast: the fraction of the group -- all {M}
+members including yourself -- that you expect to COOPERATE this round. 0.0 means nobody,
+1.0 means everybody. Judge it from what the others have said and from what they have
+done in past rounds.
+
+Think BRIEFLY -- a few sentences at most -- then answer. If you run long you will be cut
+off before you answer, and your turn will be wasted.
+
+End every reply with exactly these two lines:
+  MESSAGE: <one sentence to the group -- say whatever you choose>
+  PREDICT: <fraction of the group you expect to cooperate, between 0.0 and 1.0>
+\end{groupprompt}
+
+\begin{groupprompt}[Auxiliary groupmate --- per-round prompt]
+Round {k}. The group said:
+  Alice: "<the trained model's last MESSAGE>"
+  Charlie: "<message>"
+
+Your strategy '{strategy}' plays {COOPERATE|DEFECT} this round. Nobody else can see
+that -- they see only what you say.
+
+Say whatever you choose to the group, then give your forecast of the fraction of the
+group that will cooperate this round.
+\end{groupprompt}
+
+A reply with a valid message but no parseable forecast retains the utterance
+and uses the Mode~A prior; a failed or timed-out call falls back on both.
+
+
+\paragraph{Memory note (compaction).}
+Memory is reconstructed directly from environment state rather than by a
+summarising model, preserving the distinction between what agents
+\emph{said} and what they \emph{did}.
+
+\begin{memoryprompt}[Structured memory after compaction]
+WHERE I AM
+Round {k} of {N}. Benefit {b}, cost {c}. Running score {total}.
+
+WHO SAID WHAT AND WHAT THEY DID
+Bob - said: "<message>" | played: DEFECT
+Charlie - said: (silent) | played: COOPERATE
+
+MY RECENT PLAY
+round {k-2}: I played COOPERATE, Bob played DEFECT
+round {k-1}: I played DEFECT, Charlie played COOPERATE   (last four rounds)
+
+WHAT I SAID I WOULD DO
+I told the group: "<my last MESSAGE>"
+I predicted {g} of the group would cooperate.
+\end{memoryprompt}
+
+\section{Limitations}
+
+Our current experiments are limited in several ways. First, we instantiate
+kin selection only implicitly through shared structure and do not yet
+implement it as a dedicated training pressure, even though it is one of
+Nowak's original five rules; likewise, the run reported here trains only on
+the group-selection stage, with the direct/indirect and abstract stages
+implemented but unused. Second, our theory-of-mind signal is operationalized
+through a reciprocation heuristic rather than explicit belief-state modeling,
+which captures one important aspect of social cognition but not the full
+space of metacognitive representations. Third, all opponents are scripted
+strategies rather than learning agents, so the setting is not self-play and
+between-policy asymmetries (e.g.\ a non-zero $\delta\omega$) cannot yet be
+calibrated. Fourth, the threshold in Term~2 is a switch in the myopic best reply of
+$r_1+r_2$, not a bifurcation of the HKB potential itself, and it is not
+visible as a kink in behavior: cooperation with reciprocators varies smoothly
+in $w$ and $q$ (Appendix~\ref{app:evaluation}). No reward-term ablation has
+been run, so the reported changes are attributed to the full reward rather
+than to individual terms. Finally, several benchmark references and empirical result
+summaries remain placeholders in the current draft and must be completed
+before submission.
+
+\end{document}
