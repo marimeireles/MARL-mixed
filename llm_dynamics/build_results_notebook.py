@@ -245,7 +245,16 @@ for sub, label in [(f'donors_{VER}', 'Direct play (no thinking)'), (f'donors_{VE
     tab = pd.concat({c: pd.DataFrame({'base': ob.groupby('strategy')[c].mean(), 'rl': orl.groupby('strategy')[c].mean()}) for c in cols}, axis=1).reindex(ORDER)
     tab.loc['ALL'] = pd.concat({c: pd.Series({'base': ob[c].mean(), 'rl': orl[c].mean()}) for c in cols})
     display(Markdown(f'### {label} — share of rounds (bold = fewer suckered rounds; other columns descriptive)'))
-    display(bold_arms(tab * 100, nd=1))""")
+    display(bold_arms(tab * 100, nd=1))
+    # compact paper figure: three horizontal panels, base vs RL
+    LAB = ['AllC','TF2T','GTFT','TFT','Grim','WSLS','Rand','STFT','AllD']
+    plt.rcParams.update({'font.size': 7, 'axes.titlesize': 7.5, 'axes.labelsize': 7, 'xtick.labelsize': 6.5, 'ytick.labelsize': 6.5})
+    fig, axs = plt.subplots(1, 3, figsize=(7.2, 1.9), sharex=True); xs_ = np.arange(len(ORDER)); wd = 0.38
+    for ax, (m_, ttl) in zip(axs, [('suckered', 'suckered: model C, partner D'), ('exploiting', 'exploiting: model D, partner C'), ('mutual_C', 'mutual cooperation')]):
+        ax.bar(xs_ - wd/2, 100 * tab.loc[ORDER, (m_, 'base')], wd, color='#7a7a7a', label='base'); ax.bar(xs_ + wd/2, 100 * tab.loc[ORDER, (m_, 'rl')], wd, color='#c0392b', label=TR.replace('qwen8b_rl_', 'step ').replace('s', ''))
+        ax.set_title(ttl); ax.set_xticks(xs_); ax.set_xticklabels(LAB, rotation=45, ha='right'); ax.spines[['top', 'right']].set_visible(False); ax.grid(axis='y', lw=0.3, alpha=0.5)
+    axs[0].set_ylabel('% of rounds'); axs[0].legend(frameon=False, fontsize=6.5, loc='upper left'); plt.tight_layout(w_pad=1.0)
+    os.makedirs(f'{R}/figures', exist_ok=True); fig.savefig(f'{R}/figures/outcome_structure_{TB}_vs_{TR}_{sub}.pdf', bbox_inches='tight'); plt.show(); plt.rcParams.update(plt.rcParamsDefault)""")
 
 md(r"""### 1.1 c/b sweep, horizons, thinking-on — cooperation rate and BR captured per arm""")
 code(r"""for label, pat in [('c/b sweep', f'{{tag}}_donors_{VER}_cb*'), ('horizon N', f'{{tag}}_donors_{VER}_N*'), ('thinking on (w=1)', f'{{tag}}_donors_{VER}_think')]:
