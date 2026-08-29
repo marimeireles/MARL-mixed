@@ -90,6 +90,35 @@ achievements remain nominally significant for s75 (+0.29, p = 0.032) but not
 for abs20. On the ethics side abs20 is the lowest arm on every violation
 aggregate — consistently but never significantly.
 
+## EigenBench — abs20 becomes a stylist
+
+Both arms are judged head-to-head against the **same** base responses by the
+same judge on the same scenarios, so their effect sizes are directly
+comparable (net preference at equal response length):
+
+| constitution | role | s75 | abs20 | abs20 − s75 |
+|---|---|---|---|---|
+| kindness | positive | **+0.0436** | +0.0245 | −0.019 |
+| oct_goodness | positive | −0.0112 | −0.0235 | −0.012 |
+| oct_misalignment | reverse (higher = worse) | +0.0080 | **+0.0247** | +0.017 |
+| oct_sycophancy | reverse (higher = worse) | +0.0040 | +0.0050 | +0.001 |
+| oct_humor | control | +0.0010 | +0.0014 | ≈ 0 |
+| oct_poeticism | control | +0.0355 | **+0.0922** | **+0.057** |
+
+(s75 judged on all 10,398 scenarios; abs20 on 5,500–10,000 per constitution
+and still running.) The conversational steps move the model decisively toward
+**style**: the poeticism control — which should not move at all — is now the
+largest effect in the battery (+0.092, 2.6× s75's), the kindness gain is
+roughly halved, goodness moves further negative, and misalignment
+(reverse-scored) triples. Where s75's kindness gain was ambiguous because
+poeticism moved *comparably*, abs20's is clearly dominated by the style shift:
+poeticism moves nearly four times as much as kindness.
+
+This is the same story as the dynamics, in a different instrument: the extra
+20 conversational steps did not make the model more cooperative or kinder;
+they made it write more expressively, and cost it some of what the donors-game
+phase had bought.
+
 ## How to read this
 
 The two training phases do different things:

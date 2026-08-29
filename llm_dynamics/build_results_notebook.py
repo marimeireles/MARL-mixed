@@ -786,6 +786,71 @@ if summary:
     display(Markdown('### In plain language'))
     display(Markdown(chr(10).join('- ' + l for l in plain)))""")
 
+md(r"""### 4.1 All RL arms against the same base — the comparison that separates checkpoints
+
+Each arm is judged head-to-head against the **same** base responses by the same
+judge on the same scenarios, so the effect sizes are directly comparable: the
+difference between two arms' columns is the effect of the extra training that
+separates them. `net@len` is the net preference at equal response length (the
+number to compare). Reverse-scored constitutions (misalignment, sycophancy):
+higher = worse. Controls (humor, poeticism) should not move; if one moves as
+much as kindness, the gain is stylistic.""")
+code(r"""import math
+def eigen_summary(sufx):
+    JD_ = f'{EB}/EigenBench/runs/qwen8b/judgments_gemma4_{sufx}'
+    H2H_ = f'{EB}/EigenBench/runs/qwen8b/responses/arms_head_to_head_{sufx}.jsonl'
+    lens_ = {}
+    if os.path.exists(H2H_):
+        for l in open(H2H_):
+            rr_ = json.loads(l)
+            try: lens_[rr_['scenario_index']] = (len(rr_['base']['response_visible']), len(rr_['rl']['response_visible']))
+            except Exception: pass
+    out = {}
+    for c in ['kindness','oct_goodness','oct_misalignment','oct_sycophancy','oct_humor','oct_poeticism']:
+        f_ = f'{JD_}/{c}.jsonl'
+        if not os.path.exists(f_): continue
+        by_ = collections.defaultdict(dict)
+        for l in open(f_):
+            rr_ = json.loads(l); by_[rr_['scenario_index']][rr_['order']] = rr_['choices']
+        wins_ = collections.Counter(); nets_ = []; sids_ = []
+        for sc, d_ in by_.items():
+            if 'ab' not in d_ or 'ba' not in d_: continue
+            n_ = k_ = 0
+            for key in d_['ab']:
+                x_ = {'1': 'base', '2': 'rl'}.get(str(d_['ab'][key]), 'tie'); y_ = {'1': 'rl', '2': 'base'}.get(str(d_['ba'].get(key)), 'tie')
+                w_ = x_ if x_ == y_ else 'tie'; wins_[w_] += 1; k_ += 1; n_ += (w_ == 'rl') - (w_ == 'base')
+            nets_.append(n_ / k_); sids_.append(sc)
+        nets_ = np.array(nets_); dec_ = wins_['base'] + wins_['rl']; eq_ = np.nan
+        if lens_:
+            xs_ = np.array([lens_[sc][1] - lens_[sc][0] for sc in sids_ if sc in lens_]); ys_ = np.array([n for sc, n in zip(sids_, nets_) if sc in lens_])
+            if len(xs_) > 10:
+                sl_, ic_, _, _, _ = stats.linregress(xs_, ys_); eq_ = ic_
+        out[c] = dict(n=len(nets_), win=wins_['rl'] / dec_ if dec_ else np.nan, net=nets_.mean(), eq=eq_)
+    return out
+ROLE_ = {'kindness': 'positive', 'oct_goodness': 'positive', 'oct_misalignment': 'reverse (higher = worse)',
+         'oct_sycophancy': 'reverse (higher = worse)', 'oct_humor': 'control', 'oct_poeticism': 'control'}
+LBL = {'qwen8b_rl_s6': 's6', 'qwen8b_rl_s51': 's51', 'qwen8b_rl_s75': 's75', 'qwen8b_rl_abs20': 'abs20', 'qwen8b_rl_abs40': 'abs40'}
+sums = {LBL.get(t, t): eigen_summary(EIGEN_DIR.get(t, t)) for t in TAGS_RL}
+sums = {k: v for k, v in sums.items() if v}
+if not sums: pending('EigenBench cross-arm comparison')
+else:
+    arms_ = list(sums)
+    lines = ['| constitution | role | ' + ' | '.join(f'{a} win / net@len' for a in arms_) + ' | scenarios |', '|---|---|' + '---|' * (len(arms_) + 1)]
+    for c, role in ROLE_.items():
+        if not any(c in sums[a] for a in arms_): continue
+        cells = []
+        for a in arms_:
+            v = sums[a].get(c)
+            cells.append('pending' if not v else f"{v['win']:.3f} / {v['eq']:+.4f}")
+        ns = ' / '.join(str(sums[a][c]['n']) if c in sums[a] else '-' for a in arms_)
+        lines.append(f'| {c} | {role} | ' + ' | '.join(cells) + f' | {ns} |')
+    display(Markdown(chr(10).join(lines)))
+    if len(arms_) > 1:
+        a0, a1 = arms_[0], arms_[1]
+        deltas = [f"**{c}**: {sums[a1][c]['eq']:+.4f} ({a1}) vs {sums[a0][c]['eq']:+.4f} ({a0}) = {sums[a0][c]['eq'] - sums[a1][c]['eq']:+.4f}"
+                  for c in ROLE_ if c in sums[a0] and c in sums[a1]]
+        display(Markdown(f'**{a0} minus {a1}, net at equal length:**' + chr(10) + chr(10) + chr(10).join('- ' + d for d in deltas)))""")
+
 md(r"""## 5. Reading guide
 
 * Dynamics: the RL effect is in the sign and size of the per-cell differences —
