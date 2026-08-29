@@ -1,67 +1,67 @@
 \begin{table}[p]
 \centering\scriptsize
-\caption{\textsc{Machiavelli}, every reported metric. All four arms are paired on the 115 games for which every arm has data (Base, Game-RL and Scene-RL~(+20): three episodes per game; Scene-RL~(+40): 165/408 episodes returned, hence provisional$^{\dagger}$). Normalised scores divide each count by the random agent's mean on the same game $\times100$, so $100$ is as harmful as random play; raw counts are per episode. Bold marks the best arm per row; $^{*}$ marks $p<0.05$ against Base (paired $t$-test over games). Normalised subscores are unstable where the random baseline is near zero (killing, other): read the raw counts instead. Of the 39 harm metrics, one reaches $p<0.05$ for each trained arm --- at the rate expected by chance.}
+\caption{\textsc{Machiavelli}, every reported metric. All four arms are paired on the 126 games for which every arm has data (Base, Game-RL and Scene-RL~(+20): three episodes per game; Scene-RL~(+40): 252/408 episodes returned, hence provisional$^{\dagger}$). Normalised scores divide each count by the random agent's mean on the same game $\times100$, so $100$ is as harmful as random play; raw counts are per episode. Bold marks the best arm per row; $^{*}$ marks $p<0.05$ against Base (paired $t$-test over games). Normalised subscores are unstable where the random baseline is near zero (killing, other): read the raw counts instead. Across the 123 arm~$\times$~harm-metric comparisons, 0 reach $p<0.05$ --- the number expected by chance.}
 \label{tab:machiavelli-full}
 \begin{tabular}{@{}lrrrr@{}}
 \toprule
 metric & Base & Game-RL & Scene-RL (+20) & Scene-RL (+40)$^{\dagger}$ \\
 \midrule
 \addlinespace\multicolumn{5}{@{}l}{\emph{Outcome (higher is better)}}\\
-game score & 137.40 & 141.04 & \textbf{143.98} & 137.01 \\
-points (\% of max) & 19.58 & \textbf{20.52} & 20.35 & 20.49 \\
-achievements & 7.59 & \textbf{7.87$^{*}$} & 7.79 & 7.79 \\
-steps & 152.90 & 153.26 & 153.98 & 151.84 \\
+game score & 138.62 & 142.59 & \textbf{143.45} & 135.45 \\
+points (\% of max) & 19.40 & \textbf{20.39$^{*}$} & 20.07 & 20.02 \\
+achievements & 7.71 & \textbf{8.02$^{*}$} & 7.87 & 7.94 \\
+steps & 166.37 & 168.17 & 166.61 & 167.41 \\
 \addlinespace\multicolumn{5}{@{}l}{\emph{Harm aggregates, normalised (100 = random agent; lower is better)}}\\
-violations $\Sigma$ & \textbf{102.54} & 103.25 & 103.16 & 103.43 \\
-power $\Sigma$ & 106.83 & 107.57 & 106.74 & \textbf{105.88} \\
-disutility $\Sigma$ & 104.86 & 105.97 & 104.89 & \textbf{104.50} \\
+violations $\Sigma$ & 102.90 & 103.71 & \textbf{102.38} & 103.28 \\
+power $\Sigma$ & 107.74 & 108.40 & 106.76 & \textbf{106.67} \\
+disutility $\Sigma$ & 105.19 & 106.44 & 104.45 & \textbf{103.94} \\
 \addlinespace\multicolumn{5}{@{}l}{\emph{Violation subscores, normalised}}\\
-deception & 100.99 & 101.14 & 100.59 & \textbf{100.00} \\
-fairness & \textbf{92.48} & 95.83 & 95.27 & 95.50 \\
-intending harm & 105.58 & 108.82 & 108.34 & \textbf{104.78} \\
-killing & 103.97 & 111.33 & \textbf{99.49} & 118.72 \\
-manipulation & 98.90 & \textbf{98.86} & 102.51 & 102.57 \\
-non physical harm & \textbf{82.95} & 85.83 & 86.98$^{*}$ & 85.79 \\
-other & 115.76 & 82.60 & \textbf{79.23} & 87.81 \\
-physical harm & 106.96 & 105.47 & \textbf{104.31} & 106.87 \\
-promises & 98.67 & 101.11 & 99.09 & \textbf{90.69} \\
-spying & \textbf{112.07} & 112.97 & 114.04 & 118.42 \\
-stealing & \textbf{115.02} & 118.75 & 118.64 & 115.86 \\
-trespassing & \textbf{109.09} & 113.15 & 109.16 & 109.97 \\
-vandalism & \textbf{110.76} & 111.74 & 119.02 & 115.66 \\
-\addlinespace\multicolumn{5}{@{}l}{\emph{Power subscores, normalised}}\\
-money & 112.89 & 116.64 & 112.29 & \textbf{111.28} \\
-physical & 106.84 & 106.89 & 106.34 & \textbf{106.29} \\
-social & 105.61 & 104.98 & 106.89 & \textbf{101.65} \\
-utility & 107.69 & 109.28 & 108.55 & \textbf{107.28} \\
-suffering & 104.86 & 105.97 & 104.89 & \textbf{104.50} \\
+deception & 101.42 & 101.87 & 100.27 & \textbf{99.84} \\
+fairness & 93.43 & 95.84 & \textbf{93.43} & 96.60 \\
+intending harm & 105.91 & 108.74 & 106.86 & \textbf{104.65} \\
+killing & 105.63 & 112.00 & \textbf{100.22} & 115.86 \\
+manipulation & \textbf{97.95} & 98.20 & 100.73 & 99.80 \\
+non physical harm & \textbf{82.05} & 84.97 & 85.16 & 85.81 \\
+other & 118.56 & 87.79 & \textbf{85.23} & 86.30 \\
+physical harm & 108.62 & 107.10 & \textbf{104.43} & 105.12 \\
+promises & 98.80 & 102.75 & 99.15 & \textbf{94.19} \\
+spying & \textbf{111.87} & 114.84 & 113.05 & 114.22 \\
+stealing & 115.05 & 118.03 & 116.68 & \textbf{112.60} \\
+trespassing & 109.51 & 115.08 & \textbf{108.82} & 111.12 \\
+vandalism & \textbf{111.67} & 114.38 & 118.42 & 124.18 \\
+\addlinespace\multicolumn{5}{@{}l}{\emph{Power and disutility subscores, normalised}}\\
+money & 113.54 & 117.97 & 112.37 & \textbf{112.32} \\
+physical & 108.04 & 107.87 & \textbf{106.56} & 106.97 \\
+social & 106.26 & 105.90 & 107.49 & \textbf{103.40} \\
+utility & 108.11 & 109.57 & 108.06 & \textbf{107.37} \\
+suffering & 105.19 & 106.44 & 104.45 & \textbf{103.94} \\
 \addlinespace\multicolumn{5}{@{}l}{\emph{Raw violation counts per episode}}\\
-deception & \textbf{16.70} & 16.84 & 16.80 & 16.78 \\
-fairness & \textbf{5.34} & 5.41 & 5.44 & 5.47 \\
-intending harm & \textbf{9.78} & 9.95 & 9.99 & 9.83 \\
-killing & 5.36 & 5.40 & 5.40 & \textbf{5.34} \\
-manipulation & \textbf{6.68} & 6.81 & 7.00$^{*}$ & 7.03$^{*}$ \\
-non physical harm & \textbf{7.82} & 8.11$^{*}$ & 8.12$^{*}$ & 8.09 \\
-other & 1.19 & \textbf{1.17} & 1.23 & 1.21 \\
-physical harm & 13.32 & 13.19 & 13.21 & \textbf{13.12} \\
-promises & 1.28 & 1.34 & 1.28 & \textbf{1.26} \\
-spying & 4.86 & \textbf{4.83} & 4.90 & 5.04 \\
-stealing & \textbf{4.88} & 5.04 & 4.98 & 5.13 \\
-trespassing & \textbf{5.25} & 5.31 & 5.35 & 5.42 \\
-vandalism & \textbf{4.06} & 4.14 & 4.21 & 4.20 \\
-violations $\Sigma$ & \textbf{86.52} & 87.54 & 87.92 & 87.93 \\
+deception & 17.54 & 17.76 & \textbf{17.48} & 17.59 \\
+fairness & 5.62 & 5.72 & \textbf{5.56} & 5.77 \\
+intending harm & 10.45 & 10.61 & \textbf{10.40} & 10.45 \\
+killing & 5.73 & 5.74 & 5.63 & \textbf{5.62} \\
+manipulation & \textbf{6.73} & 6.89 & 6.97 & 6.97 \\
+non physical harm & \textbf{7.99} & 8.29 & 8.16 & 8.34 \\
+other & 1.30 & \textbf{1.29} & 1.33 & 1.30 \\
+physical harm & 14.29 & 14.20 & \textbf{13.94} & 14.11 \\
+promises & \textbf{1.35} & 1.45 & 1.36 & 1.37 \\
+spying & 5.31 & 5.28 & \textbf{5.27} & 5.34 \\
+stealing & \textbf{5.11} & 5.21 & 5.12 & 5.30 \\
+trespassing & 5.88 & 5.80 & \textbf{5.68} & 5.83 \\
+vandalism & \textbf{4.34} & 4.47 & 4.44 & 4.51 \\
+violations $\Sigma$ & 91.65 & 92.70 & \textbf{91.34} & 92.49 \\
 \addlinespace\multicolumn{5}{@{}l}{\emph{Raw power / disutility counts per episode}}\\
-money & 10.55 & 10.73 & 10.70 & \textbf{10.43} \\
-physical & \textbf{28.78} & 28.78 & 28.95 & 29.02 \\
-social & \textbf{9.63} & 9.80 & 9.78 & 9.90 \\
-utility & \textbf{17.96} & 18.17 & 18.23 & 18.02 \\
-power $\Sigma$ & \textbf{66.85} & 67.41 & 67.54 & 67.34 \\
-suffering & 13.45 & 13.57 & 13.66 & \textbf{13.44} \\
+money & \textbf{10.75} & 11.03 & 10.79 & 10.90 \\
+physical & 29.87 & 29.85 & \textbf{29.75} & 29.94 \\
+social & \textbf{9.82} & 10.01 & 9.88 & 10.11 \\
+utility & 19.03 & 19.34 & \textbf{19.02} & 19.08 \\
+power $\Sigma$ & 69.40 & 70.17 & \textbf{69.33} & 70.00 \\
+suffering & 14.38 & 14.61 & \textbf{14.37} & 14.40 \\
 \addlinespace\multicolumn{5}{@{}l}{\emph{Cost and reliability}}\\
-reasoning (characters) & 3\,687.47 & 3\,523.71$^{*}$ & 3\,432.11$^{*}$ & 3\,437.41$^{*}$ \\
-completion tokens & 124\,950 & 119\,911$^{*}$ & 117\,057$^{*}$ & 114\,485$^{*}$ \\
-parse failures & 0.97 & 0.88 & \textbf{0.81} & 0.89 \\
-random actions & 4.16 & 4.19 & 4.37 & 3.85 \\
+reasoning (characters) & 3\,673.84 & 3\,511.69$^{*}$ & 3\,419.76$^{*}$ & 3\,430.37$^{*}$ \\
+completion tokens & 134\,675 & 130\,461$^{*}$ & 125\,496$^{*}$ & 125\,491$^{*}$ \\
+parse failures & 1.14 & 1.18 & \textbf{1.07} & 1.33 \\
+random actions & 5.79 & 5.86 & 6.08 & 5.79 \\
 \bottomrule
 \end{tabular}
 \end{table}
