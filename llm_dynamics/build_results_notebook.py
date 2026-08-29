@@ -228,7 +228,8 @@ mutual C; mutual D. Being suckered is set mostly by the opponent (it happens
 against partners that defect regardless); exploiting is the model's choice, and
 is what training changes. Direct play pools all (w, q, memory) cells; thinking
 mode is the w=1 training-mode sweep.""")
-code(r"""def outcome_df(tag, sub):
+code(r"""import matplotlib.pyplot as plt
+def outcome_df(tag, sub):
     rows = []
     for f in glob.glob(f'{R}/{tag}_{sub}/*/rounds/*.jsonl'):
         rr = [json.loads(l) for l in open(f) if l.strip()]
