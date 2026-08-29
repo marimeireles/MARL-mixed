@@ -71,6 +71,17 @@ case "$PHASE" in
       $RUN donors-sweep $COMMON --b 4 --c-over-b 0.5 --w-values 1.0 --q-values 0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0 \
           --strategies $s --memories full --seeds 6 --rounds 20 --skip-portraits --out ${TAG}_donors_v3_qfine/$s > $L.qfine.$s.log 2>&1 &
     done; wait ;;
+  kink_direct)   # fine w sweep at c/b=0.75 (Nowak threshold at w=0.75), direct play
+    for st in tit_for_tat grim_trigger generous_tit_for_tat always_cooperate always_defect; do
+      $RUN donors-sweep $COMMON --b 4 --c-over-b 0.75 --q-values 0.5 --w-values 0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0 \
+          --strategies $st --memories full --seeds 6 --rounds 20 --skip-portraits --out ${TAG}_donors_v3_kink_cb075/$st > $L.kinkd.$st.log 2>&1 &
+    done; wait ;;
+  kink_think)    # fine w sweep at c/b=0.5 (threshold at w=0.5), reasoning mode; W_LIST splits the sweep
+    for st in tit_for_tat grim_trigger generous_tit_for_tat always_cooperate; do
+      $RUN donors-sweep $COMMON --thinking --with-think --max-tokens 4096 --b 4 --c-over-b 0.5 --q-values 0.5 \
+          --w-values ${W_LIST:?} --strategies $st --memories full --seeds 6 --rounds 20 --skip-portraits \
+          --out ${TAG}_donors_v3_kink_think/$st > $L.kinkt.$st.log 2>&1 &
+    done; wait ;;
   perturb_selfplay)
     $RUN donors-perturb $COMMON --seeds 4 --rounds 20 --perturb-round 8 --out ${TAG}_donors_v3_perturb > $L.perturb.log 2>&1 &
     $RUN donors-selfplay $COMMON --q-values 0,1.0 --w-values 0,1.0 --seeds 4 --rounds 20 --out ${TAG}_selfplay_v3 > $L.selfplay.log 2>&1 &
