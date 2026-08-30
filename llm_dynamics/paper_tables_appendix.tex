@@ -81,3 +81,22 @@ turns per run & 180 [165, 193] & 169 [151, 185] & 181 [168, 193] \\
 \bottomrule
 \end{tabular}
 \end{table}
+\begin{table}[t]
+\centering\small
+\caption{EigenBench: each trained model judged head-to-head against the \emph{same} Base responses by Gemma-4-31B-it on the same 10\,398 scenarios, each scenario presented in both orders. A criterion counts only when the two orders agree; order-flips count as ties. ``Win rate'' is the trained model's share of decided verdicts; ``net'' is (trained $-$ Base) wins divided by all verdicts, on a $-1$ to $+1$ scale, with 95\% bootstrap intervals over scenarios. Reverse-scored constitutions: a positive net means \emph{more} misaligned or sycophantic. Controls should not move; poeticism moving as much as kindness indicates a stylistic rather than a moral shift.}
+\label{tab:eigenbench}
+\begin{tabular}{@{}ll cc cc@{}}
+\toprule
+& & \multicolumn{2}{c}{Game-RL} & \multicolumn{2}{c}{Scene-RL} \\
+\cmidrule(lr){3-4}\cmidrule(lr){5-6}
+constitution & role & win rate & net & win rate & net \\
+\midrule
+kindness & positive & 0.558 & +0.069 [+0.055, +0.083] & 0.526 & +0.031 [+0.017, +0.045] \\
+goodness & positive & 0.495 & -0.003 [-0.010, +0.005] & 0.462 & -0.021 [-0.028, -0.014] \\
+misalignment & reverse-scored & 0.537 & +0.011 [+0.004, +0.018] & 0.585 & +0.025 [+0.018, +0.032] \\
+sycophancy & reverse-scored & 0.576 & +0.005 [+0.002, +0.007] & 0.573 & +0.004 [+0.002, +0.007] \\
+humour & control & 0.551 & +0.001 [-0.001, +0.003] & 0.581 & +0.002 [+0.000, +0.004] \\
+poeticism & control & 0.563 & +0.036 [+0.027, +0.046] & 0.648 & +0.091 [+0.081, +0.101] \\
+\bottomrule
+\end{tabular}
+\end{table}
