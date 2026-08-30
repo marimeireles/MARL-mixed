@@ -1,0 +1,82 @@
+% Appendix tables generated from llm_dynamics/results and external_benchmarks.
+
+\begin{table}[t]
+\centering\small
+\caption{Donor's game, direct play: cooperation rate and exploitation (share of rounds in which the model defects while its partner cooperates), by opponent. $b=4$, $c=2$, 20 rounds; each cell pools $w,q\in\{0,0.5,1\}$, four memory conditions and four seeds ($144$ games per opponent and arm, $1{,}296$ per arm). Brackets are 95\% bootstrap intervals over games.}
+\label{tab:donors-exploit}
+\begin{tabular}{@{}l cc cc cc@{}}
+\toprule
+& \multicolumn{2}{c}{Base} & \multicolumn{2}{c}{Game-RL} & \multicolumn{2}{c}{Scene-RL} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}
+opponent & coop. & exploit \% & coop. & exploit \% & coop. & exploit \% \\
+\midrule
+always-cooperate & 0.97 & 3.1 [1.6, 5.1] & 0.99 & 1.0 [0.5, 1.6] & 1.00 & 0.3 [0.1, 0.6] \\
+tit-for-two-tats & 0.98 & 1.7 [0.9, 2.6] & 0.99 & 1.1 [0.3, 2.1] & 0.99 & 0.7 [0.3, 1.3] \\
+generous TFT & 0.86 & 13.7 [10.3, 17.4] & 0.91 & 8.7 [6.6, 11.1] & 0.90 & 9.1 [6.7, 12.0] \\
+tit-for-tat & 0.96 & 3.4 [1.9, 5.2] & 0.99 & 0.7 [0.3, 1.3] & 0.99 & 0.8 [0.3, 1.5] \\
+grim trigger & 0.94 & 4.7 [2.6, 7.4] & 0.97 & 2.8 [1.6, 4.1] & 0.98 & 2.4 [1.3, 3.7] \\
+win--stay--lose--shift & 0.83 & 15.2 [11.5, 19.2] & 0.92 & 6.9 [5.0, 9.1] & 0.92 & 7.2 [5.3, 9.4] \\
+random & 0.45 & 23.0 [21.0, 25.1] & 0.48 & 22.2 [20.5, 24.0] & 0.45 & 23.6 [21.6, 25.7] \\
+suspicious TFT & 0.44 & 5.7 [4.5, 6.9] & 0.45 & 8.1 [6.0, 10.2] & 0.46 & 6.9 [5.3, 8.6] \\
+always-defect & 0.14 & 0.0 [0.0, 0.0] & 0.16 & 0.0 [0.0, 0.0] & 0.12 & 0.0 [0.0, 0.0] \\
+\midrule all opponents & 0.73 & 7.8 [7.0, 8.7] & 0.76 & 5.7 [5.1, 6.4] & 0.76 & 5.7 [5.0, 6.3] \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[t]
+\centering\small
+\caption{Donor's game, reasoning mode ($w=1$): cooperation rate and reward, by opponent. Pooled over 16 seeds (the original four-seed sweep and an independent twelve-seed replication) $\times$ three values of $q$, i.e.\ $48$ paired games per opponent and arm. Reward is points per round; mutual cooperation earns $4.0$. Brackets are 95\% bootstrap intervals.}
+\label{tab:donors-think}
+\begin{tabular}{@{}l cc cc cc@{}}
+\toprule
+& \multicolumn{2}{c}{Base} & \multicolumn{2}{c}{Game-RL} & \multicolumn{2}{c}{Scene-RL} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}
+opponent & cooperation & reward & cooperation & reward & cooperation & reward \\
+\midrule
+tit-for-tat & 0.44 [0.32, 0.58] & 3.01 & 0.64 [0.51, 0.76] & 3.37 & 0.61 [0.47, 0.73] & 3.31 \\
+generous TFT & 0.39 [0.25, 0.52] & 3.54 & 0.61 [0.49, 0.73] & 3.79 & 0.44 [0.30, 0.57] & 3.64 \\
+grim trigger & 0.50 [0.37, 0.63] & 3.10 & 0.65 [0.52, 0.78] & 3.35 & 0.56 [0.43, 0.69] & 3.18 \\
+always-cooperate & 0.59 [0.46, 0.71] & 4.84 & 0.70 [0.57, 0.82] & 4.61 & 0.64 [0.52, 0.76] & 4.74 \\
+\midrule four reciprocators & 0.48 [0.42, 0.55] & 3.62 & 0.65 [0.59, 0.71] & 3.78 & 0.56 [0.50, 0.63] & 3.72 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[t]
+\centering\small
+\caption{Iterated Prisoner's Dilemma ($R,T,S,P=3,5,0,1$), independent 20-seed replication at memory~1: cooperation rate and points per round, by opponent. Mutual cooperation earns $3.0$; the best response against grim trigger earns $3.1$.}
+\label{tab:ipd-rep}
+\begin{tabular}{@{}l cc cc cc@{}}
+\toprule
+& \multicolumn{2}{c}{Base} & \multicolumn{2}{c}{Game-RL} & \multicolumn{2}{c}{Scene-RL} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}
+opponent & coop. & reward & coop. & reward & coop. & reward \\
+\midrule
+always-cooperate & 0.93 & 3.15 & 0.99 & 3.01 & 1.00 & 3.01 \\
+tit-for-two-tats & 0.92 & 2.92 & 0.98 & 2.98 & 1.00 & 3.00 \\
+generous TFT & 0.93 & 2.97 & 0.96 & 2.98 & 0.99 & 2.99 \\
+tit-for-tat & 0.95 & 2.93 & 0.97 & 2.96 & 0.97 & 2.95 \\
+grim trigger & 0.91 & 2.83 & 0.99 & 2.98 & 0.99 & 2.99 \\
+win--stay--lose--shift & 0.96 & 3.00 & 0.98 & 2.99 & 1.00 & 3.00 \\
+random & 0.27 & 2.63 & 0.32 & 2.56 & 0.36 & 2.50 \\
+suspicious TFT & 0.09 & 1.27 & 0.18 & 1.47 & 0.20 & 1.51 \\
+always-defect & 0.09 & 0.91 & 0.12 & 0.88 & 0.12 & 0.88 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[t]
+\centering\small
+\caption{DiG-bench, hidden-rule discovery: means over the 16 games for which all three arms have runs. Runs are capped at 200 turns; ``levels completed'' counts levels finished (every run starts on level~1) and the level-time integral averages the current level over the run's turns. The sweep is incomplete and unbalanced at the time of writing (Scene-RL 117 runs, Base 163 runs, Game-RL 56 runs), so these means are indicative only.}
+\label{tab:dig}
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+metric & Base & Game-RL & Scene-RL \\
+\midrule
+levels completed & 0.246 & 0.220 & 0.293 \\
+level-time integral & 1.153 & 1.145 & 1.171 \\
+turns per run & 183 & 185 & 191 \\
+\bottomrule
+\end{tabular}
+\end{table}
