@@ -68,15 +68,16 @@ always-defect & 0.09 & 0.91 & 0.12 & 0.88 & 0.12 & 0.88 \\
 
 \begin{table}[t]
 \centering\small
-\caption{DiG-bench, hidden-rule discovery: means over the 16 games for which all three arms have runs. Runs are capped at 200 turns; ``levels completed'' counts levels finished (every run starts on level~1) and the level-time integral averages the current level over the run's turns. The sweep is incomplete and unbalanced at the time of writing (Scene-RL 117 runs, Base 163 runs, Game-RL 56 runs), so these means are indicative only.}
+\caption{DiG-bench, hidden-rule discovery. Every arm plays the same 43 game--repetition cells (the cells completed by all three arms, spanning 15 of the 21 public games), so the comparison is fully paired. Runs are capped at 200 turns; every run starts on level~1, ``levels completed'' counts levels finished, and the level--time integral averages the agent's current level over the turns of the run, rewarding levels reached early. Brackets are 95\% bootstrap intervals over cells. The sweep is still in progress; these are the cells finished so far.}
 \label{tab:dig}
-\begin{tabular}{@{}lrrr@{}}
+\begin{tabular}{@{}lccc@{}}
 \toprule
 metric & Base & Game-RL & Scene-RL \\
 \midrule
-levels completed & 0.246 & 0.220 & 0.293 \\
-level-time integral & 1.153 & 1.145 & 1.171 \\
-turns per run & 183 & 185 & 191 \\
+levels completed & 0.233 [0.047, 0.465] & 0.233 [0.070, 0.442] & 0.302 [0.070, 0.581] \\
+level--time integral & 1.107 [1.024, 1.218] & 1.113 [1.020, 1.230] & 1.140 [1.033, 1.282] \\
+level reached & 1.233 [1.047, 1.465] & 1.233 [1.070, 1.442] & 1.302 [1.070, 1.605] \\
+turns per run & 180 [165, 193] & 169 [151, 185] & 181 [168, 193] \\
 \bottomrule
 \end{tabular}
 \end{table}
